@@ -73,7 +73,7 @@
 #'   by 2 and both rounding up and rounding down the result, thus assuming equal
 #'   n. The suggested sample size for the planned study is calculated using both
 #'   of these values of n, and the function returns the larger of these two
-#'   suggestions, t be conservative. If the user enters a vector for n with two
+#'   suggestions, to be conservative. If the user enters a vector for n with two
 #'   different values, specific information is available on the exact group
 #'   sizes. n is calcualted as the harmonic mean of these two values (a measure
 #'   of effective sample size). Again, this is rounded both up and down. The
