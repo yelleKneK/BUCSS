@@ -43,8 +43,8 @@
 #'   half of the time, but below the desired level the other half of the time.
 #'   Selecting assurance = .5 (selecting the noncentrality parameter at the 50th
 #'   percentile of the likelihood distribution) results in a median-unbiased
-#'   estimate of the population noncentrality parameter and corrects for
-#'   publication bias only. In order to correct for uncertainty, assurance > .5
+#'   estimate of the population noncentrality parameter and does not correct for
+#'   uncertainty. In order to correct for uncertainty, assurance > .5
 #'   can be selected, which corresponds to selecting the noncentrality parameter
 #'   associated with the (1 - assurance) quantile of the likelihood
 #'   distribution.
@@ -56,7 +56,7 @@
 #'   example, setting \code{alpha.prior}=.20 would reflect less severe
 #'   publication bias than the default of .05. In essence, setting
 #'   \code{alpha.prior} at .20 assumes that studies with \eqn{p}-values less
-#'   than .20 are published, whereas those with alrger \eqn{p}-values are not.
+#'   than .20 are published, whereas those with larger \eqn{p}-values are not.
 #'
 #'   In some cases, the corrected noncentrality parameter for a given level of
 #'   assurance will be estimated to be zero. This is an indication that, at the
@@ -94,13 +94,11 @@
 #'   (\code{interaction})
 #' @param alpha.prior Alpha-level \eqn{\alpha} for the previous study or the
 #'   assumed statistical significance necessary for publishing in the field; to
-#'   assume no publication bias, a value of 1 can be entered (correct for
-#'   uncertainty only)
+#'   assume no publication bias, a value of 1 can be entered 
 #' @param alpha.planned Alpha-level (\eqn{\alpha}) assumed for the planned study
 #' @param assurance Desired level of assurance, or the long run proportion of
 #'   times that the planned study power will reach or surpass desired level
-#'   (assurance of .5 corrects for publication bias only; assurance > .5
-#'   corrects for uncertainty)
+#'   (assurance > .5 corrects for uncertainty; assurance < .5 not recommended)
 #' @param power Desired level of statistical power for the planned study
 #' @param step Value used in the iterative scheme to determine the noncentrality
 #'   parameter necessary for sample size planning (0 < step < .01) (users should
@@ -152,6 +150,11 @@ ss.power.ba <- function(F.observed, N, levels.A, levels.B=NULL, effect=c("factor
     stop("There is a problem with 'assurance' (i.e., the proportion of times statistical power is at or above the desired value), please specify as a value between 0 and 1 (the default is .80).")
   }
 
+  if(assurance <.5)
+  {
+    warning( "THe assurance you have entered is < .5, which implies you will have under a 50% chance at achieving your desired level of power" )
+  }
+  
   if(power >= 1) power <- power/100
 
   if(power<0 | power>1) stop("There is a problem with 'power' (i.e., desired statistical power), please specify as a value between 0 and 1 (the default is .80).")
