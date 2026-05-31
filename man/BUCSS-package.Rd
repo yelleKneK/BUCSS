@@ -4,20 +4,36 @@
 \name{BUCSS-package}
 \alias{BUCSS}
 \alias{BUCSS-package}
-\title{Bias and Uncertainty Corrected Sample Size (BUCSS)}
+\title{BUCSS: Bias and Uncertainty Corrected Sample Size}
 \description{
-Bias- and Uncertainty-Corrected Sample Size. BUCSS implements a method of correcting for publication bias and uncertainty when planning sample sizes in a future study from an original study
+Implements sample size planning for a future study from the summary
+statistics of a prior study, correcting the prior effect for publication
+bias and uncertainty so the planned study attains its target statistical
+power more reliably than methods that take a sample effect size at face
+value. The correction builds on the truncated noncentral distribution of
+Taylor and Muller (1996) and is described in Anderson, Kelley, and Maxwell
+(2017).
 }
 \details{
-Note that \url{https://designingexperiments.com} uses Shiny R apps that implement, via a web interface, the functions contained in BUCSS.
+The functions are also available, through a web interface, as Shiny apps at
+\url{https://designingexperiments.com}.
 }
 \references{
-Anderson, S. & Kelley, K., Maxwell, S. E. (2017). Sample size planning for more accurate statistical power: A method correcting sample effect sizes for uncertainty and publication bias. \emph{Psychological Science}, \emph{28}, 1547--1562.
+Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample size planning
+for more accurate statistical power: A method correcting sample effect sizes
+for uncertainty and publication bias. \emph{Psychological Science, 28,}
+1547--1562. \doi{10.1177/0956797617723724}
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/yelleKneK/BUCSS}
+  \item \url{https://designingexperiments.com}
+  \item Report bugs at \url{https://github.com/yelleKneK/BUCSS/issues}
+}
 
-See \url{https://designingexperiments.com/} for Shiny R implementation of the functions.
-
-For suggested updates, please email Samantha Anderson \email{samantha.f.anderson@asu.edu} or Ken Kelley \email{kkelley@nd.edu}.
 }
 \author{
-Samantha Anderson \email{samantha.f.anderson@asu.edu} and Ken Kelley \email{kkelley@nd.edu}
+Samantha F. Anderson (\email{samantha.f.anderson@asu.edu}),
+  Ken Kelley (\email{kkelley@nd.edu}), and Scott E. Maxwell
 }

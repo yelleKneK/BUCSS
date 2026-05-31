@@ -1,0 +1,170 @@
+---
+title: "Worked examples across designs"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Worked examples across designs}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library(BUCSS)
+```
+
+This vignette walks through one example of each `ss_buc_*` function. The pattern
+is always the same: summarize the prior study with a single test statistic and
+its design, and the function returns the necessary planned-study sample size and
+the bias and uncertainty adjusted noncentrality parameter. Every example uses
+80% power and 80% assurance unless noted. For the meaning of the `assurance` and
+`alpha_prior` settings, see
+`vignette("understanding-assurance", package = "BUCSS")`.
+
+## Independent *t* test
+
+A prior two-group study reported *t* = 3.00 with 20 participants per group. The
+returned sample size is per group.
+
+```{r}
+ss_buc_indep_t(t_observed = 3, n = 20, alpha_prior = .05, alpha_planned = .05,
+               assurance = .80, power = .80)
+```
+
+`ss_buc_smd` is the same planner under an effect-size name, for when you are
+working from a standardized mean difference rather than a raw *t*; prefer
+`ss_buc_indep_t` when the prior *t* was computed from unstandardized data.
+
+## Dependent (paired) *t* test
+
+A prior within-pairs study of 40 pairs reported *t* = 3.00. The returned sample
+size is the number of pairs.
+
+```{r}
+ss_buc_paired_t(t_observed = 3, N = 40, alpha_prior = .05, alpha_planned = .05,
+                assurance = .80, power = .80)
+```
+
+The alias `ss_buc_smd_paired` serves the standardized mean difference framing of
+the same comparison.
+
+## Between-subjects ANOVA
+
+A one-way fully between-subjects design takes the number of levels of the single
+factor. Here a four-group design with total *N* = 120 reported *F* = 5.00 for
+the omnibus effect. The returned sample size is per group.
+
+```{r}
+ss_buc_one_way_anova(F_observed = 5, N = 120, levels_A = 4, alpha_prior = .05,
+                     alpha_planned = .05, assurance = .80, power = .80)
+```
+
+A two-way fully between-subjects design takes the levels of both factors and the
+effect of interest (`factor_A`, `factor_B`, or `interaction`). Here a 2 x 3
+design with total *N* = 120 reported *F* = 5.00 for the main effect of Factor B.
+The returned sample size is per cell.
+
+```{r}
+ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2, levels_B = 3,
+                       effect = "factor_B", alpha_prior = .05,
+                       alpha_planned = .05, assurance = .80, power = .80)
+```
+
+When the effect of interest is not a standard main effect or interaction, or the
+design has more than two factors, use the general form and supply the degrees of
+freedom directly. The denominator degrees of freedom equal *N* minus the number
+of cells when the cell means are the only estimated parameters, so supplying
+`df_denominator = N - cells` (here 120 - 6 = 114) reproduces the two-way result
+above. A smaller `df_denominator` accounts for covariates or other nuisance
+parameters and calls for a larger sample.
+
+```{r}
+ss_buc_factorial_anova_general(F_observed = 5, N = 120, cells = 6,
+                               df_numerator = 2, df_denominator = 114,
+                               alpha_prior = .05, alpha_planned = .05,
+                               assurance = .80, power = .80)
+```
+
+## Within-subjects ANOVA
+
+For a fully within-subjects design, supply the factor levels and the effect.
+Here a 2 x 3 within-subjects design with *N* = 60 reported *F* = 5.00 for the
+main effect of Factor B. The returned sample size is the total number of
+subjects.
+
+```{r}
+ss_buc_rm_anova(F_observed = 5, N = 60, levels_A = 2, levels_B = 3,
+                effect = "factor_B", alpha_prior = .05, alpha_planned = .05,
+                assurance = .80, power = .80)
+```
+
+The general form takes the numerator degrees of freedom directly and works for
+any number of within-subjects factors. This example uses `assurance = .50`,
+which corrects for publication bias only.
+
+```{r}
+ss_buc_rm_anova_general(F_observed = 6.5, N = 80, df_numerator = 1,
+                        alpha_prior = .05, alpha_planned = .05, assurance = .50,
+                        power = .80)
+```
+
+## Split-plot (mixed) ANOVA
+
+A split-plot design crosses a between-subjects factor with a within-subjects
+factor. Supply the levels of each and the effect (`between`, `within`, or
+`interaction`). Here a design with 2 between-subjects levels and 3
+within-subjects levels and *N* = 60 reported *F* = 5.00 for the within-subjects
+effect. The returned sample size is per between-subjects cell.
+
+```{r}
+ss_buc_mixed_anova(F_observed = 5, N = 60, levels_between = 2, levels_within = 3,
+                   effect = "within", alpha_prior = .05, alpha_planned = .05,
+                   assurance = .80, power = .80)
+```
+
+The general form takes the numerator degrees of freedom and the number of
+between-subjects groups directly. The effect is one of `between_only`,
+`within_only`, or `between_within`; supply `df_num_within` when the effect
+involves a within-subjects component. The returned sample size is per group.
+
+```{r}
+ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2,
+                           num_groups = 3, effect = "between_only",
+                           alpha_prior = .05, alpha_planned = .05,
+                           assurance = .80, power = .80)
+```
+
+## Multiple regression
+
+For a single regression coefficient, supply the *t* statistic for that
+coefficient, the prior sample size, and the number of predictors `p`. A prior
+study with *N* = 150 and 3 predictors reported *t* = 3.00 for one coefficient.
+The returned sample size is the total.
+
+```{r}
+ss_buc_reg_coef(t_observed = 3, N = 150, p = 3, alpha_prior = .05,
+                alpha_planned = .05, assurance = .80, power = .80)
+```
+
+For the omnibus test of the model R-squared, supply the model *F* statistic.
+Here a prior study with *N* = 150 and 4 predictors reported *F* = 5.00.
+
+```{r}
+ss_buc_R2(F_observed = 5, N = 150, p = 4, alpha_prior = .05,
+          alpha_planned = .05, assurance = .80, power = .80)
+```
+
+For a joint test of a subset of predictors, also supply `p_joint`, the number of
+predictors tested together. Here 2 of the 4 predictors are tested jointly.
+
+```{r}
+ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2,
+                 alpha_prior = .05, alpha_planned = .05, assurance = .80,
+                 power = .80)
+```
+
+## References
+
+Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample size planning for
+more accurate statistical power: A method correcting sample effect sizes for
+uncertainty and publication bias. *Psychological Science, 28*, 1547--1562.
+<doi:10.1177/0956797617723724>

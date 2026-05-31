@@ -1,0 +1,115 @@
+---
+title: "Assurance and the publication bias correction"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Assurance and the publication bias correction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library(BUCSS)
+```
+
+Two settings control how aggressively BUCSS corrects the prior study's effect:
+`assurance` handles uncertainty, and `alpha_prior` handles publication bias.
+This vignette explains what each one does and shows how the recommended sample
+size responds as you turn each knob.
+
+## Assurance: correcting for uncertainty
+
+Assurance is the long-run proportion of replications whose realized power meets
+or exceeds the target. If you plan for 80% power with `assurance = .80`, then in
+about 80% of replications the realized power will be at least 80%.
+
+* `assurance = .5` selects the median of the likelihood. This corrects for
+  publication bias only; it does not add any cushion for uncertainty.
+* `assurance > .5` selects a lower quantile of the likelihood, which is a
+  smaller, more conservative noncentrality parameter, and therefore a larger
+  planned sample size. The extra sample size is the price of protecting against
+  the chance that the prior estimate was lucky.
+* `assurance < .5` is not recommended (the functions warn), because it implies
+  under a 50% chance of reaching the desired power.
+
+Watch the recommended per-group sample size climb as assurance rises, for a
+prior independent *t* test with *t* = 3.00 and 20 per group:
+
+```{r}
+assurances <- c(.5, .6, .7, .8, .9)
+n_by_assurance <- sapply(assurances, function(a) {
+  r <- ss_buc_indep_t(t_observed = 3, n = 20, assurance = a, power = .80)
+  r$value[r$term == "necessary_sample_size"]
+})
+data.frame(assurance = assurances, necessary_n_per_group = n_by_assurance)
+```
+
+The climb is steep. A prior effect this uncertain calls for 130 per group at
+80% assurance and over 5000 per group at 90%.
+
+### When the correction cannot be made
+
+Push assurance high enough on a weak or uncertain prior effect and the corrected
+noncentrality parameter is driven to zero. That is the method telling you the
+prior effect cannot be estimated with confidence at this level of assurance, so
+sample size planning is not possible with these settings. The function stops
+rather than returning a meaningless answer:
+
+```{r eval = FALSE}
+# Not run: this stops with an informative error.
+ss_buc_indep_t(t_observed = 3, n = 20, assurance = .95, power = .80)
+#> Error: The corrected noncentrality parameter is zero. Please either choose a
+#> lower value of assurance and/or a higher value of 'alpha_prior' for the prior
+#> study (e.g., accounting for less publication bias).
+```
+
+The two remedies are exactly the two knobs: lower the assurance, or assume less
+publication bias by raising `alpha_prior`.
+
+## alpha_prior: modeling publication bias
+
+`alpha_prior` is the significance threshold that governs publication in the
+prior study's literature. Setting `alpha_prior = .05` assumes the field
+publishes results with *p* < .05 and truncates the likelihood at that point. A
+larger value assumes a more permissive literature and therefore less severe
+bias; `alpha_prior = 1` assumes no publication bias at all, which is appropriate
+for a prior study that was never subject to the file drawer, such as a pilot
+study.
+
+Note that `alpha_prior` is not a confidence level and is distinct from
+`alpha_planned`, which is the Type I error rate of the study you are designing.
+
+Holding assurance at .80, watch the recommended sample size shrink as we assume
+less publication bias:
+
+```{r}
+alphas <- c(.05, .10, .20, .50, 1)
+n_by_alpha <- sapply(alphas, function(ap) {
+  r <- ss_buc_indep_t(t_observed = 3, n = 20, alpha_prior = ap, assurance = .80,
+                   power = .80)
+  r$value[r$term == "necessary_sample_size"]
+})
+data.frame(alpha_prior = alphas, necessary_n_per_group = n_by_alpha)
+```
+
+Assuming the strongest bias (`alpha_prior = .05`) calls for 130 per group;
+assuming none (`alpha_prior = 1`) calls for 37.
+
+## Practical guidance
+
+* Make the corrections as minimal as you can defend. Each knob trades a modeling
+  assumption for a smaller sample, and overstating either bias or uncertainty
+  inflates the study unnecessarily.
+* `assurance = .80` is a common, defensible choice. Reserve very high assurance
+  for cases where a failed replication is especially costly, and expect the
+  required sample size to grow quickly.
+* Choose `alpha_prior` to reflect the publishing threshold in the prior study's
+  field. Use `alpha_prior = 1` only when you genuinely believe the prior study
+  escaped publication bias.
+
+## References
+
+Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample size planning for
+more accurate statistical power: A method correcting sample effect sizes for
+uncertainty and publication bias. *Psychological Science, 28*, 1547--1562.
+<doi:10.1177/0956797617723724>

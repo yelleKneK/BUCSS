@@ -1,2 +1,6 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^CLAUDE\.md$
+^\.claude$
+^\.Rhistory$
+^\.DS_Store$
