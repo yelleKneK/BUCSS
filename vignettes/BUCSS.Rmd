@@ -1,5 +1,6 @@
 ---
 title: "Getting started with BUCSS"
+author: "Ken Kelley, Samantha F. Anderson, and Scott E. Maxwell"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Getting started with BUCSS}
@@ -34,9 +35,9 @@ certain than it is, so a study planned at face value tends to be underpowered.
 
 BUCSS ("Bias and Uncertainty Corrected Sample Size") corrects the prior study's
 effect before planning. It uses the prior study's test statistic and design to
-build the likelihood of a truncated noncentral distribution (truncated because
-small, nonsignificant effects go unpublished), then reads off a corrected
-noncentrality parameter at a chosen level of *assurance*. That corrected
+build the likelihood of a truncated noncentral distribution, truncated because
+small, nonsignificant effects go unpublished (Taylor & Muller, 1996), then reads
+off a corrected noncentrality parameter at a chosen level of *assurance*. That corrected
 noncentrality parameter, rather than the face-value estimate, drives the sample
 size calculation for the planned study. The method is described in Anderson,
 Kelley, and Maxwell (2017).
@@ -93,8 +94,8 @@ ss_buc_indep_t(t_observed = 3, n = c(50, 55), alpha_prior = .05,
                alpha_planned = .05, power = .80, assurance = .90)
 ```
 
-The corrected plan calls for 1482 per group. This is the value quoted in the
-2017 paper and is a vivid illustration of how much publication bias and
+The corrected plan calls for 1482 per group. This is the value quoted by
+Anderson et al. (2017) and is a vivid illustration of how much publication bias and
 uncertainty can inflate the sample size needed for a dependable replication.
 
 ## The function family
@@ -126,7 +127,7 @@ each, and `vignette("understanding-assurance", package = "BUCSS")` for how the
 Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample size planning for
 more accurate statistical power: A method correcting sample effect sizes for
 uncertainty and publication bias. *Psychological Science, 28*, 1547--1562.
-<doi:10.1177/0956797617723724>
+https://doi.org/10.1177/0956797617723724
 
 Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and sample
 size calculation due to estimating noncentrality. *Communications in

@@ -17,8 +17,8 @@
 #' for uncertainty and publication bias. \emph{Psychological Science, 28,}
 #' 1547--1562. \doi{10.1177/0956797617723724}
 #'
-#' @author Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu}),
-#'   Ken Kelley (\email{kkelley@@nd.edu}), and Scott E. Maxwell
+#' @author Ken Kelley (\email{kkelley@@nd.edu}), Samantha F. Anderson
+#'   (\email{samantha.f.anderson@@asu.edu}), and Scott E. Maxwell
 #'
 #' @import stats
 #'

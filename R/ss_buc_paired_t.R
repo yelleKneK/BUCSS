@@ -117,8 +117,8 @@
 #' # ss_buc_smd_paired is the same function under an effect-size name
 #' ss_buc_smd_paired(t_observed = 3, N = 40)
 #'
-#' @author Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu}) and
-#'   Ken Kelley (\email{kkelley@@nd.edu})
+#' @author Ken Kelley (\email{kkelley@@nd.edu}) and
+#'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'
 #' @references Anderson, S. F., & Maxwell, S. E. (2017). Addressing the
 #'   'replication crisis': Using original studies to design replication studies

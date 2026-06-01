@@ -34,6 +34,6 @@ Useful links:
 
 }
 \author{
-Samantha F. Anderson (\email{samantha.f.anderson@asu.edu}),
-  Ken Kelley (\email{kkelley@nd.edu}), and Scott E. Maxwell
+Ken Kelley (\email{kkelley@nd.edu}), Samantha F. Anderson
+  (\email{samantha.f.anderson@asu.edu}), and Scott E. Maxwell
 }

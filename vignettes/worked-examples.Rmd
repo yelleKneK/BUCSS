@@ -1,5 +1,6 @@
 ---
 title: "Worked examples across designs"
+author: "Ken Kelley, Samantha F. Anderson, and Scott E. Maxwell"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Worked examples across designs}
@@ -15,7 +16,8 @@ library(BUCSS)
 This vignette walks through one example of each `ss_buc_*` function. The pattern
 is always the same: summarize the prior study with a single test statistic and
 its design, and the function returns the necessary planned-study sample size and
-the bias and uncertainty adjusted noncentrality parameter. Every example uses
+the bias and uncertainty adjusted noncentrality parameter (Anderson, Kelley, &
+Maxwell, 2017). Every example uses
 80% power and 80% assurance unless noted. For the meaning of the `assurance` and
 `alpha_prior` settings, see
 `vignette("understanding-assurance", package = "BUCSS")`.
@@ -167,4 +169,4 @@ ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2,
 Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample size planning for
 more accurate statistical power: A method correcting sample effect sizes for
 uncertainty and publication bias. *Psychological Science, 28*, 1547--1562.
-<doi:10.1177/0956797617723724>
+https://doi.org/10.1177/0956797617723724

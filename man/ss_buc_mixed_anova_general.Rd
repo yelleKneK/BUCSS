@@ -177,6 +177,6 @@ Anderson, S. F., & Maxwell, S. E. (2017). Addressing the
   in Statistics: Theory and Methods, 25,} 1595--1610.
 }
 \author{
-Samantha F. Anderson (\email{samantha.f.anderson@asu.edu}) and
-  Ken Kelley (\email{kkelley@nd.edu})
+Ken Kelley (\email{kkelley@nd.edu}) and
+  Samantha F. Anderson (\email{samantha.f.anderson@asu.edu})
 }

@@ -3,11 +3,11 @@ Type: Package
 Title: Bias and Uncertainty Corrected Sample Size
 Version: 2.0.0
 Authors@R: c(
-    person("Samantha F.", "Anderson", role = "aut",
-           email = "samantha.f.anderson@asu.edu"),
     person("Ken", "Kelley", role = c("aut", "cre"),
            email = "kkelley@nd.edu",
            comment = c(ORCID = "0000-0002-4756-8360")),
+    person("Samantha F.", "Anderson", role = "aut",
+           email = "samantha.f.anderson@asu.edu"),
     person("Scott E.", "Maxwell", role = "aut"))
 Description: Implements sample size planning for a future study from the summary
     statistics of a prior study, correcting the prior effect for publication bias

@@ -103,8 +103,8 @@
 #'   alpha_planned = .05, assurance = .80, power = .80)
 #' result
 #'
-#' @author Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu}) and
-#'   Ken Kelley (\email{kkelley@@nd.edu})
+#' @author Ken Kelley (\email{kkelley@@nd.edu}) and
+#'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'
 #' @references Anderson, S. F., & Maxwell, S. E. (2017). Addressing the
 #'   'replication crisis': Using original studies to design replication studies
