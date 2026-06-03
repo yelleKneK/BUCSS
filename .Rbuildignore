@@ -4,3 +4,4 @@
 ^\.claude$
 ^\.Rhistory$
 ^\.DS_Store$
+^cran-comments\.md$
