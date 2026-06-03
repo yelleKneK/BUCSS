@@ -91,3 +91,32 @@ test_that("a corrected noncentrality parameter of zero is rejected", {
   expect_error(ss_buc_independent_t(t_observed = 2.03, n = 20, assurance = .95),
                "noncentrality parameter is zero", fixed = TRUE)
 })
+
+test_that("the zero-ncp error reports the closed-form assurance ceiling (independent t)", {
+  # The largest assurance a prior result can support is 1 - p/alpha_prior, where
+  # p is the prior study's two-sided p value. For t = 3 with n = 20 (df = 38)
+  # and the default alpha_prior = .05 that ceiling is about .90, so the
+  # requested assurance of .95 is out of reach and the corrected ncp is zero.
+  p_prior <- 2 * (1 - pt(3, df = 38))
+  ceiling_assurance <- floor((1 - p_prior / .05) * 100 + 1e-9) / 100
+  fragment <- paste0("usable plan is about ",
+                     sub("^0", "", sprintf("%.2f", ceiling_assurance)))
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, assurance = .95),
+               fragment, fixed = TRUE)
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, assurance = .95),
+               "noncentrality parameter is zero", fixed = TRUE)
+})
+
+test_that("the zero-ncp error reports the closed-form assurance ceiling (joint F test)", {
+  # The same closed form holds for an F test, where p is the upper-tail F p
+  # value. F = 5 on 2 and 145 degrees of freedom gives a ceiling near .84, below
+  # the requested assurance of .95, confirming the ceiling on the single-branch
+  # F path as well as the two-branch t path above.
+  p_prior <- 1 - pf(5, df1 = 2, df2 = 145)
+  ceiling_assurance <- floor((1 - p_prior / .05) * 100 + 1e-9) / 100
+  fragment <- paste0("usable plan is about ",
+                     sub("^0", "", sprintf("%.2f", ceiling_assurance)))
+  expect_error(
+    ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2, assurance = .95),
+    fragment, fixed = TRUE)
+})
