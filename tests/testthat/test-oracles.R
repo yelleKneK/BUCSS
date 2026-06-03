@@ -131,4 +131,9 @@ test_that("df_denominator functions: more nuisance parameters call for a larger 
                                                     df_denominator = 104,
                                                     assurance = .80, power = .80)
   expect_gt(ss(with_covariates), ss(base))
+  # df_denominator = 104 with N - cells = 114 carries 10 nuisance parameters
+  # (e.g., covariates) into the planned study. There is no 1.2.1 value to
+  # reproduce here because 1.x ignored df_denominator; these pin the 2.0.0
+  # output so the functional df_denominator path cannot drift unnoticed.
+  expect_oracle(with_covariates, 736, 0.262)
 })
