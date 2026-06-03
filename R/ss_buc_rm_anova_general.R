@@ -117,6 +117,11 @@
 #'   alpha_prior = .05, alpha_planned = .05, assurance = .50, power = .80)
 #' result
 #'
+#' # Requesting more assurance than the prior result can support stops with an
+#' # informative error naming the largest workable assurance (here near .74):
+#' try(ss_buc_rm_anova_general(F_observed = 6.5, N = 80, df_numerator = 1,
+#'   assurance = .95))
+#'
 #' @author Ken Kelley (\email{kkelley@@nd.edu}) and
 #'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'

@@ -15,14 +15,14 @@ expect_oracle <- function(result, sample_size, ncp_adjusted) {
 
 test_that("independent t test reproduces 1.2.1 (scalar n)", {
   expect_oracle(
-    ss_buc_indep_t(t_observed = 3, n = 20, alpha_prior = .05, alpha_planned = .05,
+    ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05, alpha_planned = .05,
                    assurance = .80, power = .80),
     130, 1.105)
 })
 
 test_that("independent t test reproduces 1.2.1 (unequal n vector)", {
   expect_oracle(
-    ss_buc_indep_t(t_observed = 3, n = c(50, 55), alpha_prior = .05,
+    ss_buc_independent_t(t_observed = 3, n = c(50, 55), alpha_prior = .05,
                    alpha_planned = .05, power = .80, assurance = .90),
     1482, 0.526)
 })
@@ -116,7 +116,7 @@ test_that("regression joint test reproduces 1.2.1", {
 test_that("effect-size aliases are identical to their test-named functions", {
   expect_identical(
     ss_buc_smd(t_observed = 3, n = 20, assurance = .80, power = .80),
-    ss_buc_indep_t(t_observed = 3, n = 20, assurance = .80, power = .80))
+    ss_buc_independent_t(t_observed = 3, n = 20, assurance = .80, power = .80))
   expect_identical(
     ss_buc_smd_paired(t_observed = 3, N = 40, assurance = .80, power = .80),
     ss_buc_paired_t(t_observed = 3, N = 40, assurance = .80, power = .80))

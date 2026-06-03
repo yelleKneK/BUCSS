@@ -56,7 +56,7 @@ replacement; update your scripts to the function listed below.
 \details{
 \tabular{ll}{
   \strong{Defunct} \tab \strong{Replacement} \cr
-  \code{ss.power.it} \tab \code{\link{ss_buc_indep_t}} (alias \code{\link{ss_buc_smd}}) \cr
+  \code{ss.power.it} \tab \code{\link{ss_buc_independent_t}} (alias \code{\link{ss_buc_smd}}) \cr
   \code{ss.power.dt} \tab \code{\link{ss_buc_paired_t}} (alias \code{\link{ss_buc_smd_paired}}) \cr
   \code{ss.power.ba} \tab \code{\link{ss_buc_one_way_anova}}, \code{\link{ss_buc_factorial_anova}} \cr
   \code{ss.power.ba.general} \tab \code{\link{ss_buc_factorial_anova_general}} \cr

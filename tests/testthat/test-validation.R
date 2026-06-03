@@ -2,36 +2,36 @@
 # sample size planning happens. Messages are matched as fixed substrings.
 
 test_that("out-of-range alpha_prior is rejected", {
-  expect_error(ss_buc_indep_t(t_observed = 3, n = 20, alpha_prior = 1.5),
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = 1.5),
                "alpha_prior", fixed = TRUE)
-  expect_error(ss_buc_indep_t(t_observed = 3, n = 20, alpha_prior = 0),
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = 0),
                "alpha_prior", fixed = TRUE)
 })
 
 test_that("out-of-range alpha_planned is rejected", {
-  expect_error(ss_buc_indep_t(t_observed = 3, n = 20, alpha_planned = 1),
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, alpha_planned = 1),
                "alpha_planned", fixed = TRUE)
-  expect_error(ss_buc_indep_t(t_observed = 3, n = 20, alpha_planned = 0),
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, alpha_planned = 0),
                "alpha_planned", fixed = TRUE)
 })
 
 test_that("out-of-range assurance is rejected", {
-  expect_error(ss_buc_indep_t(t_observed = 3, n = 20, assurance = -.1),
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, assurance = -.1),
                "assurance", fixed = TRUE)
 })
 
 test_that("assurance below .5 warns but still computes", {
-  expect_warning(ss_buc_indep_t(t_observed = 3, n = 20, assurance = .4),
+  expect_warning(ss_buc_independent_t(t_observed = 3, n = 20, assurance = .4),
                  "< .5", fixed = TRUE)
 })
 
 test_that("out-of-range power is rejected", {
-  expect_error(ss_buc_indep_t(t_observed = 3, n = 20, power = -.1),
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, power = -.1),
                "power", fixed = TRUE)
 })
 
 test_that("a nonsignificant prior t is rejected", {
-  expect_error(ss_buc_indep_t(t_observed = 1, n = 20),
+  expect_error(ss_buc_independent_t(t_observed = 1, n = 20),
                "nonsignificant", fixed = TRUE)
 })
 
@@ -88,6 +88,6 @@ test_that("a corrected noncentrality parameter of zero is rejected", {
   # t = 2.03 with n = 20 (df = 38) just clears the alpha = .05 critical value
   # (2.0244), so the prior effect is significant but so weak that at assurance
   # .95 the bias/uncertainty correction drives the ncp to zero.
-  expect_error(ss_buc_indep_t(t_observed = 2.03, n = 20, assurance = .95),
+  expect_error(ss_buc_independent_t(t_observed = 2.03, n = 20, assurance = .95),
                "noncentrality parameter is zero", fixed = TRUE)
 })

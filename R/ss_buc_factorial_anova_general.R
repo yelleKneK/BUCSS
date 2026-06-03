@@ -156,6 +156,11 @@
 #'   alpha_planned = .05, assurance = .80, power = .80)
 #' result
 #'
+#' # Requesting more assurance than the prior result can support stops with an
+#' # informative error naming the largest workable assurance (here near .83):
+#' try(ss_buc_factorial_anova_general(F_observed = 5, N = 120, cells = 6,
+#'   df_numerator = 2, df_denominator = 114, assurance = .95))
+#'
 #' @author Ken Kelley (\email{kkelley@@nd.edu}) and
 #'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'

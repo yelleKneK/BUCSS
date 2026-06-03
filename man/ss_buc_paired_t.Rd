@@ -161,6 +161,10 @@ result
 # ss_buc_smd_paired is the same function under an effect-size name
 ss_buc_smd_paired(t_observed = 3, N = 40)
 
+# Requesting more assurance than the prior result can support stops with an
+# informative error naming the largest workable assurance (here near .90):
+try(ss_buc_paired_t(t_observed = 3, N = 40, assurance = .95))
+
 }
 \references{
 Anderson, S. F., & Kelley, K. (2024). Sample size planning for

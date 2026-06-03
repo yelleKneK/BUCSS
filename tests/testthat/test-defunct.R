@@ -2,7 +2,7 @@
 # must raise an error that says so and names its ss_buc_* replacement.
 
 defunct_map <- list(
-  ss.power.it          = "ss_buc_indep_t",
+  ss.power.it          = "ss_buc_independent_t",
   ss.power.dt          = "ss_buc_paired_t",
   ss.power.ba.general  = "ss_buc_factorial_anova_general",
   ss.power.wa          = "ss_buc_rm_anova",

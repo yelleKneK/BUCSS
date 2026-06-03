@@ -33,7 +33,7 @@ assurance of .5 corrects for publication bias only, whereas assurance $> .5$
 also corrects for uncertainty.
 
 ``` r
-ss_buc_indep_t(t_observed = 3, n = c(50, 55), alpha_prior = .05,
+ss_buc_independent_t(t_observed = 3, n = c(50, 55), alpha_prior = .05,
                alpha_planned = .05, power = .80, assurance = .90)
 ```
 
@@ -45,7 +45,7 @@ summary, and because it is an ordinary `data.frame` underneath you can pull the
 two quantities out directly:
 
 ``` r
-result <- ss_buc_indep_t(t_observed = 3, n = c(50, 55), power = .80,
+result <- ss_buc_independent_t(t_observed = 3, n = c(50, 55), power = .80,
                          assurance = .90)
 
 result$value[result$term == "necessary_sample_size"]  # 1482
@@ -55,7 +55,7 @@ result$value[result$term == "ncp_adjusted"]           # adjusted noncentrality
 ## A note on function names
 
 BUCSS 2.0.0 renamed the function family to the `ss_buc_*` prefix (for example
-`ss_buc_indep_t()` in place of the former `ss.power.it()`), so the names make
+`ss_buc_independent_t()` in place of the former `ss.power.it()`), so the names make
 clear that these planners apply the bias and uncertainty correction, rather than
 ordinary power analysis. The independent and paired *t* test planners also carry
 effect-size aliases (`ss_buc_smd()` and `ss_buc_smd_paired()`), and the

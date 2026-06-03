@@ -2,7 +2,7 @@
 #' standardized mean difference) using a publication bias and uncertainty
 #' correction procedure
 #'
-#' @description \code{ss_buc_indep_t} returns the necessary per-group sample size
+#' @description \code{ss_buc_independent_t} returns the necessary per-group sample size
 #'   to achieve a desired level of statistical power for a planned study using
 #'   an independent \emph{t} test, based on information obtained from a previous
 #'   study. The effect from the previous study can be corrected for publication
@@ -12,11 +12,11 @@
 #'   The bias and uncertainty adjusted previous study noncentrality parameter is
 #'   also returned, which can be transformed to various effect size metrics.
 #'
-#'   \code{ss_buc_smd} is an alias for \code{ss_buc_indep_t}: the two are the
+#'   \code{ss_buc_smd} is an alias for \code{ss_buc_independent_t}: the two are the
 #'   same function. The two-group \emph{t} test and the standardized mean
 #'   difference (Cohen's \eqn{d}) describe the same comparison, so the same
 #'   planner serves both framings. Prefer the test-specific name
-#'   (\code{ss_buc_indep_t}) when the prior \emph{t} was computed from raw
+#'   (\code{ss_buc_independent_t}) when the prior \emph{t} was computed from raw
 #'   (unstandardized) data, since the planner works directly from the observed
 #'   \emph{t}.
 #'
@@ -26,7 +26,7 @@
 #'   at face value to plan sample size, due to both publication bias and
 #'   uncertainty.
 #'
-#'   The approach implemented in \code{ss_buc_indep_t} uses the observed
+#'   The approach implemented in \code{ss_buc_independent_t} uses the observed
 #'   \emph{t} value and sample size from a previous study to correct the
 #'   noncentrality parameter associated with the effect of interest for
 #'   publication bias and/or uncertainty. This new estimated noncentrality
@@ -91,7 +91,7 @@
 #'   independent groups \eqn{t = d / \sqrt{1/n_1 + 1/n_2}}, which equals
 #'   \eqn{d\sqrt{n/2}} when the per-group sample sizes are equal.
 #'
-#'   \code{ss_buc_indep_t} assumes that the planned study will have equal
+#'   \code{ss_buc_independent_t} assumes that the planned study will have equal
 #'   \emph{n}. Unequal \emph{n} in the previous study is handled in the
 #'   following way for the independent \emph{t}. If the user enters an odd value
 #'   for \emph{N}, no information is available on the exact group sizes. The
@@ -144,7 +144,7 @@
 #' @export
 #'
 #' @examples
-#' result <- ss_buc_indep_t(t_observed = 3, n = 20, alpha_prior = .05,
+#' result <- ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05,
 #'   alpha_planned = .05, assurance = .80, power = .80)
 #' result
 #' result$value[result$term == "necessary_sample_size"]
@@ -155,7 +155,7 @@
 #' # Asking for more assurance than the prior result can support stops with an
 #' # informative error that reports the largest workable assurance (here near
 #' # .90, the value 1 - p/alpha_prior for this prior result):
-#' try(ss_buc_indep_t(t_observed = 3, n = 20, assurance = .95))
+#' try(ss_buc_independent_t(t_observed = 3, n = 20, assurance = .95))
 #'
 #' @author Ken Kelley (\email{kkelley@@nd.edu}) and
 #'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
@@ -177,7 +177,7 @@
 #'   Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
 #'   sample size calculation due to estimating noncentrality. \emph{Communications
 #'   in Statistics: Theory and Methods, 25,} 1595--1610.
-ss_buc_indep_t <- function(t_observed, n, N, alpha_prior = .05, alpha_planned = .05,
+ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_planned = .05,
                            assurance = .80, power = .80, step = .001) {
   if (alpha_prior > 1 | alpha_prior <= 0) stop("There is a problem with 'alpha_prior' of the prior study (i.e., the Type I error rate), please specify as a value between 0 and 1 (the default is .05).")
   alpha_prior_input <- alpha_prior
@@ -304,6 +304,6 @@ ss_buc_indep_t <- function(t_observed, n, N, alpha_prior = .05, alpha_planned = 
   )
 }
 
-#' @rdname ss_buc_indep_t
+#' @rdname ss_buc_independent_t
 #' @export
-ss_buc_smd <- ss_buc_indep_t
+ss_buc_smd <- ss_buc_independent_t

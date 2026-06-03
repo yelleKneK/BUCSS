@@ -22,7 +22,7 @@ BUCSS 1.x without modification, install version 1.2.1 from the
 
   | 1.x | 2.0.0 |
   | --- | --- |
-  | `ss.power.it` | `ss_buc_indep_t` (alias `ss_buc_smd`) |
+  | `ss.power.it` | `ss_buc_independent_t` (alias `ss_buc_smd`) |
   | `ss.power.dt` | `ss_buc_paired_t` (alias `ss_buc_smd_paired`) |
   | `ss.power.ba` | `ss_buc_one_way_anova`, `ss_buc_factorial_anova` |
   | `ss.power.ba.general` | `ss_buc_factorial_anova_general` |
@@ -56,7 +56,7 @@ BUCSS 1.x without modification, install version 1.2.1 from the
 ## New features
 
 * The independent and paired *t* test planners are available under both
-  test-specific names (`ss_buc_indep_t`, `ss_buc_paired_t`) and effect-size
+  test-specific names (`ss_buc_independent_t`, `ss_buc_paired_t`) and effect-size
   names (`ss_buc_smd`, `ss_buc_smd_paired`) for the standardized mean
   difference. The two names in each pair are the same function.
 
@@ -72,8 +72,8 @@ BUCSS 1.x without modification, install version 1.2.1 from the
   is the only remaining lever. The message also clarifies that `alpha_prior` is
   the analyst's assumption about the publication threshold the prior study's
   literature faced, not a change to the prior study itself. Each planner's
-  documentation now states this ceiling, and `ss_buc_indep_t()` illustrates it
-  in its examples.
+  documentation states this ceiling and illustrates it with a runnable `try()`
+  example that requests more assurance than the prior result can support.
 
 * Added a `testthat` (edition 3) test suite: regression oracles that pin the
   1.2.1 outputs exactly, object-structure smoke tests, input-validation tests,

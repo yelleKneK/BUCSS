@@ -54,7 +54,7 @@ and we want 80% assurance, that is, we want the realized power to reach or
 exceed 80% in 80% of replications.
 
 ```{r}
-result <- ss_buc_indep_t(t_observed = 3, n = 20, alpha_prior = .05,
+result <- ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05,
                          alpha_planned = .05, assurance = .80, power = .80)
 result
 ```
@@ -90,7 +90,7 @@ study reported *t* = 3.00 with group sizes of 50 and 55, and we ask for 90%
 assurance:
 
 ```{r}
-ss_buc_indep_t(t_observed = 3, n = c(50, 55), alpha_prior = .05,
+ss_buc_independent_t(t_observed = 3, n = c(50, 55), alpha_prior = .05,
                alpha_planned = .05, power = .80, assurance = .90)
 ```
 
@@ -105,7 +105,7 @@ prior study with a single test statistic plus the design.
 
 | Function | Analysis | Prior statistic |
 |----------|----------|-----------------|
-| `ss_buc_indep_t` (alias `ss_buc_smd`) | independent *t* test / standardized mean difference | `t_observed` |
+| `ss_buc_independent_t` (alias `ss_buc_smd`) | independent *t* test / standardized mean difference | `t_observed` |
 | `ss_buc_paired_t` (alias `ss_buc_smd_paired`) | dependent (paired) *t* test | `t_observed` |
 | `ss_buc_one_way_anova` | one-way between-subjects ANOVA | `F_observed` |
 | `ss_buc_factorial_anova` | two-way between-subjects ANOVA | `F_observed` |

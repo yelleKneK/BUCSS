@@ -149,6 +149,11 @@ result <- ss_buc_rm_anova(F_observed = 5, N = 60, levels_A = 2, levels_B = 3,
   assurance = .80, power = .80)
 result
 
+# Requesting more assurance than the prior result can support stops with an
+# informative error naming the largest workable assurance (here near .83):
+try(ss_buc_rm_anova(F_observed = 5, N = 60, levels_A = 2, levels_B = 3,
+  effect = "factor_B", assurance = .95))
+
 }
 \references{
 Anderson, S. F., & Kelley, K. (2024). Sample size planning for

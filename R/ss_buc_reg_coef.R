@@ -115,6 +115,10 @@
 #'   alpha_planned = .05, assurance = .80, power = .80)
 #' result
 #'
+#' # Requesting more assurance than the prior result can support stops with an
+#' # informative error naming the largest workable assurance (here near .93):
+#' try(ss_buc_reg_coef(t_observed = 3, N = 150, p = 3, assurance = .95))
+#'
 #' @author Ken Kelley (\email{kkelley@@nd.edu}) and
 #'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'

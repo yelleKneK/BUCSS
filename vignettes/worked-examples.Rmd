@@ -28,13 +28,13 @@ A prior two-group study reported *t* = 3.00 with 20 participants per group. The
 returned sample size is per group.
 
 ```{r}
-ss_buc_indep_t(t_observed = 3, n = 20, alpha_prior = .05, alpha_planned = .05,
+ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05, alpha_planned = .05,
                assurance = .80, power = .80)
 ```
 
 `ss_buc_smd` is the same planner under an effect-size name, for when you are
 working from a standardized mean difference rather than a raw *t*; prefer
-`ss_buc_indep_t` when the prior *t* was computed from unstandardized data.
+`ss_buc_independent_t` when the prior *t* was computed from unstandardized data.
 
 ## Dependent (paired) *t* test
 
