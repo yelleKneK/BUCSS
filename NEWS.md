@@ -64,6 +64,17 @@ BUCSS 1.x without modification, install version 1.2.1 from the
   effect of interest, necessary sample size with its unit, adjusted
   noncentrality parameter, and the planning inputs).
 
+* When the bias and uncertainty correction drives the corrected noncentrality
+  parameter to zero, the error now reports the largest assurance the prior
+  result can support (the closed-form ceiling `1 - p/alpha_prior`, where `p` is
+  the prior study's *p* value) and states whether lowering assurance to at or
+  below that ceiling can reach a usable plan, or whether raising `alpha_prior`
+  is the only remaining lever. The message also clarifies that `alpha_prior` is
+  the analyst's assumption about the publication threshold the prior study's
+  literature faced, not a change to the prior study itself. Each planner's
+  documentation now states this ceiling, and `ss_buc_indep_t()` illustrates it
+  in its examples.
+
 * Added a `testthat` (edition 3) test suite: regression oracles that pin the
   1.2.1 outputs exactly, object-structure smoke tests, input-validation tests,
   and tests confirming each defunct dotted name errors with a useful signpost.
