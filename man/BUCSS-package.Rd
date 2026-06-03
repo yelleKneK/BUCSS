@@ -27,9 +27,13 @@ style. \pkg{DMAR} is a natural companion for effect size estimation,
 confidence intervals, and sample size planning across additional frameworks.
 }
 \references{
-Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample size planning
-for more accurate statistical power: A method correcting sample effect sizes
-for uncertainty and publication bias. \emph{Psychological Science, 28,}
+Anderson, S. F., & Kelley, K. (2024). Sample size planning for replication
+studies: The devil is in the design. \emph{Psychological Methods, 29,}
+844--867. \doi{10.1037/met0000520}
+
+Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample-size planning
+for more accurate statistical power: A method adjusting sample effect sizes
+for publication bias and uncertainty. \emph{Psychological Science, 28,}
 1547--1562. \doi{10.1177/0956797617723724}
 }
 \seealso{

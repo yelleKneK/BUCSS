@@ -56,18 +56,36 @@ Push assurance high enough on a weak or uncertain prior effect and the corrected
 noncentrality parameter is driven to zero. That is the method telling you the
 prior effect cannot be estimated with confidence at this level of assurance, so
 sample size planning is not possible with these settings. The function stops
-rather than returning a meaningless answer:
+rather than returning a meaningless answer, and the error reports the largest
+assurance the prior result can support so you know exactly how far to step back:
 
 ```{r eval = FALSE}
 # Not run: this stops with an informative error.
 ss_buc_indep_t(t_observed = 3, n = 20, assurance = .95, power = .80)
-#> Error: The corrected noncentrality parameter is zero. Please either choose a
-#> lower value of assurance and/or a higher value of 'alpha_prior' for the prior
-#> study (e.g., accounting for less publication bias).
+#> Error: Sample size planning is not possible with these settings. After
+#> correcting the prior study's effect for publication bias and uncertainty
+#> at the requested level of assurance, the corrected noncentrality
+#> parameter is zero, which means there is not enough information in the
+#> prior result to plan the sample size as desired. With this prior result
+#> and 'alpha_prior', the largest 'assurance' that still yields a usable
+#> plan is about .90; re-run with 'assurance' at or below that value, or
+#> raise 'alpha_prior' to lift the ceiling. 'alpha_prior' does not change
+#> the prior study, which is what it is; it is your assumption about the
+#> publication threshold the study's literature faced, so raising it toward
+#> 1 assumes less publication bias to undo (for example, 'alpha_prior = .10'
+#> assumes the literature's journals would have published a result
+#> significant at the .10 level, a more lenient policy than .05, and
+#> 'alpha_prior = 1' assumes no publication bias at all). See Anderson,
+#> Kelley, and Maxwell (2017) and Anderson and Kelley (2024).
 ```
 
-The two remedies are exactly the two knobs: lower the assurance, or assume less
-publication bias by raising `alpha_prior`.
+The reported ceiling is exact: the largest assurance a prior result can support
+is `1 - p/alpha_prior`, where *p* is the prior study's *p* value. Here that is
+about .90, so .95 is out of reach but .90 or below is fine. The two remedies are
+exactly the two knobs: lower the assurance to at or below the reported ceiling,
+or assume less publication bias by raising `alpha_prior`, which lifts the
+ceiling. When the ceiling is already at or below the .5 floor, only raising
+`alpha_prior` can help.
 
 ## alpha_prior: modeling publication bias
 
@@ -112,9 +130,13 @@ assuming none (`alpha_prior = 1`) calls for 37.
 
 ## References
 
-Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample size planning for
-more accurate statistical power: A method correcting sample effect sizes for
-uncertainty and publication bias. *Psychological Science, 28*, 1547--1562.
+Anderson, S. F., & Kelley, K. (2024). Sample size planning for replication
+studies: The devil is in the design. *Psychological Methods, 29*, 844--867.
+https://doi.org/10.1037/met0000520
+
+Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample-size planning for
+more accurate statistical power: A method adjusting sample effect sizes for
+publication bias and uncertainty. *Psychological Science, 28*, 1547--1562.
 https://doi.org/10.1177/0956797617723724
 
 Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and sample

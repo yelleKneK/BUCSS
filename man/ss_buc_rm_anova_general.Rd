@@ -3,7 +3,7 @@
 \name{ss_buc_rm_anova_general}
 \alias{ss_buc_rm_anova_general}
 \title{Necessary sample size to reach desired power for a within-subjects ANOVA with
-any number of factors using an uncertainty and publication bias correction
+any number of factors using a publication bias and uncertainty correction
 procedure}
 \usage{
 ss_buc_rm_anova_general(
@@ -115,12 +115,23 @@ Researchers often use the sample effect size from a prior study as
   desired level of assurance, the previous study's effect cannot be
   accurately estimated due to high levels of uncertainty and bias. When this
   happens, subsequent sample size planning is not possible with the chosen
-  specifications. Two alternatives are recommended. First, users can select a
-  lower value of assurance (e.g., .8 instead of .95). Second, users can
-  reduce the influence of publication bias by setting \code{alpha_prior} at a
-  value greater than .05. It is possible to correct for uncertainty only by
-  setting \code{alpha_prior = 1} and choosing the desired level of assurance.
-  We encourage users to make the adjustments as minimal as possible.
+  specifications, and the function stops with an informative error rather
+  than returning a result. The error reports the largest assurance the prior
+  result can support, which is \eqn{1 - p/\alpha}{1 - p/alpha}, where
+  \emph{p} is the prior study's \emph{p} value and \eqn{\alpha} is
+  \code{alpha_prior}; at any higher assurance the corrected noncentrality
+  parameter is driven to zero. Two remedies are available. First, users can
+  select a lower value of assurance (e.g., .8 instead of .95), at or below
+  the reported ceiling. Second, users can reduce the influence of publication
+  bias by setting \code{alpha_prior} at a value greater than .05, which raises
+  the ceiling. Note that \code{alpha_prior} is not a property of the prior
+  study, which is fixed, but the analyst's assumption about the publication
+  threshold its literature faced. When the ceiling is at or below the
+  recommended floor of .5, lowering assurance cannot help and
+  \code{alpha_prior} is the only remaining lever. It is possible to correct
+  for uncertainty only by setting \code{alpha_prior = 1} and choosing the
+  desired level of assurance. We encourage users to make the adjustments as
+  minimal as possible.
 
   \code{ss_buc_rm_anova_general} assumes sphericity for the within-subjects
   effects.
@@ -132,15 +143,19 @@ result
 
 }
 \references{
-Anderson, S. F., & Maxwell, S. E. (2017). Addressing the
-  'replication crisis': Using original studies to design replication studies
-  with appropriate statistical power. \emph{Multivariate Behavioral Research,
-  52,} 305--322.
+Anderson, S. F., & Kelley, K. (2024). Sample size planning for
+  replication studies: The devil is in the design. \emph{Psychological
+  Methods, 29,} 844--867. \doi{10.1037/met0000520}
 
-  Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample size planning
-  for more accurate statistical power: A method correcting sample effect
-  sizes for uncertainty and publication bias. \emph{Psychological Science,
-  28,} 1547--1562. \doi{10.1177/0956797617723724}
+  Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample-size planning
+  for more accurate statistical power: A method adjusting sample effect sizes
+  for publication bias and uncertainty. \emph{Psychological Science, 28,}
+  1547--1562. \doi{10.1177/0956797617723724}
+
+  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the 'replication
+  crisis': Using original studies to design replication studies with
+  appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
+  305--324.
 
   Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
   sample size calculation due to estimating noncentrality. \emph{Communications

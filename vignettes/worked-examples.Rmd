@@ -166,7 +166,11 @@ ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2,
 
 ## References
 
-Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample size planning for
-more accurate statistical power: A method correcting sample effect sizes for
-uncertainty and publication bias. *Psychological Science, 28*, 1547--1562.
+Anderson, S. F., & Kelley, K. (2024). Sample size planning for replication
+studies: The devil is in the design. *Psychological Methods, 29*, 844--867.
+https://doi.org/10.1037/met0000520
+
+Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample-size planning for
+more accurate statistical power: A method adjusting sample effect sizes for
+publication bias and uncertainty. *Psychological Science, 28*, 1547--1562.
 https://doi.org/10.1177/0956797617723724
