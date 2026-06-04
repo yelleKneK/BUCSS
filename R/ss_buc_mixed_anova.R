@@ -102,20 +102,7 @@
 #' @param effect Effect most of interest to the planned study: between-subjects
 #'   main effect (\code{between}), within-subjects main effect (\code{within}),
 #'   or interaction (\code{interaction}).
-#' @param alpha_prior Alpha level \eqn{\alpha} for the previous study or the
-#'   assumed statistical significance necessary for publishing in the field; to
-#'   assume no publication bias, a value of 1 can be entered.
-#' @param alpha_planned Alpha level \eqn{\alpha} assumed for the planned study.
-#' @param assurance Desired level of assurance, or the long run proportion of
-#'   times that the planned study power will reach or surpass the desired level
-#'   (assurance > .5 corrects for uncertainty; assurance < .5 is not
-#'   recommended).
-#' @param power Desired level of statistical power for the planned study.
-#' @param step Value used in the iterative scheme to determine the noncentrality
-#'   parameter necessary for sample size planning (0 < step < .01). Users should
-#'   not generally need to change this value; smaller values lead to more
-#'   accurate sample size planning results, but unnecessarily small values will
-#'   add unnecessary computational time.
+#' @template planning-params
 #'
 #' @return An object of class \code{bucss_power}: a \code{data.frame} with a
 #'   character \code{term} column and a numeric \code{value} column whose two
@@ -142,45 +129,23 @@
 #' @author Ken Kelley (\email{kkelley@@nd.edu}) and
 #'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'
-#' @references Anderson, S. F., & Kelley, K. (2024). Sample size planning for
-#'   replication studies: The devil is in the design. \emph{Psychological
-#'   Methods, 29,} 844--867. \doi{10.1037/met0000520}
-#'
-#'   Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample-size planning
-#'   for more accurate statistical power: A method adjusting sample effect sizes
-#'   for publication bias and uncertainty. \emph{Psychological Science, 28,}
-#'   1547--1562. \doi{10.1177/0956797617723724}
-#'
-#'   Anderson, S. F., & Maxwell, S. E. (2017). Addressing the 'replication
-#'   crisis': Using original studies to design replication studies with
-#'   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
-#'   305--324.
-#'
-#'   Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
-#'   sample size calculation due to estimating noncentrality. \emph{Communications
-#'   in Statistics: Theory and Methods, 25,} 1595--1610.
+#' @template references
 ss_buc_mixed_anova <- function(F_observed, N, levels_between, levels_within,
                          effect = c("between", "within", "interaction"),
                          alpha_prior = .05, alpha_planned = .05,
                          assurance = .80, power = .80, step = .001) {
   effect <- match.arg(effect)
 
-  if (alpha_prior > 1 | alpha_prior <= 0) stop("There is a problem with 'alpha_prior' of the prior study (i.e., the Type I error rate), please specify as a value between 0 and 1 (the default is .05).")
-  alpha_prior_input <- alpha_prior
-  if (alpha_prior == 1) alpha_prior <- .999
-
-  if (alpha_planned >= 1 | alpha_planned <= 0) stop("There is a problem with 'alpha_planned' of the planned study (i.e., the Type I error rate), please specify as a value between 0 and 1 (the default is .05).")
-
-  if (assurance >= 1) assurance <- assurance / 100
-  if (assurance < 0 | assurance > 1) stop("There is a problem with 'assurance' (i.e., the proportion of times statistical power is at or above the desired value), please specify as a value between 0 and 1 (the default is .80).")
-  if (assurance < .5) warning("The 'assurance' you have entered is < .5, which implies you will have under a 50% chance at achieving your desired level of power.")
-
-  if (power >= 1) power <- power / 100
-  if (power < 0 | power > 1) stop("There is a problem with 'power' (i.e., desired statistical power), please specify as a value between 0 and 1 (the default is .80).")
+  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, power, step)
+  alpha_prior <- v$alpha_prior
+  alpha_prior_input <- v$alpha_prior_input
+  assurance <- v$assurance
+  power <- v$power
 
   if (missing(N)) stop("You must specify 'N', which is the total sample size.")
   if (missing(levels_within)) stop("You must specify the number of levels of the within-subjects factor. If there is no within-subjects factor, use the between-subjects approach.")
   if (missing(levels_between)) stop("You must specify the number of levels of the between-subjects factor. If there is no between-subjects factor, use the within-subjects approach.")
+  if (N < 2 * levels_between) stop("Your prior study 'N' is too small for this design: at least two observations per between-subjects cell are required, so 'N' must be at least 2 * 'levels_between'.")
 
   NCP <- seq(from = 0, to = 100, by = step)
 
@@ -266,6 +231,8 @@ ss_buc_mixed_anova <- function(F_observed, N, levels_between, levels_within,
     ncp = min(ncp_rd, ncp_ru),
     design = "Two-factor split-plot (mixed) ANOVA",
     sample_size_unit = "per between-subjects cell",
+    assurance_ceiling = min(max(TM_ru), max(TM_rd)),
+    total_n = output_n * levels_between,
     effect = effect,
     inputs = list(F_observed = F_observed, N = N, levels_between = levels_between,
                   levels_within = levels_within, alpha_prior = alpha_prior_input,

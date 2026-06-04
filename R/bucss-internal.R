@@ -9,7 +9,8 @@
 # unit the sample size is counted in, the effect tested, and the planning
 # inputs) travels on attributes, never as a string in `value`.
 .bucss_power_result <- function(sample_size, ncp, design, sample_size_unit,
-                                effect = NULL, inputs = list()) {
+                                effect = NULL, assurance_ceiling = NULL,
+                                total_n = NULL, inputs = list()) {
   out <- data.frame(
     term = c("necessary_sample_size", "ncp_adjusted"),
     value = c(sample_size, ncp),
@@ -19,9 +20,40 @@
   attr(out, "design") <- design
   attr(out, "sample_size_unit") <- sample_size_unit
   attr(out, "effect") <- effect
+  attr(out, "assurance_ceiling") <- assurance_ceiling
+  attr(out, "total_n") <- total_n
   attr(out, "inputs") <- inputs
   class(out) <- c("bucss_power", "data.frame")
   out
+}
+
+# Validate the planning inputs shared by every ss_buc_* function and apply the
+# documented coercions, so the checks stay identical across all planners. The
+# three coercions are load-bearing: 'alpha_prior == 1' becomes .999 to model
+# "no publication bias" without a degenerate truncation, and 'assurance' or
+# 'power' entered as a percentage (>= 1) is divided by 100 so that, for example,
+# 80 means .80. Returns the (possibly coerced) values; 'alpha_prior_input' is
+# the value the user supplied, echoed back in the result's planning inputs.
+# call. = FALSE keeps this internal helper out of the error the user sees.
+.validate_planning_inputs <- function(alpha_prior, alpha_planned, assurance,
+                                      power, step) {
+  if (alpha_prior > 1 | alpha_prior <= 0) stop("There is a problem with 'alpha_prior' of the prior study (i.e., the Type I error rate), please specify as a value between 0 and 1 (the default is .05).", call. = FALSE)
+  alpha_prior_input <- alpha_prior
+  if (alpha_prior == 1) alpha_prior <- .999
+
+  if (alpha_planned >= 1 | alpha_planned <= 0) stop("There is a problem with 'alpha_planned' of the planned study (i.e., the Type I error rate), please specify as a value between 0 and 1 (the default is .05).", call. = FALSE)
+
+  if (assurance >= 1) assurance <- assurance / 100
+  if (assurance < 0 | assurance > 1) stop("There is a problem with 'assurance' (i.e., the proportion of times statistical power is at or above the desired value), please specify as a value between 0 and 1 (the default is .80).", call. = FALSE)
+  if (assurance < .5) warning("The 'assurance' you have entered is < .5, which implies you will have under a 50% chance at achieving your desired level of power.", call. = FALSE)
+
+  if (power >= 1) power <- power / 100
+  if (power < 0 | power > 1) stop("There is a problem with 'power' (i.e., desired statistical power), please specify as a value between 0 and 1 (the default is .80).", call. = FALSE)
+
+  if (length(step) != 1L || !is.finite(step) || step <= 0 || step >= 1) stop("'step' must be a single number greater than 0 and less than 1 (the default is .001).", call. = FALSE)
+
+  list(alpha_prior = alpha_prior, alpha_prior_input = alpha_prior_input,
+       assurance = assurance, power = power)
 }
 
 # Stop with a single, informative error when the bias and uncertainty
@@ -101,6 +133,8 @@ print.bucss_power <- function(x, ...) {
   design <- attr(x, "design")
   unit <- attr(x, "sample_size_unit")
   effect <- attr(x, "effect")
+  total_n <- attr(x, "total_n")
+  assurance_ceiling <- attr(x, "assurance_ceiling")
   inputs <- attr(x, "inputs")
 
   cat("Bias and uncertainty corrected sample size\n")
@@ -108,7 +142,13 @@ print.bucss_power <- function(x, ...) {
   if (!is.null(effect)) cat("Effect of interest:", effect, "\n")
   cat("\n")
   cat("Necessary sample size (", unit, "): ", sample_size, "\n", sep = "")
+  if (!is.null(total_n)) cat("Implied total sample size: ", total_n, "\n", sep = "")
   cat("Adjusted noncentrality parameter: ", format(ncp), "\n", sep = "")
+  if (!is.null(assurance_ceiling)) {
+    cval <- floor(assurance_ceiling * 100 + 1e-9) / 100
+    cat("Assurance this prior can support (ceiling): about ",
+        sub("^0", "", sprintf("%.2f", cval)), "\n", sep = "")
+  }
   if (length(inputs) > 0L) {
     cat("\nPlanning inputs:\n")
     nms <- names(inputs)

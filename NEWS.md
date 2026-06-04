@@ -79,6 +79,16 @@ BUCSS 1.x without modification, install version 1.2.1 from the
   1.2.1 outputs exactly, object-structure smoke tests, input-validation tests,
   and tests confirming each defunct dotted name errors with a useful signpost.
 
+* On a successful call, the result now also reports the largest assurance the
+  prior study can support (the closed-form ceiling `1 - p/alpha_prior`) and, for
+  per-group and per-cell designs, the implied total sample size. Both are shown
+  by `print.bucss_power()` and travel on the object as the `assurance_ceiling`
+  and `total_n` attributes.
+
+* Added an `inst/CITATION` file. `citation("BUCSS")` now returns the package
+  reference, so that the version and CRAN source are credited, together with the
+  Anderson, Kelley, and Maxwell (2017) and Anderson and Kelley (2024) articles.
+
 ## Bug fixes
 
 * `df_denominator` now functions in `ss_buc_factorial_anova_general()`. In 1.x
@@ -103,7 +113,24 @@ BUCSS 1.x without modification, install version 1.2.1 from the
   functions no longer fails with "the condition has length > 1" under
   R >= 4.2. `effect` now defaults to its first choice through `match.arg()`.
 
+* `ss_buc_rm_anova()` no longer silently returns the single-factor result when
+  `effect` is `"factor_B"` or `"interaction"` but `levels_B` is not supplied; it
+  now stops and explains that `levels_B` is required for those effects.
+
+* The planners give clearer errors for more input mistakes: a missing structural
+  argument (`cells`, `df_numerator`, `num_groups`, `df_num_within`, `p`, or
+  `p_joint`), a prior `N` too small for the design (fewer than two observations
+  per cell or group), and a `step` outside the interval (0, 1) are now reported
+  with an informative message instead of a cryptic one.
+
 ## Internal
 
 * Removed dead density assignments and redundant always-true guards in the
   iterative noncentrality search. Output is unchanged.
+
+* Factored the shared planning-input validation into a single internal helper,
+  and moved the duplicated `@references` and planning-argument documentation
+  into `man-roxygen` templates, so each is maintained in one place across the
+  twelve planners. The `stats` functions are now imported individually rather
+  than wholesale, and a GitHub Actions workflow runs R CMD check across
+  platforms. None of this changes any computed result.

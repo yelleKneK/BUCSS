@@ -120,3 +120,58 @@ test_that("the zero-ncp error reports the closed-form assurance ceiling (joint F
     ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2, assurance = .95),
     fragment, fixed = TRUE)
 })
+
+test_that("within-subjects ANOVA rejects a non-default effect when 'levels_B' is absent", {
+  # Previously this silently computed the single-factor result; now it stops.
+  expect_error(ss_buc_rm_anova(F_observed = 5, N = 60, levels_A = 3, effect = "factor_B"),
+               "levels_B", fixed = TRUE)
+  expect_error(ss_buc_rm_anova(F_observed = 5, N = 60, levels_A = 3, effect = "interaction"),
+               "levels_B", fixed = TRUE)
+})
+
+test_that("the general split-plot function requires 'df_num_within' for a between-within effect", {
+  expect_error(
+    ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2,
+                               num_groups = 3, effect = "between_within"),
+    "df_num_within", fixed = TRUE)
+})
+
+test_that("the general planners require their structural arguments", {
+  expect_error(ss_buc_factorial_anova_general(F_observed = 5, N = 120,
+                                              df_numerator = 2, df_denominator = 114),
+               "must specify 'cells'", fixed = TRUE)
+  expect_error(ss_buc_factorial_anova_general(F_observed = 5, N = 120, cells = 6,
+                                              df_denominator = 114),
+               "must specify 'df_numerator'", fixed = TRUE)
+  expect_error(ss_buc_rm_anova_general(F_observed = 6.5, N = 80),
+               "must specify 'df_numerator'", fixed = TRUE)
+  expect_error(ss_buc_mixed_anova_general(F_observed = 5, N = 90, num_groups = 3),
+               "must specify 'df_numerator'", fixed = TRUE)
+  expect_error(ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2),
+               "must specify 'num_groups'", fixed = TRUE)
+})
+
+test_that("the regression planners require 'p' (and 'p_joint')", {
+  expect_error(ss_buc_reg_coef(t_observed = 3, N = 150), "specify 'p'", fixed = TRUE)
+  expect_error(ss_buc_R2(F_observed = 5, N = 150), "specify 'p'", fixed = TRUE)
+  expect_error(ss_buc_reg_joint(F_observed = 5, N = 150, p = 4),
+               "specify 'p_joint'", fixed = TRUE)
+})
+
+test_that("a prior 'N' too small for the design is rejected with a clear message", {
+  expect_error(ss_buc_one_way_anova(F_observed = 5, N = 5, levels_A = 4),
+               "too small", fixed = TRUE)
+  expect_error(ss_buc_mixed_anova(F_observed = 5, N = 3, levels_between = 2,
+                                  levels_within = 3, effect = "within"),
+               "too small", fixed = TRUE)
+  expect_error(ss_buc_factorial_anova_general(F_observed = 5, N = 11, cells = 6,
+                                              df_numerator = 2, df_denominator = 5),
+               "too small", fixed = TRUE)
+})
+
+test_that("'step' outside (0, 1) is rejected", {
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, step = 0),
+               "'step'", fixed = TRUE)
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, step = 1),
+               "'step'", fixed = TRUE)
+})
