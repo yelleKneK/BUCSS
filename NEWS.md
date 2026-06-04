@@ -83,7 +83,8 @@ BUCSS 1.x without modification, install version 1.2.1 from the
   (`tidy(result)$necessary_sample_size`); `glance()` returns a one-row summary.
   The implied total sample size is now a `total_N` row of the result for
   per-group and per-cell designs, and the printed noncentrality parameter
-  respects `options(bucss.digits)`.
+  respects `options(bucss.digits)`. `tidy()` and `glance()` also report the
+  planned study's test degrees of freedom (`df_effect` and `df_error`).
 
 * When the bias and uncertainty correction drives the corrected noncentrality
   parameter to zero, the error now reports the largest assurance the prior

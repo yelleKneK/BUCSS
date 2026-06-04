@@ -169,8 +169,11 @@ ss_buc_rm_anova <- function(F_observed, N, levels_A, levels_B = NULL,
   }
   output_n <- n_rep - 1
 
+  df_error <- df_numerator * (output_n - 1)
   .bucss_power_result(
     sample_size = output_n,
+    df_effect = df_numerator,
+    df_error = df_error,
     ncp = ncp,
     design = "One or two-way within-subjects ANOVA",
     sample_size_unit = "total",

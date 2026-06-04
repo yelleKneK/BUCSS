@@ -99,10 +99,22 @@ test_that("tidy() gives a one-row wide view and glance() a one-row summary", {
   expect_equal(td$necessary_sample_size,
                res$value[res$term == "necessary_sample_size"])
   expect_equal(td$total_N, res$value[res$term == "total_N"])
+  expect_equal(td$df_effect, 2)     # levels_B - 1
+  expect_equal(td$df_error, 3948)   # 659 per cell * 6 cells - 6
   expect_equal(td$assurance_ceiling, attr(res, "assurance_ceiling"))
 
   gl <- glance(res)
   expect_identical(nrow(gl), 1L)
   expect_identical(gl$design, "Two-way between-subjects ANOVA")
   expect_identical(gl$effect, "factor_B")
+  expect_equal(gl$df_effect, 2)
+  expect_equal(gl$df_error, 3948)
+
+  # a total-unit design (no effect, no total_N row): tidy() has no total_N
+  # column and glance() reports total_N as NA, but the df are still present
+  rj <- ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2,
+                         assurance = .80, power = .80)
+  expect_false("total_N" %in% names(tidy(rj)))
+  expect_true(is.na(glance(rj)$total_N))
+  expect_equal(glance(rj)$df_effect, 2)   # p_joint
 })

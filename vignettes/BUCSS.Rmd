@@ -131,8 +131,10 @@ prior study with a single test statistic plus the design.
 | `ss_buc_reg_joint` | joint test of a subset of predictors | `F_observed` |
 
 See `vignette("worked-examples", package = "BUCSS")` for one worked example of
-each, and `vignette("understanding-assurance", package = "BUCSS")` for how the
-`assurance` and `alpha_prior` settings shape the correction.
+each, `vignette("understanding-assurance", package = "BUCSS")` for how the
+`assurance` and `alpha_prior` settings shape the correction, and
+`vignette("reading-output", package = "BUCSS")` for the print, `tidy()`, and
+`glance()` views of the result.
 
 ## References
 

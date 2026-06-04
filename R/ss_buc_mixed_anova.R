@@ -223,8 +223,11 @@ ss_buc_mixed_anova <- function(F_observed, N, levels_between, levels_within,
   repn_ru <- n_rep - 1
 
   output_n <- max(repn_rd, repn_ru)
+  df_error <- if (effect == "between") output_n * levels_between - levels_between else (output_n * levels_between - levels_between) * (levels_within - 1)
   .bucss_power_result(
     sample_size = output_n,
+    df_effect = df_numerator,
+    df_error = df_error,
     ncp = min(ncp_rd, ncp_ru),
     design = "Two-factor split-plot (mixed) ANOVA",
     sample_size_unit = "per between-subjects cell",

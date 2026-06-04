@@ -14,7 +14,8 @@
 # the prior supports, and the planning inputs) travels on attributes.
 .bucss_power_result <- function(sample_size, ncp, design, sample_size_unit,
                                 effect = NULL, assurance_ceiling = NULL,
-                                total_n = NULL, inputs = list()) {
+                                total_n = NULL, df_effect = NULL, df_error = NULL,
+                                inputs = list()) {
   if (is.null(total_n)) {
     out <- data.frame(term = c("necessary_sample_size", "ncp_adjusted"),
                       value = c(sample_size, ncp), stringsAsFactors = FALSE)
@@ -27,6 +28,8 @@
   attr(out, "sample_size_unit") <- sample_size_unit
   attr(out, "effect") <- effect
   attr(out, "assurance_ceiling") <- assurance_ceiling
+  attr(out, "df_effect") <- df_effect
+  attr(out, "df_error") <- df_error
   attr(out, "inputs") <- inputs
   class(out) <- c("bucss_power", "data.frame")
   out

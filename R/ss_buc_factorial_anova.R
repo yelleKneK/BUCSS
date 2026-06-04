@@ -222,8 +222,11 @@ ss_buc_factorial_anova <- function(F_observed, N, levels_A, levels_B,
   repn_rd <- n_rep - 1
 
   output_n <- max(repn_ru, repn_rd)
+  df_error <- output_n * cells - cells
   .bucss_power_result(
     sample_size = output_n,
+    df_effect = df_numerator,
+    df_error = df_error,
     ncp = min(ncp_rd, ncp_ru),
     design = "Two-way between-subjects ANOVA",
     sample_size_unit = "per cell",

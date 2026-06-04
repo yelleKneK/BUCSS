@@ -162,8 +162,11 @@ ss_buc_paired_t <- function(t_observed, N, alpha_prior = .05, alpha_planned = .0
   }
   output_n <- n_rep - 1
 
+  df_error <- output_n - 1
   .bucss_power_result(
     sample_size = output_n,
+    df_effect = 1,
+    df_error = df_error,
     ncp = ncp,
     design = "Dependent (paired) t test",
     sample_size_unit = "number of pairs",

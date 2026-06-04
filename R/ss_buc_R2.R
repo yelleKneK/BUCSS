@@ -148,8 +148,11 @@ ss_buc_R2 <- function(F_observed, N, p, alpha_prior = .05,
   }
   output_n <- n_rep - 1
 
+  df_error <- output_n - p - 1
   .bucss_power_result(
     sample_size = output_n,
+    df_effect = df_numerator,
+    df_error = df_error,
     ncp = ncp,
     design = "Multiple regression: omnibus test of model R2",
     sample_size_unit = "total",

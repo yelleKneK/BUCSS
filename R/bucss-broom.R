@@ -26,9 +26,10 @@
 #'
 #' @return A one-row \code{data.frame}. For \code{tidy()}, one column per
 #'   planned-study quantity (\code{necessary_sample_size}, \code{total_N} where
-#'   applicable, \code{ncp_adjusted}, and \code{assurance_ceiling}). For
+#'   applicable, \code{ncp_adjusted}, the planned test's degrees of freedom
+#'   \code{df_effect} and \code{df_error}, and \code{assurance_ceiling}). For
 #'   \code{glance()}, a one-row summary with the design, effect, headline sample
-#'   sizes, unit, and assurance ceiling.
+#'   sizes, the test degrees of freedom, the unit, and the assurance ceiling.
 #'
 #' @examples
 #' result <- ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2,
@@ -59,6 +60,10 @@ generics::glance
 tidy.bucss_power <- function(x, ...) {
   wide <- as.data.frame(as.list(stats::setNames(x$value, x$term)),
                         stringsAsFactors = FALSE)
+  df_effect <- attr(x, "df_effect")
+  df_error <- attr(x, "df_error")
+  if (!is.null(df_effect)) wide$df_effect <- df_effect
+  if (!is.null(df_error)) wide$df_error <- df_error
   ceiling <- attr(x, "assurance_ceiling")
   if (!is.null(ceiling)) wide$assurance_ceiling <- ceiling
   wide
@@ -71,12 +76,18 @@ glance.bucss_power <- function(x, ...) {
   if (is.null(effect)) effect <- NA_character_
   ceiling <- attr(x, "assurance_ceiling")
   if (is.null(ceiling)) ceiling <- NA_real_
+  df_effect <- attr(x, "df_effect")
+  if (is.null(df_effect)) df_effect <- NA_real_
+  df_error <- attr(x, "df_error")
+  if (is.null(df_error)) df_error <- NA_real_
   total_N <- if ("total_N" %in% x$term) x$value[x$term == "total_N"] else NA_real_
   data.frame(
     design                = attr(x, "design"),
     effect                = effect,
     necessary_sample_size = x$value[x$term == "necessary_sample_size"],
     total_N               = total_N,
+    df_effect             = df_effect,
+    df_error              = df_error,
     sample_size_unit      = attr(x, "sample_size_unit"),
     assurance_ceiling     = ceiling,
     stringsAsFactors      = FALSE

@@ -19,9 +19,10 @@ function.}
 \value{
 A one-row \code{data.frame}. For \code{tidy()}, one column per
   planned-study quantity (\code{necessary_sample_size}, \code{total_N} where
-  applicable, \code{ncp_adjusted}, and \code{assurance_ceiling}). For
+  applicable, \code{ncp_adjusted}, the planned test's degrees of freedom
+  \code{df_effect} and \code{df_error}, and \code{assurance_ceiling}). For
   \code{glance()}, a one-row summary with the design, effect, headline sample
-  sizes, unit, and assurance ceiling.
+  sizes, the test degrees of freedom, the unit, and the assurance ceiling.
 }
 \description{
 \code{tidy()} returns the planned-study quantities as a one-row

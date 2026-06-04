@@ -225,8 +225,11 @@ ss_buc_mixed_anova_general <- function(F_observed, N, df_numerator, num_groups,
   if (effect == "between_within") inputs$df_num_within <- df_num_within
 
   output_n <- max(repn_rd, repn_ru)
+  df_error <- ((output_n * num_groups) - num_groups) * denom_mult
   .bucss_power_result(
     sample_size = output_n,
+    df_effect = df_numerator,
+    df_error = df_error,
     ncp = min(ncp_rd, ncp_ru),
     design = "Split-plot (mixed) ANOVA (any number of factors)",
     sample_size_unit = "per group",

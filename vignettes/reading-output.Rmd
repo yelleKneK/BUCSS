@@ -1,0 +1,103 @@
+---
+title: "Reading and using BUCSS output"
+author: "Ken Kelley, Samantha F. Anderson, and Scott E. Maxwell"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Reading and using BUCSS output}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library(BUCSS)
+```
+
+Every `ss_buc_*` function returns the same kind of object: a tidy result of
+class `bucss_power`. This vignette shows the three ways to read it, which follow
+the same conventions as the **DMAR** package, so the habits carry over.
+
+We will use a two-way between-subjects ANOVA throughout.
+
+```{r}
+result <- ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2,
+                                 levels_B = 3, effect = "factor_B")
+```
+
+## 1. Read it as a printed summary
+
+Printing the object gives a readable summary: the design, the necessary sample
+size with the unit it is counted in (and, for per-group and per-cell designs,
+the implied total sample size on the same line), the bias and uncertainty
+adjusted noncentrality parameter, the largest assurance this prior result can
+support, and the planning inputs you supplied.
+
+```{r}
+result
+```
+
+The displayed noncentrality parameter is rounded for reading; the stored value
+keeps full precision. Change the display with `options(bucss.digits = )`.
+
+```{r}
+options(bucss.digits = 5)
+result
+options(bucss.digits = 3)  # restore the default
+```
+
+## 2. Pull a single number out
+
+The object is an ordinary `data.frame` with a character `term` column and a
+numeric `value` column, so you can index it like any data frame. The rows are
+`necessary_sample_size`, `ncp_adjusted`, and, for per-group and per-cell
+designs, `total_N`.
+
+```{r}
+result$value[result$term == "necessary_sample_size"]
+result$value[result$term == "total_N"]
+```
+
+That works, but the `tidy()` view below is usually tidier for pulling one value
+out by name.
+
+## 3. The broom verbs: `tidy()` and `glance()`
+
+`tidy()` returns a one-row data frame with one column per quantity (the "wide"
+view), so a single value comes out by name with no row indexing. It also
+includes the planned test's degrees of freedom and the assurance ceiling.
+
+```{r}
+tidy(result)
+tidy(result)$necessary_sample_size
+tidy(result)$total_N
+```
+
+`glance()` returns a one-row model-level summary: the design, the effect tested,
+the headline sample sizes, the planned test's degrees of freedom, the unit, and
+the assurance ceiling. It is the convenient shape for collecting many results
+into one table for reporting.
+
+```{r}
+glance(result)
+```
+
+Both verbs come from the **generics** package and are re-exported by BUCSS, so
+they work as soon as the package is loaded, with no extra setup. The full
+precision values are always available in the object itself, since only the
+printed display rounds.
+
+## What lives where
+
+* The planned-study quantities (`necessary_sample_size`, `total_N`,
+  `ncp_adjusted`) are rows of the `value` column, so they survive any further
+  arithmetic you do on the object.
+* The design label, the effect tested, the unit, the assurance ceiling, the
+  planned test's degrees of freedom, and the planning inputs travel on
+  attributes and are surfaced by the print method and by `tidy()`/`glance()`.
+
+## References
+
+Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample-size planning for
+more accurate statistical power: A method adjusting sample effect sizes for
+publication bias and uncertainty. *Psychological Science, 28*, 1547--1562.
+https://doi.org/10.1177/0956797617723724

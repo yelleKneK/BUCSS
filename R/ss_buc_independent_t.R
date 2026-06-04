@@ -253,8 +253,11 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
   repn_rd <- n_rep - 1
 
   output_n <- max(repn_ru, repn_rd)
+  df_error <- 2 * output_n - 2
   .bucss_power_result(
     sample_size = output_n,
+    df_effect = 1,
+    df_error = df_error,
     ncp = min(ncp_ru, ncp_rd),
     design = "Independent t test",
     sample_size_unit = "per group",

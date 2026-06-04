@@ -234,8 +234,11 @@ ss_buc_factorial_anova_general <- function(F_observed, N, cells, df_numerator,
   repn_rd <- n_rep - 1
 
   output_n <- max(repn_ru, repn_rd)
+  df_error <- output_n * cells - cells - nuisance_df
   .bucss_power_result(
     sample_size = output_n,
+    df_effect = df_numerator,
+    df_error = df_error,
     ncp = min(ncp_rd, ncp_ru),
     design = "Between-subjects ANOVA (general)",
     sample_size_unit = "per cell",

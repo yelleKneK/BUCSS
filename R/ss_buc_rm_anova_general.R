@@ -150,8 +150,11 @@ ss_buc_rm_anova_general <- function(F_observed, N, df_numerator, alpha_prior = .
   }
   output_n <- n_rep - 1
 
+  df_error <- df_numerator * (output_n - 1)
   .bucss_power_result(
     sample_size = output_n,
+    df_effect = df_numerator,
+    df_error = df_error,
     ncp = ncp,
     design = "Within-subjects ANOVA (any number of factors)",
     sample_size_unit = "total",
