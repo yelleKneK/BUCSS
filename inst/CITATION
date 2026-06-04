@@ -1,0 +1,50 @@
+if (!exists("meta") || is.null(meta)) meta <- packageDescription("BUCSS")
+year <- sub("-.*", "", meta$Date)
+if (length(year) == 0L || is.na(year) || !nzchar(year)) year <- format(Sys.Date(), "%Y")
+note <- sprintf("R package version %s", meta$Version)
+
+citHeader(
+  "To cite BUCSS in publications, please cite the package itself, so that the ",
+  "specific version and its CRAN source are credited, together with the ",
+  "methodological article(s) on which the analysis you report relies. The ",
+  "2017 article introduces the method; the 2024 article extends it to the ",
+  "design of replication studies."
+)
+
+bibentry(
+  bibtype  = "Manual",
+  title    = "{BUCSS}: Bias and Uncertainty Corrected Sample Size",
+  author   = c(person("Ken", "Kelley"),
+               person("Samantha F.", "Anderson"),
+               person("Scott E.", "Maxwell")),
+  year     = year,
+  note     = note,
+  url      = "https://CRAN.R-project.org/package=BUCSS"
+)
+
+bibentry(
+  bibtype = "Article",
+  title   = paste("Sample-size planning for more accurate statistical power:",
+                  "A method adjusting sample effect sizes for publication bias",
+                  "and uncertainty"),
+  author  = c(person("Samantha F.", "Anderson"),
+              person("Ken", "Kelley"),
+              person("Scott E.", "Maxwell")),
+  journal = "Psychological Science",
+  year    = "2017",
+  volume  = "28",
+  pages   = "1547--1562",
+  doi     = "10.1177/0956797617723724"
+)
+
+bibentry(
+  bibtype = "Article",
+  title   = "Sample size planning for replication studies: The devil is in the design",
+  author  = c(person("Samantha F.", "Anderson"),
+              person("Ken", "Kelley")),
+  journal = "Psychological Methods",
+  year    = "2024",
+  volume  = "29",
+  pages   = "844--867",
+  doi     = "10.1037/met0000520"
+)
