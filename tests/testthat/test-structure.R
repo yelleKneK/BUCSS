@@ -79,6 +79,6 @@ test_that("print shows the implied total N and the assurance ceiling", {
   res <- ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2, levels_B = 3,
                                 effect = "factor_B", assurance = .80, power = .80)
 
-  expect_output(print(res), "Implied total sample size", fixed = TRUE)
+  expect_output(print(res), "total N = ", fixed = TRUE)
   expect_output(print(res), "Assurance this prior can support", fixed = TRUE)
 })

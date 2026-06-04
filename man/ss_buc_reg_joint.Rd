@@ -14,8 +14,7 @@ ss_buc_reg_joint(
   alpha_prior = 0.05,
   alpha_planned = 0.05,
   assurance = 0.8,
-  power = 0.8,
-  step = 0.001
+  power = 0.8
 )
 }
 \arguments{
@@ -45,12 +44,6 @@ percent.}
 \item{power}{Desired level of statistical power for the planned study. Enter
 it as a proportion in (0, 1) or as a percentage greater than 1; a value of
 exactly 1 is read as 1 percent.}
-
-\item{step}{Value used in the iterative scheme to determine the noncentrality
-parameter necessary for sample size planning (0 < step < .01). Users should
-not generally need to change this value; smaller values lead to more
-accurate sample size planning results, but unnecessarily small values will
-add unnecessary computational time.}
 }
 \value{
 An object of class \code{bucss_power}: a \code{data.frame} with a

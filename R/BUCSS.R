@@ -19,6 +19,12 @@
 #' style. \pkg{DMAR} is a natural companion for effect size estimation,
 #' confidence intervals, and sample size planning across additional frameworks.
 #'
+#' The resolution of the noncentrality-parameter grid the planners search
+#' internally is not a function argument; advanced users can change it with
+#' \code{options(bucss.step = )} (the default is \code{0.001}). Smaller values
+#' are slightly more precise but slower, and the default is appropriate for
+#' essentially all use.
+#'
 #' @references
 #' Anderson, S. F., & Kelley, K. (2024). Sample size planning for replication
 #' studies: The devil is in the design. \emph{Psychological Methods, 29,}

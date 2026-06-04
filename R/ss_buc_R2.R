@@ -105,13 +105,13 @@
 #'
 #' @template references
 ss_buc_R2 <- function(F_observed, N, p, alpha_prior = .05,
-                             alpha_planned = .05, assurance = .80, power = .80,
-                             step = .001) {
-  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, power, step)
+                             alpha_planned = .05, assurance = .80, power = .80) {
+  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, power)
   alpha_prior <- v$alpha_prior
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
   power <- v$power
+  step <- v$step
 
   if (missing(N)) stop("You need to specify 'N', which is the total sample size of the original study.")
   if (N <= 1) stop("Your total sample size is too small.")

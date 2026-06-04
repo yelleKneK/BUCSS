@@ -27,3 +27,25 @@ test_that("alpha_prior = 1 models no publication bias and is echoed as entered",
   expect_lt(no_bias$value[no_bias$term == "necessary_sample_size"],
             default$value[default$term == "necessary_sample_size"])
 })
+
+test_that("effect-argument shorthand is accepted and normalized to the canonical value", {
+  base <- ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2, levels_B = 3,
+                                 effect = "factor_B", assurance = .80, power = .80)
+  for (syn in c("B", "b")) {
+    alt <- ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2, levels_B = 3,
+                                  effect = syn, assurance = .80, power = .80)
+    expect_equal(alt$value, base$value)
+    expect_identical(attr(alt, "effect"), "factor_B")
+  }
+  expect_identical(
+    attr(ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2, levels_B = 3,
+                                effect = "AxB", assurance = .80, power = .80),
+         "effect"),
+    "interaction")
+  expect_identical(
+    attr(ss_buc_mixed_anova(F_observed = 5, N = 60, levels_between = 2,
+                            levels_within = 3, effect = "ws", assurance = .80,
+                            power = .80),
+         "effect"),
+    "within")
+})

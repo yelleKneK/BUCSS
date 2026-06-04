@@ -87,9 +87,12 @@
 #' @param levels_A Number of levels for Factor A.
 #' @param levels_B Number of levels for Factor B, which is NULL if a single
 #'   factor design.
-#' @param effect Effect most of interest to the planned study: main effect of A
+#' @param effect Effect of most interest to the planned study: main effect of A
 #'   (\code{factor_A}), main effect of B (\code{factor_B}), or interaction
-#'   (\code{interaction}).
+#'   (\code{interaction}). Case-insensitive shorthand is also accepted but not
+#'   recommended in scripts: \code{"A"} (or \code{"a"}) for \code{factor_A},
+#'   \code{"B"} for \code{factor_B}, and \code{"AxB"} (or \code{"AB"}) for
+#'   \code{interaction}.
 #' @template planning-params
 #'
 #' @templateVar size_phrase total sample size
@@ -115,14 +118,15 @@
 ss_buc_rm_anova <- function(F_observed, N, levels_A, levels_B = NULL,
                         effect = c("factor_A", "factor_B", "interaction"),
                         alpha_prior = .05, alpha_planned = .05,
-                        assurance = .80, power = .80, step = .001) {
-  effect <- match.arg(effect)
+                        assurance = .80, power = .80) {
+  effect <- .match_effect(effect, c("factor_A", "factor_B", "interaction"))
 
-  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, power, step)
+  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, power)
   alpha_prior <- v$alpha_prior
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
   power <- v$power
+  step <- v$step
 
   if (missing(N)) stop("You must specify 'N', which is the total sample size.")
 

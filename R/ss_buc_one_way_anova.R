@@ -125,12 +125,13 @@
 #' @template references
 ss_buc_one_way_anova <- function(F_observed, N, levels_A,
                                  alpha_prior = .05, alpha_planned = .05,
-                                 assurance = .80, power = .80, step = .001) {
-  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, power, step)
+                                 assurance = .80, power = .80) {
+  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, power)
   alpha_prior <- v$alpha_prior
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
   power <- v$power
+  step <- v$step
 
   if (missing(N)) stop("You must specify 'N', which is the total sample size.")
   if (missing(levels_A)) stop("You must specify 'levels_A', the number of groups.")

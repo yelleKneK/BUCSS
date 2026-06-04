@@ -99,9 +99,11 @@
 #' @param N Total sample size of the previous study.
 #' @param levels_between Number of levels for the between-subjects factor.
 #' @param levels_within Number of levels for the within-subjects factor.
-#' @param effect Effect most of interest to the planned study: between-subjects
+#' @param effect Effect of most interest to the planned study: between-subjects
 #'   main effect (\code{between}), within-subjects main effect (\code{within}),
-#'   or interaction (\code{interaction}).
+#'   or interaction (\code{interaction}). Case-insensitive shorthand is also
+#'   accepted but not recommended in scripts: \code{"bs"} for \code{between},
+#'   \code{"ws"} for \code{within}, and \code{"BxW"} for \code{interaction}.
 #' @template planning-params
 #'
 #' @templateVar size_phrase per between-subjects cell sample size
@@ -127,14 +129,15 @@
 ss_buc_mixed_anova <- function(F_observed, N, levels_between, levels_within,
                          effect = c("between", "within", "interaction"),
                          alpha_prior = .05, alpha_planned = .05,
-                         assurance = .80, power = .80, step = .001) {
-  effect <- match.arg(effect)
+                         assurance = .80, power = .80) {
+  effect <- .match_effect(effect, c("between", "within", "interaction"))
 
-  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, power, step)
+  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, power)
   alpha_prior <- v$alpha_prior
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
   power <- v$power
+  step <- v$step
 
   if (missing(N)) stop("You must specify 'N', which is the total sample size.")
   if (missing(levels_within)) stop("You must specify the number of levels of the within-subjects factor. If there is no within-subjects factor, use the between-subjects approach.")

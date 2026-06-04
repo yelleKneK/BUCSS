@@ -11,8 +11,3 @@
 #' @param power Desired level of statistical power for the planned study. Enter
 #'   it as a proportion in (0, 1) or as a percentage greater than 1; a value of
 #'   exactly 1 is read as 1 percent.
-#' @param step Value used in the iterative scheme to determine the noncentrality
-#'   parameter necessary for sample size planning (0 < step < .01). Users should
-#'   not generally need to change this value; smaller values lead to more
-#'   accurate sample size planning results, but unnecessarily small values will
-#'   add unnecessary computational time.

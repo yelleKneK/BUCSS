@@ -45,6 +45,11 @@ BUCSS 1.x without modification, install version 1.2.1 from the
 * `effect` values are now snake_case: `"factor.A"` becomes `"factor_A"`,
   `"between.only"` becomes `"between_only"`, and so on.
 
+* The grid-resolution `step` argument has been removed from every planner's
+  signature, since it distracted from the study-design arguments. The default
+  (`.001`) is right for essentially all use; advanced users can change it with
+  `options(bucss.step = )`.
+
 * The functions now return a tidy object of class `bucss_power` rather than a
   printed two-element list. It is a `data.frame` with a character `term` column
   and a numeric `value` column whose two rows are `necessary_sample_size` and
@@ -63,6 +68,13 @@ BUCSS 1.x without modification, install version 1.2.1 from the
 * Added `print.bucss_power()`, which formats the result for humans (design,
   effect of interest, necessary sample size with its unit, adjusted
   noncentrality parameter, and the planning inputs).
+
+* The `effect` argument now also accepts case-insensitive shorthand in the
+  two-way between-subjects, within-subjects, and split-plot planners, for
+  example `"A"` for `"factor_A"`, `"B"` for `"factor_B"`, `"AxB"` for
+  `"interaction"`, and `"bs"`/`"ws"` for `"between"`/`"within"`. The snake_case
+  values remain the documented forms and the result always records the canonical
+  one.
 
 * When the bias and uncertainty correction drives the corrected noncentrality
   parameter to zero, the error now reports the largest assurance the prior

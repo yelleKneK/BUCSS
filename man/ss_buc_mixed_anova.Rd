@@ -14,8 +14,7 @@ ss_buc_mixed_anova(
   alpha_prior = 0.05,
   alpha_planned = 0.05,
   assurance = 0.8,
-  power = 0.8,
-  step = 0.001
+  power = 0.8
 )
 }
 \arguments{
@@ -28,9 +27,11 @@ sample size for a planned study.}
 
 \item{levels_within}{Number of levels for the within-subjects factor.}
 
-\item{effect}{Effect most of interest to the planned study: between-subjects
+\item{effect}{Effect of most interest to the planned study: between-subjects
 main effect (\code{between}), within-subjects main effect (\code{within}),
-or interaction (\code{interaction}).}
+or interaction (\code{interaction}). Case-insensitive shorthand is also
+accepted but not recommended in scripts: \code{"bs"} for \code{between},
+\code{"ws"} for \code{within}, and \code{"BxW"} for \code{interaction}.}
 
 \item{alpha_prior}{Alpha level \eqn{\alpha} for the previous study or the
 assumed statistical significance necessary for publishing in the field; to
@@ -48,12 +49,6 @@ percent.}
 \item{power}{Desired level of statistical power for the planned study. Enter
 it as a proportion in (0, 1) or as a percentage greater than 1; a value of
 exactly 1 is read as 1 percent.}
-
-\item{step}{Value used in the iterative scheme to determine the noncentrality
-parameter necessary for sample size planning (0 < step < .01). Users should
-not generally need to change this value; smaller values lead to more
-accurate sample size planning results, but unnecessarily small values will
-add unnecessary computational time.}
 }
 \value{
 An object of class \code{bucss_power}: a \code{data.frame} with a

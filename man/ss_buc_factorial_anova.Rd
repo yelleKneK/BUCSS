@@ -14,8 +14,7 @@ ss_buc_factorial_anova(
   alpha_prior = 0.05,
   alpha_planned = 0.05,
   assurance = 0.8,
-  power = 0.8,
-  step = 0.001
+  power = 0.8
 )
 }
 \arguments{
@@ -28,9 +27,12 @@ sample size for a planned study.}
 
 \item{levels_B}{Number of levels for Factor B.}
 
-\item{effect}{Effect most of interest to the planned study: main effect of A
+\item{effect}{Effect of most interest to the planned study: main effect of A
 (\code{factor_A}), main effect of B (\code{factor_B}), or interaction
-(\code{interaction}).}
+(\code{interaction}). Case-insensitive shorthand is also accepted but not
+recommended in scripts: \code{"A"} (or \code{"a"}) for \code{factor_A},
+\code{"B"} for \code{factor_B}, and \code{"AxB"} (or \code{"AB"}) for
+\code{interaction}.}
 
 \item{alpha_prior}{Alpha level \eqn{\alpha} for the previous study or the
 assumed statistical significance necessary for publishing in the field; to
@@ -48,12 +50,6 @@ percent.}
 \item{power}{Desired level of statistical power for the planned study. Enter
 it as a proportion in (0, 1) or as a percentage greater than 1; a value of
 exactly 1 is read as 1 percent.}
-
-\item{step}{Value used in the iterative scheme to determine the noncentrality
-parameter necessary for sample size planning (0 < step < .01). Users should
-not generally need to change this value; smaller values lead to more
-accurate sample size planning results, but unnecessarily small values will
-add unnecessary computational time.}
 }
 \value{
 An object of class \code{bucss_power}: a \code{data.frame} with a
@@ -167,6 +163,12 @@ result <- ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2,
   levels_B = 3, effect = "factor_B", alpha_prior = .05, alpha_planned = .05,
   assurance = .80, power = .80)
 result
+
+# Pull the planned per-cell sample size, the implied total sample size, and
+# the adjusted noncentrality parameter out of the result:
+result$value[result$term == "necessary_sample_size"]  # per cell
+attr(result, "total_n")                                # total across all cells
+result$value[result$term == "ncp_adjusted"]
 
 # Requesting more assurance than the prior result can support stops with an
 # informative error naming the largest workable assurance (here near .83):
