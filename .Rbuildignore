@@ -5,3 +5,6 @@
 ^\.Rhistory$
 ^\.DS_Store$
 ^cran-comments\.md$
+^tools$
+^\.github$
+^man-roxygen$

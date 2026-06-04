@@ -34,6 +34,6 @@
 #' @author Ken Kelley (\email{kkelley@@nd.edu}), Samantha F. Anderson
 #'   (\email{samantha.f.anderson@@asu.edu}), and Scott E. Maxwell
 #'
-#' @import stats
+#' @importFrom stats pf pt qf qt
 #'
 "_PACKAGE"

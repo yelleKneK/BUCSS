@@ -19,6 +19,15 @@ Then load the package:
 library(BUCSS)
 ```
 
+The `ss_buc_*` function family described below is the BUCSS 2.0.0 interface.
+Until 2.0.0 reaches CRAN, install the development version from GitHub to use
+these names:
+
+``` r
+# install.packages("remotes")
+remotes::install_github("yelleKneK/BUCSS")
+```
+
 ## Using `BUCSS`
 
 Consider an original study in which two independent groups are used to test the

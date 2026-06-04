@@ -18,6 +18,7 @@ Description: Implements sample size planning for a future study from the summary
     is described in Anderson, Kelley, and Maxwell (2017) <doi:10.1177/0956797617723724>.
 License: GPL (>= 3)
 Encoding: UTF-8
+Language: en-US
 Depends: R (>= 3.5.0)
 Imports: stats
 Suggests:
