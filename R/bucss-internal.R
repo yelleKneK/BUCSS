@@ -2,26 +2,31 @@
 
 # Build the tidy result object returned by every ss_buc_* function.
 #
-# The two computed quantities (the necessary planned-study sample size and the
-# bias and uncertainty adjusted prior-study noncentrality parameter) live in a
-# numeric `value` column so the object behaves like an ordinary data.frame for
-# downstream arithmetic. Everything non-numeric (the human design label, the
-# unit the sample size is counted in, the effect tested, and the planning
-# inputs) travels on attributes, never as a string in `value`.
+# The planned-study quantities (the necessary sample size, the implied total
+# sample size for per-group and per-cell designs, and the bias and uncertainty
+# adjusted prior-study noncentrality parameter) live as rows of a numeric
+# `value` column so the object behaves like an ordinary data.frame for
+# downstream arithmetic; tidy() pivots them to a one-row wide view. The
+# `necessary_sample_size` and `ncp_adjusted` term names are fixed (the
+# regression oracles read them). The `total_N` row is present only when a
+# `total_n` is supplied (the per-group and per-cell designs). Everything else
+# (the human design label, the unit, the effect tested, the assurance ceiling
+# the prior supports, and the planning inputs) travels on attributes.
 .bucss_power_result <- function(sample_size, ncp, design, sample_size_unit,
                                 effect = NULL, assurance_ceiling = NULL,
                                 total_n = NULL, inputs = list()) {
-  out <- data.frame(
-    term = c("necessary_sample_size", "ncp_adjusted"),
-    value = c(sample_size, ncp),
-    stringsAsFactors = FALSE
-  )
+  if (is.null(total_n)) {
+    out <- data.frame(term = c("necessary_sample_size", "ncp_adjusted"),
+                      value = c(sample_size, ncp), stringsAsFactors = FALSE)
+  } else {
+    out <- data.frame(term = c("necessary_sample_size", "total_N", "ncp_adjusted"),
+                      value = c(sample_size, total_n, ncp), stringsAsFactors = FALSE)
+  }
   inputs <- inputs[!vapply(inputs, is.null, logical(1))]
   attr(out, "design") <- design
   attr(out, "sample_size_unit") <- sample_size_unit
   attr(out, "effect") <- effect
   attr(out, "assurance_ceiling") <- assurance_ceiling
-  attr(out, "total_n") <- total_n
   attr(out, "inputs") <- inputs
   class(out) <- c("bucss_power", "data.frame")
   out
@@ -163,7 +168,8 @@ print.bucss_power <- function(x, ...) {
   design <- attr(x, "design")
   unit <- attr(x, "sample_size_unit")
   effect <- attr(x, "effect")
-  total_n <- attr(x, "total_n")
+  total_n <- x$value[x$term == "total_N"]
+  if (length(total_n) == 0L) total_n <- NULL
   assurance_ceiling <- attr(x, "assurance_ceiling")
   inputs <- attr(x, "inputs")
 
@@ -177,7 +183,8 @@ print.bucss_power <- function(x, ...) {
   } else {
     cat("Necessary sample size (", unit, "): ", sample_size, "\n", sep = "")
   }
-  cat("Adjusted noncentrality parameter: ", format(ncp), "\n", sep = "")
+  cat("Adjusted noncentrality parameter: ",
+      format(signif(ncp, getOption("bucss.digits", 3L))), "\n", sep = "")
   if (!is.null(assurance_ceiling)) {
     cval <- floor(assurance_ceiling * 100 + 1e-9) / 100
     cat("Assurance this prior can support (ceiling): about ",
@@ -191,5 +198,7 @@ print.bucss_power <- function(x, ...) {
           paste(format(inputs[[i]]), collapse = ", "), "\n", sep = "")
     }
   }
+  cat("\nUse tidy() for these quantities as a one-row data frame, ",
+      "or glance() for a summary.\n", sep = "")
   invisible(x)
 }

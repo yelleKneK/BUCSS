@@ -76,6 +76,15 @@ BUCSS 1.x without modification, install version 1.2.1 from the
   values remain the documented forms and the result always records the canonical
   one.
 
+* Added `tidy()` and `glance()` methods for `bucss_power` results (from the
+  `generics` package, as in the `DMAR` package), so the result has the same
+  programmer-friendly shape. `tidy()` returns a one-row data frame with one
+  column per quantity, so a single value is pulled out by name
+  (`tidy(result)$necessary_sample_size`); `glance()` returns a one-row summary.
+  The implied total sample size is now a `total_N` row of the result for
+  per-group and per-cell designs, and the printed noncentrality parameter
+  respects `options(bucss.digits)`.
+
 * When the bias and uncertainty correction drives the corrected noncentrality
   parameter to zero, the error now reports the largest assurance the prior
   result can support (the closed-form ceiling `1 - p/alpha_prior`, where `p` is

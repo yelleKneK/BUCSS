@@ -61,6 +61,17 @@ result$value[result$term == "necessary_sample_size"]  # 1482
 result$value[result$term == "ncp_adjusted"]           # adjusted noncentrality
 ```
 
+For a programmer-friendly view, the broom verbs give the convenient shapes (as
+in the [`DMAR`](https://github.com/yelleKneK/DMAR) package): `tidy()` returns a
+one-row data frame with one column per quantity, so you pull a value out by
+name, and `glance()` returns a one-row summary:
+
+``` r
+tidy(result)$necessary_sample_size  # 1482
+tidy(result)                        # necessary_sample_size, total_N, ncp_adjusted, ...
+glance(result)
+```
+
 ## A note on function names
 
 BUCSS 2.0.0 renamed the function family to the `ss_buc_*` prefix (for example

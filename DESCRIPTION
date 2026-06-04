@@ -20,7 +20,9 @@ License: GPL (>= 3)
 Encoding: UTF-8
 Language: en-US
 Depends: R (>= 3.5.0)
-Imports: stats
+Imports:
+    generics,
+    stats
 Suggests:
     testthat (>= 3.0.0),
     knitr,

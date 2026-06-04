@@ -84,6 +84,17 @@ guess:
 attr(result, "sample_size_unit")
 ```
 
+For programmatic use the broom verbs give the convenient shapes, exactly as in
+the **DMAR** package: `tidy()` returns a one-row data frame with one column per
+quantity (so you pull a value out by name), and `glance()` returns a one-row
+summary.
+
+```{r}
+tidy(result)
+tidy(result)$necessary_sample_size
+glance(result)
+```
+
 ## The replication example
 
 When the prior study has unequal group sizes, you can pass both. Here a prior
