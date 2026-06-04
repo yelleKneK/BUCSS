@@ -87,13 +87,8 @@
 #' @param p_joint Number of predictors tested jointly for significance.
 #' @template planning-params
 #'
-#' @return An object of class \code{bucss_power}: a \code{data.frame} with a
-#'   character \code{term} column and a numeric \code{value} column whose two
-#'   rows are \code{necessary_sample_size} (the suggested total sample size for
-#'   the planned study) and \code{ncp_adjusted} (the publication bias and
-#'   uncertainty adjusted prior study noncentrality parameter). The design, the
-#'   unit the sample size is counted in, and the planning inputs travel on
-#'   attributes and are shown by \code{print.bucss_power}.
+#' @templateVar size_phrase total sample size
+#' @template return
 #'
 #' @export
 #'

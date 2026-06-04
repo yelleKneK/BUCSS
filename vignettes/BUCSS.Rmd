@@ -65,10 +65,11 @@ calculation from *t* = 3.00 would suggest.
 ## Reading the result
 
 Every `ss_buc_*` function returns a tidy object that prints the design, the
-necessary sample size with the unit it is counted in, the bias and uncertainty
-adjusted noncentrality parameter, and the planning inputs you supplied. Because
-the object is an ordinary `data.frame` underneath, you can pull the two
-quantities out directly:
+necessary sample size with the unit it is counted in, the implied total sample
+size where the unit is per group or per cell, the bias and uncertainty adjusted
+noncentrality parameter, the largest assurance the prior result can support, and
+the planning inputs you supplied. Because the object is an ordinary `data.frame`
+underneath, you can pull the two quantities out directly:
 
 ```{r}
 result$value[result$term == "necessary_sample_size"]

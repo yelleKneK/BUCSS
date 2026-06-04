@@ -87,6 +87,11 @@ or assume less publication bias by raising `alpha_prior`, which lifts the
 ceiling. When the ceiling is already at or below the .5 floor, only raising
 `alpha_prior` can help.
 
+Every successful call reports this same ceiling too, printed as "Assurance this
+prior can support", so you can see how much headroom remains before the
+correction breaks down. The printed result also gives the implied total sample
+size for per-group and per-cell designs, saving you the multiplication.
+
 ## alpha_prior: modeling publication bias
 
 `alpha_prior` is the significance threshold that governs publication in the

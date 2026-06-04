@@ -129,8 +129,9 @@ BUCSS 1.x without modification, install version 1.2.1 from the
   iterative noncentrality search. Output is unchanged.
 
 * Factored the shared planning-input validation into a single internal helper,
-  and moved the duplicated `@references` and planning-argument documentation
-  into `man-roxygen` templates, so each is maintained in one place across the
-  twelve planners. The `stats` functions are now imported individually rather
-  than wholesale, and a GitHub Actions workflow runs R CMD check across
-  platforms. None of this changes any computed result.
+  and moved the duplicated `@references`, planning-argument, and `@return`
+  documentation into `man-roxygen` templates, so each is maintained in one place
+  across the twelve planners. The `stats` functions are now imported individually
+  rather than wholesale, an `inst/WORDLIST` curates the domain terms for the
+  spell check enabled by `Language: en-US`, and a GitHub Actions workflow runs
+  R CMD check across platforms. None of this changes any computed result.
