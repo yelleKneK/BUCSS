@@ -126,14 +126,12 @@ ss_buc_rm_anova <- function(F_observed, N, levels_A, levels_B = NULL,
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
   power <- v$power
-  step <- v$step
 
   if (missing(N)) stop("You must specify 'N', which is the total sample size.")
 
   if (is.null(levels_B) && effect != "factor_A") stop("For a one-way within-subjects design ('levels_B' not supplied), the only testable effect is the single factor; keep the default 'effect = \"factor_A\"'. To test 'factor_B' or the interaction, supply 'levels_B'.")
 
   n <- N
-  NCP <- seq(from = 0, to = 100, by = step)
 
   if (is.null(levels_B)) {
     df_numerator <- levels_A - 1
@@ -148,26 +146,18 @@ ss_buc_rm_anova <- function(F_observed, N, levels_A, levels_B = NULL,
   crit_F <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator)
   if (F_observed <= crit_F) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.")
 
-  power_values <- 1 - pf(crit_F, df1 = df_numerator, df2 = df_denominator, ncp = NCP)
-  area_above_F <- 1 - pf(F_observed, df1 = df_numerator, df2 = df_denominator, ncp = NCP)
-  area_between <- power_values - area_above_F
+  ncp_solution <- .solve_ncp_assurance(
+    .tm_f(F_observed, crit_F, df_numerator, df_denominator), assurance)
+  ncp <- ncp_solution$ncp
 
-  TM <- area_between / power_values
-  ncp <- min(NCP[which(abs(TM - assurance) == min(abs(TM - assurance)))])
+  if (ncp == 0) .stop_zero_ncp(ncp_solution$ceiling)
 
-  if (ncp == 0) .stop_zero_ncp(max(TM))
-
-  n_rep <- 2
-  denom_df <- df_numerator * (n_rep - 1)
-  diff <- -1
-  while (diff < 0) {
-    critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
-    powers <- 1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / n) * ncp)
-    diff <- powers - power
-    n_rep <- n_rep + 1
+  power_at <- function(n_rep) {
     denom_df <- df_numerator * (n_rep - 1)
+    critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
+    1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / n) * ncp)
   }
-  output_n <- n_rep - 1
+  output_n <- .smallest_n_for_power(power_at, power)
 
   df_error <- df_numerator * (output_n - 1)
   .bucss_power_result(
@@ -177,7 +167,7 @@ ss_buc_rm_anova <- function(F_observed, N, levels_A, levels_B = NULL,
     ncp = ncp,
     design = "One or two-way within-subjects ANOVA",
     sample_size_unit = "total",
-    assurance_ceiling = max(TM),
+    assurance_ceiling = ncp_solution$ceiling,
     effect = effect,
     inputs = list(F_observed = F_observed, N = N, levels_A = levels_A,
                   levels_B = levels_B, alpha_prior = alpha_prior_input,

@@ -41,10 +41,7 @@
 # "no publication bias" without a degenerate truncation, and 'assurance' or
 # 'power' entered as a percentage (>= 1) is divided by 100 so that, for example,
 # 80 means .80. Returns the (possibly coerced) values; 'alpha_prior_input' is
-# the value the user supplied, echoed back in the result's planning inputs. The
-# grid resolution 'step' is not a user argument; it is read here from
-# getOption("bucss.step", .001) so the planner signatures stay focused on the
-# study design, and is returned for the planner's NCP grid.
+# the value the user supplied, echoed back in the result's planning inputs.
 # call. = FALSE keeps this internal helper out of the error the user sees.
 .validate_planning_inputs <- function(alpha_prior, alpha_planned, assurance,
                                       power) {
@@ -61,11 +58,8 @@
   if (power >= 1) power <- power / 100
   if (power < 0 | power > 1) stop("There is a problem with 'power' (i.e., desired statistical power), please specify as a value between 0 and 1 (the default is .80).", call. = FALSE)
 
-  step <- getOption("bucss.step", 0.001)
-  if (length(step) != 1L || !is.finite(step) || step <= 0 || step >= 1) stop("The 'bucss.step' option (set with options(bucss.step = ...)) must be a single number greater than 0 and less than 1; the default is .001.", call. = FALSE)
-
   list(alpha_prior = alpha_prior, alpha_prior_input = alpha_prior_input,
-       assurance = assurance, power = power, step = step)
+       assurance = assurance, power = power)
 }
 
 # Map common shorthand for the `effect` argument to its canonical value, so a
@@ -92,6 +86,101 @@
     NULL)
   if (!is.null(syn) && key %in% names(syn)) return(syn[[key]])
   match.arg(raw, choices)
+}
+
+# Build the truncated-likelihood mean TM as a function of the noncentrality
+# parameter for the two distributional shapes the planners use. TM(ncp) is the
+# truncated cumulative density evaluated at the observed statistic: the area of
+# the (publication-)truncated noncentral distribution between the critical value
+# and the observed statistic, divided by the power (the untruncated area beyond
+# the critical value). It is monotone decreasing in 'ncp', from its ceiling
+# TM(0) = 1 - p_prior / alpha_prior down to 0. The returned closure is
+# vectorized over 'ncp' (pf()/pt() are), so it serves both uniroot() (scalar
+# calls) and the grid fallback (vector call) in .solve_ncp_assurance().
+#
+# Upper safety bound on the root-finding bracket in .solve_ncp_assurance(). It
+# is far beyond any noncentrality parameter a real prior study implies; reaching
+# it signals a likely input error (or an essentially deterministic prior) rather
+# than a genuine solution, and the solver warns and returns it instead of
+# expanding without bound.
+.bucss_ncp_upper_cap <- 1e7
+
+# .tm_f covers the one-sided noncentral F designs (the ANOVA and regression
+# planners; the single regression coefficient passes the squared t as 'stat'
+# against an F critical value). .tm_t covers the two-sided noncentral t designs
+# (the independent and paired t tests), summing both tails exactly as the 1.x
+# code did.
+.tm_f <- function(stat, crit, df1, df2) {
+  function(ncp) {
+    power <- 1 - pf(crit, df1 = df1, df2 = df2, ncp = ncp)
+    area_above <- 1 - pf(stat, df1 = df1, df2 = df2, ncp = ncp)
+    (power - area_above) / power
+  }
+}
+
+.tm_t <- function(stat, crit, df) {
+  function(ncp) {
+    power <- (1 - pt(crit, df = df, ncp = ncp)) + pt(-crit, df = df, ncp = ncp)
+    area_above <- (1 - pt(stat, df = df, ncp = ncp)) + pt(-stat, df = df, ncp = ncp)
+    (power - area_above) / power
+  }
+}
+
+# Solve TM(ncp) = assurance for the bias and uncertainty adjusted noncentrality
+# parameter. Because TM is monotone decreasing from its ceiling TM(0) to 0, the
+# equation has a unique root whenever 'assurance' is below the ceiling. This root
+# is found directly with uniroot() rather than by selecting the closest value on
+# the fixed 0..100 grid the 1.x code used, so the
+# adjusted parameter is no longer capped at 100 and no longer snapped to the grid
+# resolution. The upper bracket starts at 100 (the historical grid maximum) and
+# doubles until TM falls below assurance, with a generous safety cap so a
+# pathological input cannot loop forever. Returns the root and the ceiling
+# TM(0); the caller routes a zero (at-or-above-ceiling) result through
+# .stop_zero_ncp(), exactly as the grid code routed a selected NCP of 0. A
+# uniroot() failure (it should not occur once bracketed) falls back to a fine
+# grid search over the established bracket. The ceiling it returns equals the
+# 1.x max(TM), so the zero-NCP message is unchanged.
+.solve_ncp_assurance <- function(tm_fun, assurance) {
+  ceiling_tm <- tm_fun(0)
+  if (!is.finite(ceiling_tm)) ceiling_tm <- 1
+  if (ceiling_tm <= assurance) return(list(ncp = 0, ceiling = ceiling_tm))
+
+  f <- function(x) tm_fun(x) - assurance
+  upper <- 100
+  while (upper < .bucss_ncp_upper_cap && f(upper) > 0) upper <- upper * 2
+  if (f(upper) > 0) {
+    warning("The bias and uncertainty corrected noncentrality parameter exceeds ",
+            .bucss_ncp_upper_cap, "; returning ", .bucss_ncp_upper_cap, ". The ",
+            "prior result implies an extremely large effect, so please verify ",
+            "that the observed statistic and 'N' of the prior study are correct.",
+            call. = FALSE)
+    return(list(ncp = .bucss_ncp_upper_cap, ceiling = ceiling_tm))
+  }
+  root <- tryCatch(
+    uniroot(f, lower = 0, upper = upper, tol = .Machine$double.eps^0.5)$root,
+    error = function(e) {
+      grid <- seq(0, upper, length.out = 200001L)
+      tm <- tm_fun(grid)
+      min(grid[which(abs(tm - assurance) == min(abs(tm - assurance)))])
+    }
+  )
+  list(ncp = root, ceiling = ceiling_tm)
+}
+
+# Smallest planned-study sample size (in the design's own unit) whose power
+# reaches 'target'. 'power_at' returns the planned study's power for a candidate
+# size; power is monotone increasing in the size, so the first size at or above
+# 'target' is the answer. 'start' is the smallest admissible size (2 for most
+# designs; larger when nuisance-parameter or predictor degrees of freedom must
+# be absorbed before the error df is positive). Every planner routes its
+# planned-n search through this helper so the incremental search, and its
+# off-by-one, lives in one place rather than being re-derived per design; each
+# planner supplies a 'power_at' closure carrying its own degrees-of-freedom and
+# noncentrality scaling.
+.smallest_n_for_power <- function(power_at, target, start = 2L) {
+  n_rep <- start
+  while (power_at(n_rep) < target) n_rep <- n_rep + 1L
+  n_rep
 }
 
 # Stop with a single, informative error when the bias and uncertainty

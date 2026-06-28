@@ -112,7 +112,6 @@ ss_buc_reg_coef <- function(t_observed, N, p, alpha_prior = .05,
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
   power <- v$power
-  step <- v$step
 
   if (missing(N)) stop("You need to specify 'N', which is the total sample size of the original study.")
   if (N <= 1) stop("Your total sample size is too small.")
@@ -123,31 +122,22 @@ ss_buc_reg_coef <- function(t_observed, N, p, alpha_prior = .05,
   df_numerator <- 1
   df_denominator <- N - p - 1
 
-  NCP <- seq(from = 0, to = 100, by = step)
   value_critical <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator)
 
   if (t_observed^2 <= value_critical) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.")
 
-  power_values <- 1 - pf(value_critical, df1 = df_numerator, df2 = df_denominator, ncp = NCP)
-  area_above_F <- 1 - pf(t_observed^2, df1 = df_numerator, df2 = df_denominator, ncp = NCP)
-  area_between <- power_values - area_above_F
-  TM <- area_between / power_values
+  ncp_solution <- .solve_ncp_assurance(
+    .tm_f(t_observed^2, value_critical, df_numerator, df_denominator), assurance)
+  ncp <- ncp_solution$ncp
 
-  ncp <- min(NCP[which(abs(TM - assurance) == min(abs(TM - assurance)))])
+  if (ncp == 0) .stop_zero_ncp(ncp_solution$ceiling)
 
-  if (ncp == 0) .stop_zero_ncp(max(TM))
-
-  n_rep <- 2 + p + 1
-  denom_df <- n_rep - p - 1
-  diff <- -1
-  while (diff < 0) {
-    critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
-    powers <- 1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / N) * ncp)
-    diff <- powers - power
-    n_rep <- n_rep + 1
+  power_at <- function(n_rep) {
     denom_df <- n_rep - p - 1
+    critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
+    1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / N) * ncp)
   }
-  output_n <- n_rep - 1
+  output_n <- .smallest_n_for_power(power_at, power, start = 2 + p + 1)
 
   df_error <- output_n - p - 1
   .bucss_power_result(
@@ -157,7 +147,7 @@ ss_buc_reg_coef <- function(t_observed, N, p, alpha_prior = .05,
     ncp = ncp,
     design = "Multiple regression: single coefficient",
     sample_size_unit = "total",
-    assurance_ceiling = max(TM),
+    assurance_ceiling = ncp_solution$ceiling,
     inputs = list(t_observed = t_observed, N = N, p = p,
                   alpha_prior = alpha_prior_input, alpha_planned = alpha_planned,
                   assurance = assurance, power = power)

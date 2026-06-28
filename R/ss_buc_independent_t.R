@@ -150,7 +150,6 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
   power <- v$power
-  step <- v$step
 
   if (!missing(N)) {
     if (!is.null(N)) {
@@ -190,67 +189,36 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
     }
   }
 
-  NCP <- seq(from = 0, to = 100, by = step)
-
   ## Rounding up
   value_critical_ru <- qt(1 - alpha_prior / 2, df = DF_ru)
   if (t_observed <= value_critical_ru) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.")
 
-  area_above_critical_value_ru <- 1 - pt(value_critical_ru, df = DF_ru, ncp = NCP)
-  area_other_tail_ru <- pt(-1 * value_critical_ru, df = DF_ru, ncp = NCP)
-  power_values_ru <- area_above_critical_value_ru + area_other_tail_ru
-  area_above_t_ru <- 1 - pt(t_observed, df = DF_ru, ncp = NCP)
-  area_above_t_opp_ru <- pt(-1 * t_observed, df = DF_ru, ncp = NCP)
-  area_between_ru <- (area_above_critical_value_ru - area_above_t_ru) + (area_other_tail_ru - area_above_t_opp_ru)
+  solution_ru <- .solve_ncp_assurance(
+    .tm_t(t_observed, value_critical_ru, DF_ru), assurance)
+  ncp_ru <- solution_ru$ncp
 
-  TM_ru <- area_between_ru / power_values_ru
-  ncp_ru <- min(NCP[which(abs(TM_ru - assurance) == min(abs(TM_ru - assurance)))])
+  if (ncp_ru == 0) .stop_zero_ncp(solution_ru$ceiling)
 
-  if (ncp_ru == 0) .stop_zero_ncp(max(TM_ru))
-
-  n_rep <- 2
-  denom_df <- (2 * n_rep) - 2
-  diff_ru <- -1
-  while (diff_ru < 0) {
-    critical_t <- qt(1 - alpha_planned / 2, df = denom_df)
-    powers1_ru <- 1 - pt(critical_t, df = denom_df, ncp = sqrt(n_rep / n_ru) * ncp_ru)
-    powers2_ru <- pt(-1 * critical_t, df = denom_df, ncp = sqrt(n_rep / n_ru) * ncp_ru)
-    powers_ru <- powers1_ru + powers2_ru
-    diff_ru <- powers_ru - power
-    n_rep <- n_rep + 1
+  power_at <- function(n_rep, n_prior, ncp_b) {
     denom_df <- (2 * n_rep) - 2
+    critical_t <- qt(1 - alpha_planned / 2, df = denom_df)
+    scaled <- sqrt(n_rep / n_prior) * ncp_b
+    (1 - pt(critical_t, df = denom_df, ncp = scaled)) +
+      pt(-1 * critical_t, df = denom_df, ncp = scaled)
   }
-  repn_ru <- n_rep - 1
+  repn_ru <- .smallest_n_for_power(function(k) power_at(k, n_ru, ncp_ru), power)
 
   ## Rounding down
   value_critical_rd <- qt(1 - alpha_prior / 2, df = DF_rd)
   if (t_observed <= value_critical_rd) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.")
 
-  area_above_critical_value_rd <- 1 - pt(value_critical_rd, df = DF_rd, ncp = NCP)
-  area_other_tail_rd <- pt(-1 * value_critical_rd, df = DF_rd, ncp = NCP)
-  power_values_rd <- area_above_critical_value_rd + area_other_tail_rd
-  area_above_t_rd <- 1 - pt(t_observed, df = DF_rd, ncp = NCP)
-  area_above_t_opp_rd <- pt(-1 * t_observed, df = DF_rd, ncp = NCP)
-  area_between_rd <- (area_above_critical_value_rd - area_above_t_rd) + (area_other_tail_rd - area_above_t_opp_rd)
+  solution_rd <- .solve_ncp_assurance(
+    .tm_t(t_observed, value_critical_rd, DF_rd), assurance)
+  ncp_rd <- solution_rd$ncp
 
-  TM_rd <- area_between_rd / power_values_rd
-  ncp_rd <- min(NCP[which(abs(TM_rd - assurance) == min(abs(TM_rd - assurance)))])
+  if (ncp_rd == 0) .stop_zero_ncp(solution_rd$ceiling)
 
-  if (ncp_rd == 0) .stop_zero_ncp(max(TM_rd))
-
-  n_rep <- 2
-  denom_df <- (2 * n_rep) - 2
-  diff_rd <- -1
-  while (diff_rd < 0) {
-    critical_t <- qt(1 - alpha_planned / 2, df = denom_df)
-    powers1_rd <- 1 - pt(critical_t, df = denom_df, ncp = sqrt(n_rep / n_rd) * ncp_rd)
-    powers2_rd <- pt(-1 * critical_t, df = denom_df, ncp = sqrt(n_rep / n_rd) * ncp_rd)
-    powers_rd <- powers1_rd + powers2_rd
-    diff_rd <- powers_rd - power
-    n_rep <- n_rep + 1
-    denom_df <- (2 * n_rep) - 2
-  }
-  repn_rd <- n_rep - 1
+  repn_rd <- .smallest_n_for_power(function(k) power_at(k, n_rd, ncp_rd), power)
 
   output_n <- max(repn_ru, repn_rd)
   df_error <- 2 * output_n - 2
@@ -261,7 +229,7 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
     ncp = min(ncp_ru, ncp_rd),
     design = "Independent t test",
     sample_size_unit = "per group",
-    assurance_ceiling = min(max(TM_ru), max(TM_rd)),
+    assurance_ceiling = min(solution_ru$ceiling, solution_rd$ceiling),
     total_n = 2 * output_n,
     inputs = list(t_observed = t_observed, alpha_prior = alpha_prior_input,
                   alpha_planned = alpha_planned, assurance = assurance,

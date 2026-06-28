@@ -106,9 +106,11 @@ ss_buc_independent_t(t_observed = 3, n = c(50, 55), alpha_prior = .05,
                alpha_planned = .05, power = .80, assurance = .90)
 ```
 
-The corrected plan calls for 1482 per group. This is the value quoted by
-Anderson et al. (2017) and is a vivid illustration of how much publication bias and
-uncertainty can inflate the sample size needed for a dependable replication.
+The corrected plan calls for 1485 per group, a vivid illustration of how much
+publication bias and uncertainty can inflate the sample size needed for a
+dependable replication. Anderson et al. (2017) quoted 1482 for this example
+under the original grid-search method; as of BUCSS 2.0.0 the adjusted
+noncentrality parameter is found by direct root finding, which gives 1485.
 
 ## The function family
 
@@ -132,9 +134,12 @@ prior study with a single test statistic plus the design.
 
 See `vignette("worked-examples", package = "BUCSS")` for one worked example of
 each, `vignette("understanding-assurance", package = "BUCSS")` for how the
-`assurance` and `alpha_prior` settings shape the correction, and
+`assurance` and `alpha_prior` settings shape the correction,
 `vignette("reading-output", package = "BUCSS")` for the print, `tidy()`, and
-`glance()` views of the result.
+`glance()` views of the result, and
+`vignette("planning-replications", package = "BUCSS")` for a worked
+demonstration of why a literature of underpowered studies misleads and how the
+correction repairs the replication sample size.
 
 ## References
 

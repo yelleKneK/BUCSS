@@ -1,5 +1,12 @@
 # BUCSS
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/yelleKneK/BUCSS/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/yelleKneK/BUCSS/actions/workflows/R-CMD-check.yaml)
+[![CRAN status](https://www.r-pkg.org/badges/version/BUCSS)](https://CRAN.R-project.org/package=BUCSS)
+[![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/BUCSS)](https://CRAN.R-project.org/package=BUCSS)
+[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
+<!-- badges: end -->
+
 BUCSS is an R package for implementing Bias and Uncertainty Corrected Sample
 Size planning. BUCSS implements a method of correcting for publication bias and
 uncertainty when planning the sample size of a future study from an original
@@ -19,9 +26,9 @@ Then load the package:
 library(BUCSS)
 ```
 
-The `ss_buc_*` function family described below is the BUCSS 2.0.0 interface.
-Until 2.0.0 reaches CRAN, install the development version from GitHub to use
-these names:
+The `ss_buc_*` function family described below is the current BUCSS interface
+(introduced in 2.0.0). Until it reaches CRAN, install the development version
+from GitHub to use these names:
 
 ``` r
 # install.packages("remotes")
@@ -46,8 +53,11 @@ ss_buc_independent_t(t_observed = 3, n = c(50, 55), alpha_prior = .05,
                alpha_planned = .05, power = .80, assurance = .90)
 ```
 
-This yields a necessary sample size of $n_1=n_2=1482$ per group (i.e.,
-$N=n_1+n_2=2964$).
+This yields a necessary sample size of $n_1=n_2=1485$ per group (i.e.,
+$N=n_1+n_2=2970$). The 2017 paper reported 1482 for this example under the
+original grid-search method; as of BUCSS 2.0.0 the bias and uncertainty adjusted
+noncentrality parameter is found by direct root finding, which gives 1485 (see
+`NEWS.md`).
 
 The functions return a tidy object of class `bucss_power`. It prints a readable
 summary, and because it is an ordinary `data.frame` underneath you can pull the
@@ -57,7 +67,7 @@ two quantities out directly:
 result <- ss_buc_independent_t(t_observed = 3, n = c(50, 55), power = .80,
                          assurance = .90)
 
-result$value[result$term == "necessary_sample_size"]  # 1482
+result$value[result$term == "necessary_sample_size"]  # 1485
 result$value[result$term == "ncp_adjusted"]           # adjusted noncentrality
 ```
 
@@ -67,7 +77,7 @@ one-row data frame with one column per quantity, so you pull a value out by
 name, and `glance()` returns a one-row summary:
 
 ``` r
-tidy(result)$necessary_sample_size  # 1482
+tidy(result)$necessary_sample_size  # 1485
 tidy(result)                        # necessary_sample_size, total_N, ncp_adjusted, ...
 glance(result)
 ```
@@ -83,10 +93,11 @@ between-subjects ANOVA is now split into a one-way planner
 (`ss_buc_one_way_anova()`) and a two-way planner (`ss_buc_factorial_anova()`).
 Each function returns a tidy `bucss_power` object rather than a two-element list.
 
-BUCSS 2.0.0 is not backward compatible with the 1.x API: function names,
-argument names, and the returned object all changed. The old dotted names are
-defunct, so calling one (for example `ss.power.it()`) raises an error naming its
-replacement. To run scripts written for BUCSS 1.x without modification, install
-version 1.2.1 from the
-[CRAN archive](https://cran.r-project.org/src/contrib/Archive/BUCSS/). See the
-`NEWS.md` file for the full list of changes.
+The old dotted names are retained for backward compatibility. As of BUCSS 2.0.0
+each one (for example `ss.power.it()`) is **deprecated**: it still runs, but it
+forwards to its `ss_buc_*` replacement and issues a one-time-per-session warning
+naming the new function. The object it returns keeps the 1.x positional
+extraction working, so legacy code that reads `result[[1]]` (the necessary
+sample size) and `result[[2]]` (the adjusted noncentrality parameter) continues
+to work unchanged. New code should call the `ss_buc_*` functions directly. See
+the `NEWS.md` file for the full list of changes.

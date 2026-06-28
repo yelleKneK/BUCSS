@@ -125,42 +125,29 @@ ss_buc_paired_t <- function(t_observed, N, alpha_prior = .05, alpha_planned = .0
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
   power <- v$power
-  step <- v$step
 
   if (missing(N)) stop("You need to specify a sample size (i.e., the number of pairs) used in the original study.")
   if (N <= 1) stop("Your total sample size is too small.")
 
   DF <- N - 1
-  NCP <- seq(from = 0, to = 100, by = step)
 
   value_critical <- qt(1 - alpha_prior / 2, df = DF)
   if (t_observed <= value_critical) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.")
 
-  area_above_crit <- 1 - pt(value_critical, df = DF, ncp = NCP)
-  area_other_tail <- pt(-1 * value_critical, df = DF, ncp = NCP)
-  power_values <- area_above_crit + area_other_tail
-  area_above_t <- 1 - pt(t_observed, df = DF, ncp = NCP)
-  area_above_t_opp <- pt(-1 * t_observed, df = DF, ncp = NCP)
-  area_between <- (area_above_crit - area_above_t) + (area_other_tail - area_above_t_opp)
+  ncp_solution <- .solve_ncp_assurance(
+    .tm_t(t_observed, value_critical, DF), assurance)
+  ncp <- ncp_solution$ncp
 
-  TM <- area_between / power_values
-  ncp <- min(NCP[which(abs(TM - assurance) == min(abs(TM - assurance)))])
+  if (ncp == 0) .stop_zero_ncp(ncp_solution$ceiling)
 
-  if (ncp == 0) .stop_zero_ncp(max(TM))
-
-  n_rep <- 2
-  denom_df <- n_rep - 1
-  diff <- -1
-  while (diff < 0) {
-    critical_t <- qt(1 - alpha_planned / 2, df = denom_df)
-    powers1 <- 1 - pt(critical_t, df = denom_df, ncp = sqrt(n_rep / N) * ncp)
-    powers2 <- pt(-1 * critical_t, df = denom_df, ncp = sqrt(n_rep / N) * ncp)
-    powers <- powers1 + powers2
-    diff <- powers - power
-    n_rep <- n_rep + 1
+  power_at <- function(n_rep) {
     denom_df <- n_rep - 1
+    critical_t <- qt(1 - alpha_planned / 2, df = denom_df)
+    scaled <- sqrt(n_rep / N) * ncp
+    (1 - pt(critical_t, df = denom_df, ncp = scaled)) +
+      pt(-1 * critical_t, df = denom_df, ncp = scaled)
   }
-  output_n <- n_rep - 1
+  output_n <- .smallest_n_for_power(power_at, power)
 
   df_error <- output_n - 1
   .bucss_power_result(
@@ -170,7 +157,7 @@ ss_buc_paired_t <- function(t_observed, N, alpha_prior = .05, alpha_planned = .0
     ncp = ncp,
     design = "Dependent (paired) t test",
     sample_size_unit = "number of pairs",
-    assurance_ceiling = max(TM),
+    assurance_ceiling = ncp_solution$ceiling,
     inputs = list(t_observed = t_observed, N = N, alpha_prior = alpha_prior_input,
                   alpha_planned = alpha_planned, assurance = assurance,
                   power = power)

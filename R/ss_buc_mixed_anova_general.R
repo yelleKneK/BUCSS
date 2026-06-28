@@ -145,15 +145,12 @@ ss_buc_mixed_anova_general <- function(F_observed, N, df_numerator, num_groups,
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
   power <- v$power
-  step <- v$step
 
   if (missing(N)) stop("You must specify 'N', which is the total sample size.")
   if (missing(df_numerator)) stop("You must specify 'df_numerator', the numerator degrees of freedom for the effect of interest.")
   if (missing(num_groups)) stop("You must specify 'num_groups', the number of between-subjects groups.")
   if (effect == "between_within" && missing(df_num_within)) stop("For 'effect = \"between_within\"' you must specify 'df_num_within', the numerator degrees of freedom of the within-subjects component.")
   if (N < 2 * num_groups) stop("Your prior study 'N' is too small for this design: at least two observations per between-subjects group are required, so 'N' must be at least 2 * 'num_groups'.")
-
-  NCP <- seq(from = 0, to = 100, by = step)
 
   denom_mult <- switch(effect,
                        between_only = 1,
@@ -168,26 +165,18 @@ ss_buc_mixed_anova_general <- function(F_observed, N, df_numerator, num_groups,
   crit_F_rd <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator_rd)
   if (F_observed <= crit_F_rd) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.")
 
-  power_values_rd <- 1 - pf(crit_F_rd, df1 = df_numerator, df2 = df_denominator_rd, ncp = NCP)
-  area_above_F_rd <- 1 - pf(F_observed, df1 = df_numerator, df2 = df_denominator_rd, ncp = NCP)
-  area_between_rd <- power_values_rd - area_above_F_rd
+  solution_rd <- .solve_ncp_assurance(
+    .tm_f(F_observed, crit_F_rd, df_numerator, df_denominator_rd), assurance)
+  ncp_rd <- solution_rd$ncp
 
-  TM_rd <- area_between_rd / power_values_rd
-  ncp_rd <- min(NCP[which(abs(TM_rd - assurance) == min(abs(TM_rd - assurance)))])
+  if (ncp_rd == 0) .stop_zero_ncp(solution_rd$ceiling)
 
-  if (ncp_rd == 0) .stop_zero_ncp(max(TM_rd))
-
-  n_rep <- 2
-  denom_df <- ((n_rep * num_groups) - num_groups) * denom_mult
-  diff_rd <- -1
-  while (diff_rd < 0) {
-    critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
-    powers_rd <- 1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / n_rd) * ncp_rd)
-    diff_rd <- powers_rd - power
-    n_rep <- n_rep + 1
+  power_at <- function(n_rep, n_prior, ncp_b) {
     denom_df <- ((n_rep * num_groups) - num_groups) * denom_mult
+    critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
+    1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / n_prior) * ncp_b)
   }
-  repn_rd <- n_rep - 1
+  repn_rd <- .smallest_n_for_power(function(k) power_at(k, n_rd, ncp_rd), power)
 
   ## Rounding up
   n_ru <- ceiling(N / num_groups)
@@ -197,26 +186,13 @@ ss_buc_mixed_anova_general <- function(F_observed, N, df_numerator, num_groups,
   crit_F_ru <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator_ru)
   if (F_observed <= crit_F_ru) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.")
 
-  power_values_ru <- 1 - pf(crit_F_ru, df1 = df_numerator, df2 = df_denominator_ru, ncp = NCP)
-  area_above_F_ru <- 1 - pf(F_observed, df1 = df_numerator, df2 = df_denominator_ru, ncp = NCP)
-  area_between_ru <- power_values_ru - area_above_F_ru
+  solution_ru <- .solve_ncp_assurance(
+    .tm_f(F_observed, crit_F_ru, df_numerator, df_denominator_ru), assurance)
+  ncp_ru <- solution_ru$ncp
 
-  TM_ru <- area_between_ru / power_values_ru
-  ncp_ru <- min(NCP[which(abs(TM_ru - assurance) == min(abs(TM_ru - assurance)))])
+  if (ncp_ru == 0) .stop_zero_ncp(solution_ru$ceiling)
 
-  if (ncp_ru == 0) .stop_zero_ncp(max(TM_ru))
-
-  n_rep <- 2
-  denom_df <- ((n_rep * num_groups) - num_groups) * denom_mult
-  diff_ru <- -1
-  while (diff_ru < 0) {
-    critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
-    powers_ru <- 1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / n_ru) * ncp_ru)
-    diff_ru <- powers_ru - power
-    n_rep <- n_rep + 1
-    denom_df <- ((n_rep * num_groups) - num_groups) * denom_mult
-  }
-  repn_ru <- n_rep - 1
+  repn_ru <- .smallest_n_for_power(function(k) power_at(k, n_ru, ncp_ru), power)
 
   inputs <- list(F_observed = F_observed, N = N, df_numerator = df_numerator,
                  num_groups = num_groups, alpha_prior = alpha_prior_input,
@@ -233,7 +209,7 @@ ss_buc_mixed_anova_general <- function(F_observed, N, df_numerator, num_groups,
     ncp = min(ncp_rd, ncp_ru),
     design = "Split-plot (mixed) ANOVA (any number of factors)",
     sample_size_unit = "per group",
-    assurance_ceiling = min(max(TM_ru), max(TM_rd)),
+    assurance_ceiling = min(solution_ru$ceiling, solution_rd$ceiling),
     total_n = output_n * num_groups,
     effect = effect,
     inputs = inputs

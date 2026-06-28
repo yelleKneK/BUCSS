@@ -168,14 +168,3 @@ test_that("a prior 'N' too small for the design is rejected with a clear message
                                               df_numerator = 2, df_denominator = 5),
                "too small", fixed = TRUE)
 })
-
-test_that("the bucss.step option outside (0, 1) is rejected", {
-  # 'step' is no longer a user argument; it is read from getOption("bucss.step").
-  old <- options(bucss.step = 0)
-  on.exit(options(old), add = TRUE)
-  expect_error(ss_buc_independent_t(t_observed = 3, n = 20),
-               "bucss.step", fixed = TRUE)
-  options(bucss.step = 1)
-  expect_error(ss_buc_independent_t(t_observed = 3, n = 20),
-               "bucss.step", fixed = TRUE)
-})

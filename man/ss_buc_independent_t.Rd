@@ -205,6 +205,10 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
   305--324.
 
+  Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
+  experiments and analyzing data: A model comparison perspective} (4th ed.).
+  Routledge.
+
   Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
   sample size calculation due to estimating noncentrality. \emph{Communications
   in Statistics: Theory and Methods, 25,} 1595--1610.

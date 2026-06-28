@@ -19,11 +19,9 @@
 #' style. \pkg{DMAR} is a natural companion for effect size estimation,
 #' confidence intervals, and sample size planning across additional frameworks.
 #'
-#' The resolution of the noncentrality-parameter grid the planners search
-#' internally is not a function argument; advanced users can change it with
-#' \code{options(bucss.step = )} (the default is \code{0.001}). Smaller values
-#' are slightly more precise but slower, and the default is appropriate for
-#' essentially all use.
+#' The bias and uncertainty adjusted noncentrality parameter is found by solving
+#' the truncated-likelihood equation directly with \code{\link[stats]{uniroot}},
+#' so it is not capped at any maximum and needs no resolution argument.
 #'
 #' @references
 #' Anderson, S. F., & Kelley, K. (2024). Sample size planning for replication
@@ -35,11 +33,15 @@
 #' for publication bias and uncertainty. \emph{Psychological Science, 28,}
 #' 1547--1562. \doi{10.1177/0956797617723724}
 #'
+#' Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
+#' experiments and analyzing data: A model comparison perspective} (4th ed.).
+#' Routledge.
+#'
 #' @seealso \pkg{DMAR}
 #'
 #' @author Ken Kelley (\email{kkelley@@nd.edu}), Samantha F. Anderson
 #'   (\email{samantha.f.anderson@@asu.edu}), and Scott E. Maxwell
 #'
-#' @importFrom stats pf pt qf qt
+#' @importFrom stats pf pt qf qt uniroot
 #'
 "_PACKAGE"

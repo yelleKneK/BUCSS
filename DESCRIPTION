@@ -7,8 +7,10 @@ Authors@R: c(
            email = "kkelley@nd.edu",
            comment = c(ORCID = "0000-0002-4756-8360")),
     person("Samantha F.", "Anderson", role = "aut",
-           email = "samantha.f.anderson@asu.edu"),
-    person("Scott E.", "Maxwell", role = "aut"))
+           email = "samantha.f.anderson@asu.edu",
+           comment = c(ORCID = "0000-0003-4451-5295")),
+    person("Scott E.", "Maxwell", role = "aut",
+           comment = c(ORCID = "0000-0001-8067-7027")))
 Description: Implements sample size planning for a future study from the summary
     statistics of a prior study, correcting the prior effect for publication bias
     and uncertainty so the planned study attains its target statistical power more
@@ -16,6 +18,11 @@ Description: Implements sample size planning for a future study from the summary
     independent and dependent 't' test, between-subjects, within-subjects, and
     split-plot factorial analysis of variance, and multiple regression. The method
     is described in Anderson, Kelley, and Maxwell (2017) <doi:10.1177/0956797617723724>.
+    The noncentrality parameter underlying the correction is obtained by direct
+    numerical root finding, a more accurate approach than a fixed grid search that
+    also removes an internal upper limit on the parameter. A small number of
+    planned sample sizes therefore differ slightly from versions 1.x; the new
+    values are more accurate.
 License: GPL (>= 3)
 Encoding: UTF-8
 Language: en-US
@@ -28,7 +35,8 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
-URL: https://github.com/yelleKneK/BUCSS, https://designingexperiments.com
+URL: https://github.com/yelleKneK/BUCSS, https://yelleKneK.github.io/BUCSS,
+    https://designingexperiments.com
 BugReports: https://github.com/yelleKneK/BUCSS/issues
 Config/testthat/edition: 3
 RoxygenNote: 7.3.2

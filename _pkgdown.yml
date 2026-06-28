@@ -1,0 +1,52 @@
+url: https://yelleKneK.github.io/BUCSS
+
+template:
+  bootstrap: 5
+
+reference:
+- title: t tests
+  desc: >
+    Independent and dependent (paired) t test designs, that is, the
+    standardized mean difference.
+  contents:
+  - ss_buc_independent_t
+  - ss_buc_paired_t
+- title: Between-subjects ANOVA
+  contents:
+  - ss_buc_one_way_anova
+  - ss_buc_factorial_anova
+  - ss_buc_factorial_anova_general
+- title: Within-subjects ANOVA
+  contents:
+  - ss_buc_rm_anova
+  - ss_buc_rm_anova_general
+- title: Split-plot (mixed) ANOVA
+  contents:
+  - ss_buc_mixed_anova
+  - ss_buc_mixed_anova_general
+- title: Multiple regression
+  contents:
+  - ss_buc_reg_coef
+  - ss_buc_R2
+  - ss_buc_reg_joint
+- title: The result object
+  desc: Working with the tidy bucss_power object the planners return.
+  contents:
+  - print.bucss_power
+  - bucss_tidiers
+- title: Deprecated 1.x functions
+  contents:
+  - bucss-deprecated
+- title: Package overview
+  contents:
+  - BUCSS-package
+
+articles:
+- title: Articles
+  navbar: ~
+  contents:
+  - BUCSS
+  - planning-replications
+  - understanding-assurance
+  - reading-output
+  - worked-examples
