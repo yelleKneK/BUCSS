@@ -19,22 +19,30 @@ but silently ignored and which now functions. The regression tests in
 
 ## Test environments
 
-* local: macOS, R 4.5.2
+* local: macOS (arm64), R 4.5.2
 
-(Before submission, also check on win-builder (devel and release) and R-hub.)
+Before submission this will also be checked on win-builder (devel and release)
+and R-hub.
 
 ## R CMD check results
 
-0 errors | 0 warnings | 2 notes
+0 errors | 0 warnings | NOTEs as described below.
 
-Both NOTEs are environmental rather than package issues and do not appear on a
-clean check machine:
+* "Found the following (possibly) invalid URLs:
+  https://yelleKneK.github.io/BUCSS ... Status: 404". This is the package's
+  pkgdown documentation website, listed in DESCRIPTION (URL) and referenced by
+  the pkgdown configuration. It is hosted on GitHub Pages and is deployed from
+  the package repository. The site is published before this submission, so the
+  URL resolves on the CRAN check machines; a local check run before the site is
+  deployed will report the 404, which is expected and not a package defect.
+* "checking HTML version of manual": the local copy of HTML Tidy is too old and
+  'V8' is unavailable, so the optional HTML validation is skipped. Environmental;
+  it does not appear on a CRAN check machine.
+* "checking for future file timestamps ... unable to verify current time" may
+  also appear when the local machine cannot reach a time server. Environmental;
+  it does not appear on a CRAN check machine.
 
-* "checking for future file timestamps ... unable to verify current time": the
-  local machine could not reach a time server.
-* "checking HTML version of manual": the system copy of HTML Tidy is too old and
-  'V8' is unavailable, so the optional HTML validation and math-rendering checks
-  are skipped.
+There are no other NOTEs. The package was previously on CRAN as version 1.2.1.
 
 ## Reverse dependencies
 
