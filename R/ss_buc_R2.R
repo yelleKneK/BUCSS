@@ -104,6 +104,9 @@
 #'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'
 #' @template references
+#' @references Anderson, S. F. (2021). Using prior information to plan
+#'   appropriately powered regression studies: A tutorial using BUCSS.
+#'   \emph{Psychological Methods, 26,} 513--526. \doi{10.1037/met0000366}
 ss_buc_R2 <- function(F_observed, N, p, alpha_prior = .05,
                              alpha_planned = .05, assurance = .80, power = .80) {
   v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, power)

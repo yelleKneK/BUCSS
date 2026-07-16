@@ -145,10 +145,6 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   replication studies: The devil is in the design. \emph{Psychological
   Methods, 29,} 844--867. \doi{10.1037/met0000520}
 
-  Anderson, S. F. (2021). Using prior information to plan appropriately
-  powered regression studies: A tutorial using BUCSS. \emph{Psychological
-  Methods, 26,} 513--526. \doi{10.1037/met0000366}
-
   Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample-size planning
   for more accurate statistical power: A method adjusting sample effect sizes
   for publication bias and uncertainty. \emph{Psychological Science, 28,}
@@ -166,6 +162,10 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
   sample size calculation due to estimating noncentrality. \emph{Communications
   in Statistics: Theory and Methods, 25,} 1595--1610.
+
+Anderson, S. F. (2021). Using prior information to plan
+  appropriately powered regression studies: A tutorial using BUCSS.
+  \emph{Psychological Methods, 26,} 513--526. \doi{10.1037/met0000366}
 }
 \author{
 Ken Kelley (\email{kkelley@nd.edu}) and
