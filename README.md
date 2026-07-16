@@ -1,4 +1,4 @@
-# BUCSS
+# BUCSS <img src="man/figures/logo.png" align="right" height="139" alt="BUCSS hex logo" />
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/yelleKneK/BUCSS/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/yelleKneK/BUCSS/actions/workflows/R-CMD-check.yaml)
@@ -101,3 +101,15 @@ extraction working, so legacy code that reads `result[[1]]` (the necessary
 sample size) and `result[[2]]` (the adjusted noncentrality parameter) continues
 to work unchanged. New code should call the `ss_buc_*` functions directly. See
 the `NEWS.md` file for the full list of changes.
+
+## Citing `BUCSS`
+
+If you use BUCSS, please cite the package, which credits the software, its
+authors, and the version you used:
+
+> Kelley, K., Anderson, S. F., &amp; Maxwell, S. E. (2026). *BUCSS: Bias and
+> Uncertainty Corrected Sample Size* (R package version 2.0.0).
+> <https://CRAN.R-project.org/package=BUCSS>
+
+For the full set of references, including the methodological articles the
+correction relies on, run `citation("BUCSS")` in R.

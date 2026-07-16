@@ -31,6 +31,13 @@ target, for two reasons.
 Both forces push the same way: they make the prior effect look bigger and more
 certain than it is, so a study planned at face value tends to be underpowered.
 
+The uncertainty piece is easy to underestimate. Even with no publication bias,
+the sample size needed for a target power is a nonlinear function of the effect
+size, so an overestimate reduces power (by planning too small a study) by more
+than an equally sized underestimate raises it (by planning a larger one).
+Symmetric error in the estimate therefore produces an asymmetric loss of power,
+which is why correcting for uncertainty, not just bias, matters.
+
 ## What BUCSS does
 
 BUCSS ("Bias and Uncertainty Corrected Sample Size") corrects the prior study's

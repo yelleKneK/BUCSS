@@ -35,6 +35,17 @@ about 80% of replications the realized power will be at least 80%.
 * `assurance < .5` is not recommended (the functions warn), because it implies
   under a 50% chance of reaching the desired power.
 
+Why does uncertainty call for a larger sample at all? Suppose for a moment there
+were no publication bias, so the reported effect were equally likely to fall
+above or below the true value. The two kinds of error do not cancel, because the
+sample size needed for a given level of power is a nonlinear function of the
+effect size. An overestimate leads you to plan too small a study and cuts power
+sharply, while an equally sized underestimate leads you to plan a larger study
+and raises power by less. Averaged over the ways a noisy estimate can come out,
+planning at face value loses more power than it gains, so protecting against
+uncertainty means shifting the plan toward a larger sample. That is exactly what
+assurance above .5 does.
+
 Watch the recommended per-group sample size climb as assurance rises, for a
 prior independent *t* test with *t* = 3.00 and 20 per group:
 
@@ -101,6 +112,16 @@ larger value assumes a more permissive literature and therefore less severe
 bias; `alpha_prior = 1` assumes no publication bias at all, which is appropriate
 for a prior study that was never subject to the file drawer, such as a pilot
 study.
+
+A dissertation study is a similar case, since it is typically completed and
+defended regardless of how the results turn out. Even a pilot study is not
+guaranteed to be bias-free, though. If the researchers would have gone on to the
+full study only after a promising pilot result, say *p* < .25, then the pilot
+faced an informal filter of its own, and an `alpha_prior` between .05 and 1 may
+describe it better than either extreme. An intermediate value above .05 also
+suits a prior effect that was not the original study's focus, such as a
+secondary effect reported alongside a study's main result, which usually faced a
+weaker publication filter than the headline effect did.
 
 Note that `alpha_prior` is not a confidence level and is distinct from
 `alpha_planned`, which is the Type I error rate of the study you are designing.
