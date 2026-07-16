@@ -221,6 +221,10 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for replication
 studies: The devil is in the design. *Psychological Methods, 29*, 844--867.
 https://doi.org/10.1037/met0000520
 
+Anderson, S. F., & Maxwell, S. E. (2017). Addressing the "replication crisis":
+Using original studies to design replication studies with appropriate
+statistical power. *Multivariate Behavioral Research, 52*, 305--324.
+
 Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample-size planning for
 more accurate statistical power: A method adjusting sample effect sizes for
 publication bias and uncertainty. *Psychological Science, 28*, 1547--1562.

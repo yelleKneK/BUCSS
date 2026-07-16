@@ -137,6 +137,9 @@ ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2,
 
 ## Multiple regression
 
+Anderson (2021) is a step-by-step tutorial for planning regression studies with
+BUCSS, and is the best starting point for the three regression planners below.
+
 For a single regression coefficient, supply the *t* statistic for that
 coefficient, the prior sample size, and the number of predictors `p`. A prior
 study with *N* = 150 and 3 predictors reported *t* = 3.00 for one coefficient.
@@ -165,6 +168,10 @@ ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2,
 ```
 
 ## References
+
+Anderson, S. F. (2021). Using prior information to plan appropriately powered
+regression studies: A tutorial using BUCSS. *Psychological Methods, 26*,
+513--526. https://doi.org/10.1037/met0000366
 
 Anderson, S. F., & Kelley, K. (2024). Sample size planning for replication
 studies: The devil is in the design. *Psychological Methods, 29*, 844--867.
