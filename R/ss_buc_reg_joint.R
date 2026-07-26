@@ -119,13 +119,14 @@ ss_buc_reg_joint <- function(F_observed, N, p, p_joint, alpha_prior = .05,
   power <- v$power
 
   if (missing(N)) stop("You need to specify 'N', which is the total sample size of the original study.")
-  if (N <= 1) stop("Your total sample size is too small.")
   if (missing(p)) stop("You need to specify 'p', the number of predictors in the model.")
-  if (p < 1) stop("Your number of predictors is too small.")
+  .check_scalar_finite(F_observed, "F_observed")
+  .check_count(N, "N", min = 2)
+  .check_count(p, "p", min = 1)
   if (N - p - 1 < 1) stop("The combination of your sample size and number of predictors leads to 0 or negative degrees of freedom.")
   if (missing(p_joint)) stop("You need to specify 'p_joint', the number of predictors tested jointly.")
+  .check_count(p_joint, "p_joint", min = 1)
   if (p_joint > p) stop("The number of tested predictors cannot exceed the number of total predictors.")
-  if (p_joint < 1) stop("The number of jointly tested predictors cannot be less than 1.")
 
   df_numerator <- p_joint
   df_denominator <- N - p - 1

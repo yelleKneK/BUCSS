@@ -119,6 +119,9 @@ ss_buc_rm_anova_general <- function(F_observed, N, df_numerator, alpha_prior = .
 
   if (missing(N)) stop("You must specify 'N', which is the total sample size.")
   if (missing(df_numerator)) stop("You must specify 'df_numerator', the numerator degrees of freedom for the effect of interest.")
+  .check_scalar_finite(F_observed, "F_observed")
+  .check_count(N, "N", min = 2)
+  .check_count(df_numerator, "df_numerator", min = 1)
 
   n <- N
 

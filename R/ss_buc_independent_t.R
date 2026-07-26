@@ -151,9 +151,13 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
   assurance <- v$assurance
   power <- v$power
 
+  .check_scalar_finite(t_observed, "t_observed")
+
   if (!missing(N)) {
     if (!is.null(N)) {
-      if (N <= 2) stop("Your total sample size is too small.")
+      # The round-down branch has df = 2 * floor(N / 2) - 2, so N = 3 would
+      # already drive the error df to 0; the smallest workable total is 4.
+      .check_count(N, "N", min = 4)
       if (!missing(n)) stop("Because you specified 'N' you should not specify 'n'.")
       if (missing(n)) {
         n_ru <- ceiling(N / 2)
@@ -169,6 +173,7 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
 
   if (missing(N)) {
     if (!(length(n) %in% c(1, 2))) stop("The value of 'n' should be a vector of length two or a single value (for equal group sample sizes).")
+    for (n_i in n) .check_count(n_i, "n", min = 2)
     if (length(n) == 2) {
       n_1 <- n[1]
       n_2 <- n[2]

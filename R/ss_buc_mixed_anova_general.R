@@ -150,6 +150,11 @@ ss_buc_mixed_anova_general <- function(F_observed, N, df_numerator, num_groups,
   if (missing(df_numerator)) stop("You must specify 'df_numerator', the numerator degrees of freedom for the effect of interest.")
   if (missing(num_groups)) stop("You must specify 'num_groups', the number of between-subjects groups.")
   if (effect == "between_within" && missing(df_num_within)) stop("For 'effect = \"between_within\"' you must specify 'df_num_within', the numerator degrees of freedom of the within-subjects component.")
+  .check_scalar_finite(F_observed, "F_observed")
+  .check_count(N, "N", min = 2)
+  .check_count(num_groups, "num_groups", min = 2)
+  .check_count(df_numerator, "df_numerator", min = 1)
+  if (effect == "between_within") .check_count(df_num_within, "df_num_within", min = 1)
   if (N < 2 * num_groups) stop("Your prior study 'N' is too small for this design: at least two observations per between-subjects group are required, so 'N' must be at least 2 * 'num_groups'.")
 
   denom_mult <- switch(effect,

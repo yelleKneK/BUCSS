@@ -117,9 +117,10 @@ ss_buc_reg_coef <- function(t_observed, N, p, alpha_prior = .05,
   power <- v$power
 
   if (missing(N)) stop("You need to specify 'N', which is the total sample size of the original study.")
-  if (N <= 1) stop("Your total sample size is too small.")
   if (missing(p)) stop("You need to specify 'p', the number of predictors in the model.")
-  if (p < 1) stop("Your number of predictors is too small.")
+  .check_scalar_finite(t_observed, "t_observed")
+  .check_count(N, "N", min = 2)
+  .check_count(p, "p", min = 1)
   if (N - p - 1 < 1) stop("The combination of your sample size and number of predictors leads to 0 or negative degrees of freedom.")
 
   df_numerator <- 1

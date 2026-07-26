@@ -180,6 +180,44 @@ test_that("the regression planners require 'p' (and 'p_joint')", {
                "specify 'p_joint'", fixed = TRUE)
 })
 
+test_that("non-scalar, non-finite, and non-whole inputs get friendly errors", {
+  # A fractional predictor count used to flow through the planned-n search and
+  # return a non-integer "necessary sample size" (624.5).
+  expect_error(ss_buc_reg_coef(t_observed = 3, N = 150, p = 2.5),
+               "whole number", fixed = TRUE)
+  expect_error(ss_buc_one_way_anova(F_observed = 5, N = 120.5, levels_A = 3),
+               "whole number", fixed = TRUE)
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20.5),
+               "whole number", fixed = TRUE)
+  # NA, Inf, and vector inputs used to die inside base R ("missing value where
+  # TRUE/FALSE needed", "the condition has length > 1").
+  expect_error(ss_buc_paired_t(t_observed = NA, N = 40),
+               "single finite number", fixed = TRUE)
+  expect_error(ss_buc_independent_t(t_observed = Inf, n = 20),
+               "single finite number", fixed = TRUE)
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, assurance = NA),
+               "single finite number", fixed = TRUE)
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20,
+                                    alpha_prior = c(.05, .10)),
+               "single finite number", fixed = TRUE)
+  expect_error(ss_buc_paired_t(t_observed = 3, N = NA),
+               "whole number", fixed = TRUE)
+})
+
+test_that("degenerate sample sizes are rejected before any qt/qf call", {
+  # rm designs: N = 1 used to reach qf() with 0 denominator df (NaN) and die
+  # with "missing value where TRUE/FALSE needed".
+  expect_error(ss_buc_rm_anova(F_observed = 200, N = 1, levels_A = 3,
+                               alpha_prior = 1, assurance = .5),
+               "at least 2", fixed = TRUE)
+  expect_error(ss_buc_rm_anova_general(F_observed = 200, N = 1,
+                                       df_numerator = 2),
+               "at least 2", fixed = TRUE)
+  # independent t: N = 3 used to reach qt() with 0 df on the round-down branch.
+  expect_error(ss_buc_independent_t(t_observed = 3, N = 3),
+               "at least 4", fixed = TRUE)
+})
+
 test_that("a prior 'N' too small for the design is rejected with a clear message", {
   expect_error(ss_buc_one_way_anova(F_observed = 5, N = 5, levels_A = 4),
                "too small", fixed = TRUE)

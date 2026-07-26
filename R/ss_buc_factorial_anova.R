@@ -152,6 +152,10 @@ ss_buc_factorial_anova <- function(F_observed, N, levels_A, levels_B,
 
   if (missing(levels_A)) stop("You must specify 'levels_A', the number of levels of the first factor.")
   if (missing(levels_B) || is.null(levels_B)) stop("You must specify 'levels_B' for a two-way design. For a single between-subjects factor, use 'ss_buc_one_way_anova'.")
+  .check_scalar_finite(F_observed, "F_observed")
+  .check_count(N, "N", min = 2)
+  .check_count(levels_A, "levels_A", min = 2)
+  .check_count(levels_B, "levels_B", min = 2)
 
   cells <- levels_A * levels_B
   if (N < 2 * cells) stop("Your prior study 'N' is too small for this design: at least two observations per cell are required, so 'N' must be at least 2 * 'levels_A' * 'levels_B'.")

@@ -141,6 +141,10 @@ ss_buc_mixed_anova <- function(F_observed, N, levels_between, levels_within,
   if (missing(N)) stop("You must specify 'N', which is the total sample size.")
   if (missing(levels_within)) stop("You must specify the number of levels of the within-subjects factor. If there is no within-subjects factor, use the between-subjects approach.")
   if (missing(levels_between)) stop("You must specify the number of levels of the between-subjects factor. If there is no between-subjects factor, use the within-subjects approach.")
+  .check_scalar_finite(F_observed, "F_observed")
+  .check_count(N, "N", min = 2)
+  .check_count(levels_between, "levels_between", min = 2)
+  .check_count(levels_within, "levels_within", min = 2)
   if (N < 2 * levels_between) stop("Your prior study 'N' is too small for this design: at least two observations per between-subjects cell are required, so 'N' must be at least 2 * 'levels_between'.")
 
   ## Rounding down

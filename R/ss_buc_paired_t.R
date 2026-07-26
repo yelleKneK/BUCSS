@@ -127,7 +127,8 @@ ss_buc_paired_t <- function(t_observed, N, alpha_prior = .05, alpha_planned = .0
   power <- v$power
 
   if (missing(N)) stop("You need to specify a sample size (i.e., the number of pairs) used in the original study.")
-  if (N <= 1) stop("Your total sample size is too small.")
+  .check_scalar_finite(t_observed, "t_observed")
+  .check_count(N, "N", min = 2)
 
   DF <- N - 1
 

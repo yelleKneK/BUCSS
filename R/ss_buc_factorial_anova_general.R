@@ -162,7 +162,12 @@ ss_buc_factorial_anova_general <- function(F_observed, N, cells, df_numerator,
   if (missing(df_numerator)) stop("You must specify 'df_numerator', the numerator degrees of freedom for the effect of interest.")
 
   if (missing(df_denominator)) stop("You must specify 'df_denominator', the denominator (error) degrees of freedom for the effect of interest in the prior study.")
+  .check_scalar_finite(F_observed, "F_observed")
+  .check_count(N, "N", min = 2)
+  .check_count(cells, "cells", min = 2)
+  .check_count(df_numerator, "df_numerator", min = 1)
   if (df_denominator <= 0) stop("'df_denominator' must be a positive number.")
+  .check_count(df_denominator, "df_denominator", min = 1)
 
   nuisance_df <- (N - cells) - df_denominator
   if (nuisance_df < 0) stop("'df_denominator' cannot exceed 'N' - 'cells', which is the residual degrees of freedom when the cell means are the only estimated parameters. Check 'N', 'cells', and 'df_denominator'.")

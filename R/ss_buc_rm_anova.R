@@ -130,6 +130,11 @@ ss_buc_rm_anova <- function(F_observed, N, levels_A, levels_B = NULL,
   if (missing(N)) stop("You must specify 'N', which is the total sample size.")
 
   if (is.null(levels_B) && effect != "factor_A") stop("For a one-way within-subjects design ('levels_B' not supplied), the only testable effect is the single factor; keep the default 'effect = \"factor_A\"'. To test 'factor_B' or the interaction, supply 'levels_B'.")
+  if (missing(levels_A)) stop("You must specify 'levels_A', the number of levels of the within-subjects factor.")
+  .check_scalar_finite(F_observed, "F_observed")
+  .check_count(N, "N", min = 2)
+  .check_count(levels_A, "levels_A", min = 2)
+  if (!is.null(levels_B)) .check_count(levels_B, "levels_B", min = 2)
 
   n <- N
 

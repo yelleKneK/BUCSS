@@ -35,6 +35,29 @@
   out
 }
 
+# Check that a value is a single finite number, so a typo (NA, Inf, a vector)
+# gets a friendly error naming the argument rather than a cryptic base-R
+# condition failure ("missing value where TRUE/FALSE needed", "the condition
+# has length > 1"). Used for the observed statistic and, via
+# .validate_planning_inputs(), the four planning inputs.
+.check_scalar_finite <- function(x, name) {
+  if (!is.numeric(x) || length(x) != 1L || !is.finite(x))
+    stop("'", name, "' must be a single finite number.", call. = FALSE)
+  invisible(x)
+}
+
+# Check that a design count (a sample size, number of levels, cells, groups,
+# predictors, or degrees of freedom) is a single finite whole number of at
+# least 'min'. Guards against inputs like p = 2.5, which would otherwise flow
+# through the planned-n search and return a non-integer "sample size".
+.check_count <- function(x, name, min = 1) {
+  if (!is.numeric(x) || length(x) != 1L || !is.finite(x) || x != floor(x))
+    stop("'", name, "' must be a single whole number.", call. = FALSE)
+  if (x < min)
+    stop("'", name, "' must be at least ", min, ".", call. = FALSE)
+  invisible(x)
+}
+
 # Validate the planning inputs shared by every ss_buc_* function and apply the
 # documented coercions, so the checks stay identical across all planners. The
 # three coercions are load-bearing: 'alpha_prior == 1' becomes .999 to model
@@ -45,6 +68,10 @@
 # call. = FALSE keeps this internal helper out of the error the user sees.
 .validate_planning_inputs <- function(alpha_prior, alpha_planned, assurance,
                                       power) {
+  .check_scalar_finite(alpha_prior, "alpha_prior")
+  .check_scalar_finite(alpha_planned, "alpha_planned")
+  .check_scalar_finite(assurance, "assurance")
+  .check_scalar_finite(power, "power")
   if (alpha_prior > 1 | alpha_prior <= 0) stop("There is a problem with 'alpha_prior' of the prior study (i.e., the Type I error rate), please specify as a value between 0 and 1 (the default is .05).", call. = FALSE)
   alpha_prior_input <- alpha_prior
   if (alpha_prior == 1) alpha_prior <- .999

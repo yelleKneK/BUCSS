@@ -181,6 +181,16 @@ fixes").
   `p_joint`) and a prior `N` too small for the design (fewer than two
   observations per cell or group) are now reported with an informative message.
 
+* Every planner now validates that its observed statistic is a single finite
+  number and that its design counts (`n`, `N`, levels, `cells`, `num_groups`,
+  `p`, `p_joint`, prior degrees of freedom) are single whole numbers, naming
+  the offending argument. In 1.x a fractional count could flow through the
+  search and return a non-integer "sample size" (`p = 2.5` returned 624.5),
+  and `NA`, infinite, or vector inputs died inside base R with "missing value
+  where TRUE/FALSE needed" or "the condition has length > 1". A within-subjects
+  `N` of 1, or an independent-samples total `N` below 4, is likewise rejected
+  up front instead of reaching `qt()`/`qf()` with zero degrees of freedom.
+
 ## Documentation
 
 * Added the reference Maxwell, Delaney, and Kelley (2027, *Designing Experiments

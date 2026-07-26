@@ -134,6 +134,9 @@ ss_buc_one_way_anova <- function(F_observed, N, levels_A,
 
   if (missing(N)) stop("You must specify 'N', which is the total sample size.")
   if (missing(levels_A)) stop("You must specify 'levels_A', the number of groups.")
+  .check_scalar_finite(F_observed, "F_observed")
+  .check_count(N, "N", min = 2)
+  .check_count(levels_A, "levels_A", min = 2)
 
   cells <- levels_A
   if (N < 2 * cells) stop("Your prior study 'N' is too small for this design: at least two observations per group are required, so 'N' must be at least 2 * 'levels_A'.")
