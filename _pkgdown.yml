@@ -12,19 +12,23 @@ reference:
   - ss_buc_independent_t
   - ss_buc_paired_t
 - title: Between-Subjects ANOVA
+  desc: One-way, two-way, and general between-subjects designs, planned per group or per cell.
   contents:
   - ss_buc_one_way_anova
   - ss_buc_factorial_anova
   - ss_buc_factorial_anova_general
 - title: Within-Subjects ANOVA
+  desc: Repeated measures designs, planned on the total number of subjects.
   contents:
   - ss_buc_rm_anova
   - ss_buc_rm_anova_general
 - title: Split-Plot (Mixed) ANOVA
+  desc: Designs crossing a between-subjects factor with a within-subjects factor.
   contents:
   - ss_buc_mixed_anova
   - ss_buc_mixed_anova_general
 - title: Multiple Regression
+  desc: A single coefficient, the omnibus model R2, or a joint subset of predictors.
   contents:
   - ss_buc_reg_coef
   - ss_buc_R2
@@ -34,10 +38,13 @@ reference:
   contents:
   - print.bucss_power
   - bucss_tidiers
+  - planning_sentence
 - title: Deprecated 1.x Functions
+  desc: The dot-named 1.x API, kept working as thin wrappers around the ss_buc_* planners.
   contents:
   - bucss-deprecated
 - title: Package Overview
+  desc: The package-level help page, with the method and its references.
   contents:
   - BUCSS-package
 

@@ -83,6 +83,16 @@
 #'   desired level of assurance. We encourage users to make the adjustments as
 #'   minimal as possible.
 #'
+#'   The returned \code{actual_power} is the power the planned study
+#'   attains at the returned sample size, evaluated at the returned
+#'   (adjusted) noncentrality parameter. For the designs that round the prior
+#'   study's implied cell size both up and down (the conservative two-sided
+#'   rounding), the returned sample size is the larger of the two branch
+#'   answers while the returned noncentrality parameter is the smaller, so
+#'   \code{actual_power} is evaluated under the more conservative branch and
+#'   is a lower bound on the power the plan achieves; for the single-branch
+#'   designs it is exact. It always meets or exceeds \code{desired_power}.
+#'
 #'   \code{ss_buc_one_way_anova} assumes that the planned study will have equal
 #'   \emph{n}. Unequal \emph{n} in the previous study is handled in the
 #'   following way for between-subjects ANOVA designs. If the user enters an
@@ -111,7 +121,7 @@
 #'
 #' @examples
 #' result <- ss_buc_one_way_anova(F_observed = 5, N = 120, levels_A = 4,
-#'   alpha_prior = .05, alpha_planned = .05, assurance = .80, power = .80)
+#'   alpha_prior = .05, alpha_planned = .05, assurance = .80, desired_power = .80)
 #' result
 #'
 #' # Requesting more assurance than the prior result can support stops with an
@@ -125,21 +135,21 @@
 #' @template references
 ss_buc_one_way_anova <- function(F_observed, N, levels_A,
                                  alpha_prior = .05, alpha_planned = .05,
-                                 assurance = .80, power = .80) {
-  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, power)
+                                 assurance = .80, desired_power = .80) {
+  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, desired_power)
   alpha_prior <- v$alpha_prior
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
-  power <- v$power
+  desired_power <- v$desired_power
 
-  if (missing(N)) stop("You must specify 'N', which is the total sample size.")
-  if (missing(levels_A)) stop("You must specify 'levels_A', the number of groups.")
+  if (missing(N)) stop("You must specify 'N', which is the total sample size.", call. = FALSE)
+  if (missing(levels_A)) stop("You must specify 'levels_A', the number of groups.", call. = FALSE)
   .check_scalar_finite(F_observed, "F_observed")
   .check_count(N, "N", min = 2)
   .check_count(levels_A, "levels_A", min = 2)
 
   cells <- levels_A
-  if (N < 2 * cells) stop("Your prior study 'N' is too small for this design: at least two observations per group are required, so 'N' must be at least 2 * 'levels_A'.")
+  if (N < 2 * cells) stop("Your prior study 'N' is too small for this design: at least two observations per group are required, so 'N' must be at least 2 * 'levels_A'.", call. = FALSE)
   df_numerator <- levels_A - 1
 
   ## Rounding up
@@ -148,7 +158,7 @@ ss_buc_one_way_anova <- function(F_observed, N, levels_A,
   df_denominator_ru <- N_ru - cells
 
   crit_F_ru <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator_ru)
-  if (F_observed <= crit_F_ru) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.")
+  if (F_observed <= crit_F_ru) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.", call. = FALSE)
 
   solution_ru <- .solve_ncp_assurance(
     .tm_f(F_observed, crit_F_ru, df_numerator, df_denominator_ru), assurance)
@@ -161,7 +171,7 @@ ss_buc_one_way_anova <- function(F_observed, N, levels_A,
     critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
     1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / n_prior) * ncp_b)
   }
-  repn_ru <- .smallest_n_for_power(function(k) power_at(k, n_ru, ncp_ru), power)
+  repn_ru <- .smallest_n_for_power(function(k) power_at(k, n_ru, ncp_ru), desired_power)
 
   ## Rounding down
   n_rd <- floor(N / cells)
@@ -169,7 +179,7 @@ ss_buc_one_way_anova <- function(F_observed, N, levels_A,
   df_denominator_rd <- N_rd - cells
 
   crit_F_rd <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator_rd)
-  if (F_observed <= crit_F_rd) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.")
+  if (F_observed <= crit_F_rd) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.", call. = FALSE)
 
   solution_rd <- .solve_ncp_assurance(
     .tm_f(F_observed, crit_F_rd, df_numerator, df_denominator_rd), assurance)
@@ -177,12 +187,16 @@ ss_buc_one_way_anova <- function(F_observed, N, levels_A,
 
   if (ncp_rd == 0) .stop_zero_ncp(solution_rd$ceiling)
 
-  repn_rd <- .smallest_n_for_power(function(k) power_at(k, n_rd, ncp_rd), power)
+  repn_rd <- .smallest_n_for_power(function(k) power_at(k, n_rd, ncp_rd), desired_power)
 
   output_n <- max(repn_ru, repn_rd)
   df_error <- output_n * cells - cells
+  actual_power <- if (ncp_rd <= ncp_ru) power_at(output_n, n_rd, ncp_rd) else
+    power_at(output_n, n_ru, ncp_ru)
   .bucss_power_result(
     sample_size = output_n,
+    size_term = "necessary_n_per_group",
+    actual_power = actual_power,
     df_effect = df_numerator,
     df_error = df_error,
     ncp = min(ncp_rd, ncp_ru),
@@ -192,6 +206,6 @@ ss_buc_one_way_anova <- function(F_observed, N, levels_A,
     total_n = output_n * levels_A,
     inputs = list(F_observed = F_observed, N = N, levels_A = levels_A,
                   alpha_prior = alpha_prior_input, alpha_planned = alpha_planned,
-                  assurance = assurance, power = power)
+                  assurance = assurance, desired_power = desired_power)
   )
 }

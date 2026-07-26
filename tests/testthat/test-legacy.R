@@ -8,7 +8,7 @@
 legacy_pairs <- list(
   it = list(
     old = quote(ss.power.it(t.observed = 3, n = 20, alpha.prior = .05, assurance = .80, power = .80)),
-    new = quote(ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05, assurance = .80, power = .80))),
+    new = quote(ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05, assurance = .80, desired_power = .80))),
   dt = list(
     old = quote(ss.power.dt(t.observed = 3, N = 40)),
     new = quote(ss_buc_paired_t(t_observed = 3, N = 40))),
@@ -89,8 +89,8 @@ test_that("the legacy 'step' argument is accepted and ignored", {
 })
 
 test_that("bucss_power keeps 1.x positional extraction working", {
-  r <- ss_buc_independent_t(t_observed = 3, n = 20, assurance = .80, power = .80)
-  expect_identical(r[[1]], r$value[r$term == "necessary_sample_size"])
+  r <- ss_buc_independent_t(t_observed = 3, n = 20, assurance = .80, desired_power = .80)
+  expect_identical(r[[1]], r$value[r$term %in% BUCSS:::.BUCSS_SIZE_TERMS][1])
   expect_identical(r[[2]], r$value[r$term == "ncp_adjusted"])
   # Named/column access is unaffected by the [[ method.
   expect_identical(r[["value"]], r$value)

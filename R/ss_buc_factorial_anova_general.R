@@ -98,6 +98,16 @@
 #'   desired level of assurance. We encourage users to make the adjustments as
 #'   minimal as possible.
 #'
+#'   The returned \code{actual_power} is the power the planned study
+#'   attains at the returned sample size, evaluated at the returned
+#'   (adjusted) noncentrality parameter. For the designs that round the prior
+#'   study's implied cell size both up and down (the conservative two-sided
+#'   rounding), the returned sample size is the larger of the two branch
+#'   answers while the returned noncentrality parameter is the smaller, so
+#'   \code{actual_power} is evaluated under the more conservative branch and
+#'   is a lower bound on the power the plan achieves; for the single-branch
+#'   designs it is exact. It always meets or exceeds \code{desired_power}.
+#'
 #'   \code{ss_buc_factorial_anova_general} assumes that the planned study will
 #'   have equal \emph{n}. Unequal \emph{n} in the previous study is handled in
 #'   the following way for between-subjects ANOVA designs. If the user enters an
@@ -135,7 +145,7 @@
 #' # omnibus result from ss_buc_factorial_anova (here 120 - 6 = 114).
 #' result <- ss_buc_factorial_anova_general(F_observed = 5, N = 120, cells = 6,
 #'   df_numerator = 2, df_denominator = 114, alpha_prior = .05,
-#'   alpha_planned = .05, assurance = .80, power = .80)
+#'   alpha_planned = .05, assurance = .80, desired_power = .80)
 #' result
 #'
 #' # Requesting more assurance than the prior result can support stops with an
@@ -150,28 +160,28 @@
 ss_buc_factorial_anova_general <- function(F_observed, N, cells, df_numerator,
                                            df_denominator, alpha_prior = .05,
                                            alpha_planned = .05, assurance = .80,
-                                           power = .80) {
-  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, power)
+                                           desired_power = .80) {
+  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, desired_power)
   alpha_prior <- v$alpha_prior
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
-  power <- v$power
+  desired_power <- v$desired_power
 
-  if (missing(N)) stop("You must specify 'N', which is the total sample size.")
-  if (missing(cells)) stop("You must specify 'cells', the number of cells (groups) in the between-subjects design.")
-  if (missing(df_numerator)) stop("You must specify 'df_numerator', the numerator degrees of freedom for the effect of interest.")
+  if (missing(N)) stop("You must specify 'N', which is the total sample size.", call. = FALSE)
+  if (missing(cells)) stop("You must specify 'cells', the number of cells (groups) in the between-subjects design.", call. = FALSE)
+  if (missing(df_numerator)) stop("You must specify 'df_numerator', the numerator degrees of freedom for the effect of interest.", call. = FALSE)
 
-  if (missing(df_denominator)) stop("You must specify 'df_denominator', the denominator (error) degrees of freedom for the effect of interest in the prior study.")
+  if (missing(df_denominator)) stop("You must specify 'df_denominator', the denominator (error) degrees of freedom for the effect of interest in the prior study.", call. = FALSE)
   .check_scalar_finite(F_observed, "F_observed")
   .check_count(N, "N", min = 2)
   .check_count(cells, "cells", min = 2)
   .check_count(df_numerator, "df_numerator", min = 1)
-  if (df_denominator <= 0) stop("'df_denominator' must be a positive number.")
+  if (df_denominator <= 0) stop("'df_denominator' must be a positive number.", call. = FALSE)
   .check_count(df_denominator, "df_denominator", min = 1)
 
   nuisance_df <- (N - cells) - df_denominator
-  if (nuisance_df < 0) stop("'df_denominator' cannot exceed 'N' - 'cells', which is the residual degrees of freedom when the cell means are the only estimated parameters. Check 'N', 'cells', and 'df_denominator'.")
-  if ((floor(N / cells) - 1) * cells - nuisance_df < 1) stop("Your prior study 'N' is too small for this design: after rounding the per-cell sample size down, no error degrees of freedom remain. Increase 'N', or reduce the nuisance parameters implied by 'df_denominator'.")
+  if (nuisance_df < 0) stop("'df_denominator' cannot exceed 'N' - 'cells', which is the residual degrees of freedom when the cell means are the only estimated parameters. Check 'N', 'cells', and 'df_denominator'.", call. = FALSE)
+  if ((floor(N / cells) - 1) * cells - nuisance_df < 1) stop("Your prior study 'N' is too small for this design: after rounding the per-cell sample size down, no error degrees of freedom remain. Increase 'N', or reduce the nuisance parameters implied by 'df_denominator'.", call. = FALSE)
 
   # Smallest planned per-cell n whose denominator df is still positive once the
   # nuisance parameters are carried through. Reduces to 2 when nuisance_df = 0.
@@ -183,7 +193,7 @@ ss_buc_factorial_anova_general <- function(F_observed, N, cells, df_numerator,
   df_denominator_ru <- (n_ru * cells) - cells - nuisance_df
 
   crit_F_ru <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator_ru)
-  if (F_observed <= crit_F_ru) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.")
+  if (F_observed <= crit_F_ru) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.", call. = FALSE)
 
   solution_ru <- .solve_ncp_assurance(
     .tm_f(F_observed, crit_F_ru, df_numerator, df_denominator_ru), assurance)
@@ -196,7 +206,7 @@ ss_buc_factorial_anova_general <- function(F_observed, N, cells, df_numerator,
     critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
     1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / n_prior) * ncp_b)
   }
-  repn_ru <- .smallest_n_for_power(function(k) power_at(k, n_ru, ncp_ru), power,
+  repn_ru <- .smallest_n_for_power(function(k) power_at(k, n_ru, ncp_ru), desired_power,
                                    start = n_rep_start)
 
   ## Rounding down
@@ -205,7 +215,7 @@ ss_buc_factorial_anova_general <- function(F_observed, N, cells, df_numerator,
   df_denominator_rd <- (n_rd * cells) - cells - nuisance_df
 
   crit_F_rd <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator_rd)
-  if (F_observed <= crit_F_rd) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.")
+  if (F_observed <= crit_F_rd) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.", call. = FALSE)
 
   solution_rd <- .solve_ncp_assurance(
     .tm_f(F_observed, crit_F_rd, df_numerator, df_denominator_rd), assurance)
@@ -213,13 +223,17 @@ ss_buc_factorial_anova_general <- function(F_observed, N, cells, df_numerator,
 
   if (ncp_rd == 0) .stop_zero_ncp(solution_rd$ceiling)
 
-  repn_rd <- .smallest_n_for_power(function(k) power_at(k, n_rd, ncp_rd), power,
+  repn_rd <- .smallest_n_for_power(function(k) power_at(k, n_rd, ncp_rd), desired_power,
                                    start = n_rep_start)
 
   output_n <- max(repn_ru, repn_rd)
   df_error <- output_n * cells - cells - nuisance_df
+  actual_power <- if (ncp_rd <= ncp_ru) power_at(output_n, n_rd, ncp_rd) else
+    power_at(output_n, n_ru, ncp_ru)
   .bucss_power_result(
     sample_size = output_n,
+    size_term = "necessary_n_per_cell",
+    actual_power = actual_power,
     df_effect = df_numerator,
     df_error = df_error,
     ncp = min(ncp_rd, ncp_ru),
@@ -230,6 +244,6 @@ ss_buc_factorial_anova_general <- function(F_observed, N, cells, df_numerator,
     inputs = list(F_observed = F_observed, N = N, cells = cells,
                   df_numerator = df_numerator, df_denominator = df_denominator,
                   alpha_prior = alpha_prior_input, alpha_planned = alpha_planned,
-                  assurance = assurance, power = power)
+                  assurance = assurance, desired_power = desired_power)
   )
 }

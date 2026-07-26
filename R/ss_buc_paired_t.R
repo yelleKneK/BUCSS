@@ -87,6 +87,16 @@
 #'   desired level of assurance. We encourage users to make the adjustments as
 #'   minimal as possible.
 #'
+#'   The returned \code{actual_power} is the power the planned study
+#'   attains at the returned sample size, evaluated at the returned
+#'   (adjusted) noncentrality parameter. For the designs that round the prior
+#'   study's implied cell size both up and down (the conservative two-sided
+#'   rounding), the returned sample size is the larger of the two branch
+#'   answers while the returned noncentrality parameter is the smaller, so
+#'   \code{actual_power} is evaluated under the more conservative branch and
+#'   is a lower bound on the power the plan achieves; for the single-branch
+#'   designs it is exact. It always meets or exceeds \code{desired_power}.
+#'
 #'   The observed \emph{t} may be entered with either sign. The publication
 #'   rule the correction assumes is two-sided and the truncated likelihood
 #'   is symmetric in the sign of \emph{t}, so only the magnitude enters the
@@ -117,7 +127,7 @@
 #'
 #' @examples
 #' result <- ss_buc_paired_t(t_observed = 3, N = 40, alpha_prior = .05,
-#'   alpha_planned = .05, assurance = .80, power = .80)
+#'   alpha_planned = .05, assurance = .80, desired_power = .80)
 #' result
 #'
 #' # ss_buc_smd_paired is the same function under an effect size name
@@ -132,14 +142,14 @@
 #'
 #' @template references
 ss_buc_paired_t <- function(t_observed, N, alpha_prior = .05, alpha_planned = .05,
-                            assurance = .80, power = .80) {
-  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, power)
+                            assurance = .80, desired_power = .80) {
+  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, desired_power)
   alpha_prior <- v$alpha_prior
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
-  power <- v$power
+  desired_power <- v$desired_power
 
-  if (missing(N)) stop("You need to specify a sample size (i.e., the number of pairs) used in the original study.")
+  if (missing(N)) stop("You need to specify a sample size (i.e., the number of pairs) used in the original study.", call. = FALSE)
   .check_scalar_finite(t_observed, "t_observed")
 
   # The publication rule is two-sided and TM is symmetric in the sign of t,
@@ -153,7 +163,7 @@ ss_buc_paired_t <- function(t_observed, N, alpha_prior = .05, alpha_planned = .0
   DF <- N - 1
 
   value_critical <- qt(1 - alpha_prior / 2, df = DF)
-  if (t_stat <= value_critical) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.")
+  if (t_stat <= value_critical) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.", call. = FALSE)
 
   ncp_solution <- .solve_ncp_assurance(
     .tm_t(t_stat, value_critical, DF), assurance)
@@ -168,11 +178,14 @@ ss_buc_paired_t <- function(t_observed, N, alpha_prior = .05, alpha_planned = .0
     (1 - pt(critical_t, df = denom_df, ncp = scaled)) +
       pt(-1 * critical_t, df = denom_df, ncp = scaled)
   }
-  output_n <- .smallest_n_for_power(power_at, power)
+  output_n <- .smallest_n_for_power(power_at, desired_power)
 
   df_error <- output_n - 1
+  actual_power <- power_at(output_n)
   .bucss_power_result(
     sample_size = output_n,
+    size_term = "necessary_N",
+    actual_power = actual_power,
     df_effect = 1,
     df_error = df_error,
     ncp = ncp,
@@ -181,7 +194,7 @@ ss_buc_paired_t <- function(t_observed, N, alpha_prior = .05, alpha_planned = .0
     assurance_ceiling = ncp_solution$ceiling,
     inputs = list(t_observed = t_observed, N = N, alpha_prior = alpha_prior_input,
                   alpha_planned = alpha_planned, assurance = assurance,
-                  power = power)
+                  desired_power = desired_power)
   )
 }
 

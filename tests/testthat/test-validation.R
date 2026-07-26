@@ -25,19 +25,19 @@ test_that("endpoint assurance and power are rejected, not silently planned", {
   # returned the uniroot bracket endpoint as the adjusted NCP.
   expect_error(ss_buc_independent_t(t_observed = 3, n = 50, assurance = 0),
                "assurance", fixed = TRUE)
-  # power = 100 coerces to a target of exactly 1.0, which the search can only
-  # "reach" by floating-point error in pt(); power = 0 trivially returned n = 2.
-  expect_error(ss_buc_paired_t(t_observed = 3, N = 25, power = 100),
+  # desired_power = 100 coerces to a target of exactly 1.0, which the search can only
+  # "reach" by floating-point error in pt(); desired_power = 0 trivially returned n = 2.
+  expect_error(ss_buc_paired_t(t_observed = 3, N = 25, desired_power = 100),
                "power", fixed = TRUE)
-  expect_error(ss_buc_paired_t(t_observed = 3, N = 25, power = 0),
+  expect_error(ss_buc_paired_t(t_observed = 3, N = 25, desired_power = 0),
                "power", fixed = TRUE)
   expect_error(ss_buc_independent_t(t_observed = 3, n = 20, assurance = 100),
                "assurance", fixed = TRUE)
   # The documented percentage rule is untouched: exactly 1 still means 1
-  # percent (coercion runs before the range check), so power = 1 plans at a
+  # percent (coercion runs before the range check), so desired_power = 1 plans at a
   # .01 target without error, and assurance = 1 reaches the < .5 warning
   # rather than the range stop.
-  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, power = 1), NA)
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, desired_power = 1), NA)
   expect_warning(ss_buc_independent_t(t_observed = 3, n = 20, assurance = 1),
                  "< .5", fixed = TRUE)
 })
@@ -48,7 +48,7 @@ test_that("assurance below .5 warns but still computes", {
 })
 
 test_that("out-of-range power is rejected", {
-  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, power = -.1),
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, desired_power = -.1),
                "power", fixed = TRUE)
 })
 
@@ -64,18 +64,21 @@ test_that("a negative prior t plans from its magnitude (two-sided rule)", {
   # on it. The signed value is still echoed in the stored inputs.
   neg <- ss_buc_independent_t(t_observed = -3, n = 20)
   pos <- ss_buc_independent_t(t_observed = 3, n = 20)
-  expect_equal(neg$value, pos$value)
-  expect_identical(attr(neg, "inputs")$t_observed, -3)
+  expect_equal(neg$value[neg$term != "t_observed"],
+               pos$value[pos$term != "t_observed"])
+  expect_identical(neg$value[neg$term == "t_observed"][1], -3)
 
   neg_p <- ss_buc_paired_t(t_observed = -3, N = 40)
   pos_p <- ss_buc_paired_t(t_observed = 3, N = 40)
-  expect_equal(neg_p$value, pos_p$value)
-  expect_identical(attr(neg_p, "inputs")$t_observed, -3)
+  expect_equal(neg_p$value[neg_p$term != "t_observed"],
+               pos_p$value[pos_p$term != "t_observed"])
+  expect_identical(neg_p$value[neg_p$term == "t_observed"][1], -3)
 
   neg_r <- ss_buc_reg_coef(t_observed = -3, N = 150, p = 3)
   pos_r <- ss_buc_reg_coef(t_observed = 3, N = 150, p = 3)
-  expect_equal(neg_r$value, pos_r$value)
-  expect_identical(attr(neg_r, "inputs")$t_observed, -3)
+  expect_equal(neg_r$value[neg_r$term != "t_observed"],
+               pos_r$value[pos_r$term != "t_observed"])
+  expect_identical(neg_r$value[neg_r$term == "t_observed"][1], -3)
 
   # A magnitude below the two-tailed cutoff is still rejected, whatever
   # its sign, and the alpha_prior remedy in the message is now reachable.
@@ -222,14 +225,14 @@ test_that("non-scalar, non-finite, and non-whole inputs get friendly errors", {
   # NA, Inf, and vector inputs used to die inside base R ("missing value where
   # TRUE/FALSE needed", "the condition has length > 1").
   expect_error(ss_buc_paired_t(t_observed = NA, N = 40),
-               "single finite number", fixed = TRUE)
+               "single finite numeric value", fixed = TRUE)
   expect_error(ss_buc_independent_t(t_observed = Inf, n = 20),
-               "single finite number", fixed = TRUE)
+               "single finite numeric value", fixed = TRUE)
   expect_error(ss_buc_independent_t(t_observed = 3, n = 20, assurance = NA),
-               "single finite number", fixed = TRUE)
+               "single finite numeric value", fixed = TRUE)
   expect_error(ss_buc_independent_t(t_observed = 3, n = 20,
                                     alpha_prior = c(.05, .10)),
-               "single finite number", fixed = TRUE)
+               "single finite numeric value", fixed = TRUE)
   expect_error(ss_buc_paired_t(t_observed = 3, N = NA),
                "whole number", fixed = TRUE)
 })
@@ -269,7 +272,7 @@ test_that("every remaining documented guard fires with its message", {
     # validator: percentages above 100 are out of range after the coercion
     list(quote(ss_buc_independent_t(t_observed = 3, n = 20, assurance = 150)),
          "assurance"),
-    list(quote(ss_buc_independent_t(t_observed = 3, n = 20, power = 150)),
+    list(quote(ss_buc_independent_t(t_observed = 3, n = 20, desired_power = 150)),
          "power"),
     # independent t structural guards
     list(quote(ss_buc_independent_t(t_observed = 3, n = 20, N = 40)),

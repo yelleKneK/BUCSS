@@ -62,7 +62,7 @@ exceed 80% in 80% of replications.
 
 ```{r}
 result <- ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05,
-                         alpha_planned = .05, assurance = .80, power = .80)
+                         alpha_planned = .05, assurance = .80, desired_power = .80)
 result
 ```
 
@@ -71,35 +71,45 @@ calculation from *t* = 3.00 would suggest.
 
 ## Reading the Result
 
-Every `ss_buc_*` function returns a tidy object that prints the design, the
-necessary sample size with the unit it is counted in, the implied total sample
-size where the unit is per group or per cell, the bias and uncertainty adjusted
-noncentrality parameter, the largest assurance the prior result can support, and
-the planning inputs you supplied. Because the object is an ordinary `data.frame`
-underneath, you can pull the two quantities out directly:
+Every `ss_buc_*` function returns a tidy object shaped like the result tables
+in the **DMAR** package: `term`/`value` rows holding the design results first
+(the necessary sample size, named for its unit; the implied total sample size
+where the unit is per group or per cell; the achieved power at the returned
+size; and the bias and uncertainty adjusted noncentrality parameter), followed
+by rows echoing the planning inputs, so the assumptions travel with the result.
+The print method shows the aligned table and closes with the design, the unit,
+and the largest assurance the prior result can support. Because the object is
+an ordinary `data.frame` underneath, you can pull any quantity out directly:
 
 ```{r}
-result$value[result$term == "necessary_sample_size"]
+result$value[result$term == "necessary_n_per_group"]
 result$value[result$term == "ncp_adjusted"]
 ```
 
 The unit the sample size is counted in depends on the design (per group, per
-cell, number of pairs, or total) and travels on the object so you never have to
-guess:
+cell, number of pairs, or total): the size row is named accordingly
+(`necessary_n_per_group`, `necessary_n_per_cell`, or `necessary_N`), and the
+unit also travels on the object so you never have to guess:
 
 ```{r}
 attr(result, "sample_size_unit")
 ```
 
-For programmatic use the broom verbs give the convenient shapes, exactly as in
-the **DMAR** package: `tidy()` returns a one-row data frame with one column per
-quantity (so you pull a value out by name), and `glance()` returns a one-row
-summary.
+For programmatic use the broom verbs give the convenient views, exactly as in
+the **DMAR** package: `tidy()` returns the compact estimate view (the sample
+size and its achieved power), and `glance()` returns the one-row wide view
+with every quantity and echoed input as a column.
 
 ```{r}
 tidy(result)
-tidy(result)$necessary_sample_size
+tidy(result)$estimate
 glance(result)
+```
+
+For a manuscript's method section, `planning_sentence()` writes the sentence:
+
+```{r}
+planning_sentence(result)
 ```
 
 ## The Replication Example
@@ -110,7 +120,7 @@ assurance:
 
 ```{r}
 ss_buc_independent_t(t_observed = 3, n = c(50, 55), alpha_prior = .05,
-               alpha_planned = .05, power = .80, assurance = .90)
+               alpha_planned = .05, desired_power = .80, assurance = .90)
 ```
 
 The corrected plan calls for 1485 per group, a vivid illustration of how much

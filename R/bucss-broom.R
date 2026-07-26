@@ -1,47 +1,47 @@
 # tidy() and glance() methods for bucss_power results, registered with the
-# generics package (the same mechanism the DMAR package uses). They give the
-# programmer-friendly views of the tidy result: tidy() pivots the value rows to
-# a one-row wide data.frame (so a single quantity is pulled out by name), and
-# glance() returns a one-row model-level summary.
+# generics package and shaped exactly like the DMAR package's dmar_ss_power
+# tidiers: tidy() is the compact estimate view (term/estimate/power), and
+# glance() is the one-row wide view carrying the estimate together with every
+# echoed planning input and the design metadata as columns.
 
 #' Tidy and summarize a bias and uncertainty corrected sample size result
 #'
-#' \code{tidy()} returns the planned-study quantities as a one-row
-#' \code{data.frame} with one column per quantity (the "wide" view), which is
-#' the convenient way to pull a single value out by name or to plot or join the
-#' result. \code{glance()} returns a one-row model-level summary (the design,
-#' the effect tested, the headline sample sizes, and the assurance ceiling the
-#' prior result supports).
+#' \code{tidy()} returns the compact estimate view, mirroring the sibling
+#' package \code{DMAR}'s sample size planners: one row with \code{term}
+#' (\code{"sample_size"}), \code{estimate} (the necessary sample size in the
+#' design's unit), and \code{power} (the conservative achieved power at that
+#' sample size; see the planner's help page). \code{glance()} returns the
+#' one-row wide view: the estimate plus one column per row of the result
+#' (\code{total_N} where applicable, \code{ncp_adjusted}, and every echoed
+#' planning input) together with the design, the effect tested, the unit, the
+#' planned test's degrees of freedom, and the assurance ceiling.
 #'
 #' These methods come from the \pkg{generics} package and need no extra setup;
 #' the verbs are re-exported by \pkg{BUCSS}, so \code{tidy(result)} and
 #' \code{glance(result)} work as soon as the package is loaded. The result is
 #' also an ordinary \code{data.frame}, so the long view and the stored full
 #' precision values remain available directly, for example
-#' \code{result$value[result$term == "necessary_sample_size"]}.
+#' \code{result$value[result$term == "ncp_adjusted"]}.
 #'
 #' @param x An object of class \code{bucss_power} returned by an \code{ss_buc_*}
 #'   function.
 #' @param ... Ignored.
 #'
-#' @return A one-row \code{data.frame}. For \code{tidy()}, one column per
-#'   planned-study quantity (\code{necessary_sample_size}, \code{total_N} where
-#'   applicable, \code{ncp_adjusted}, the planned test's degrees of freedom
-#'   \code{df_effect} and \code{df_error}, and \code{assurance_ceiling}). For
-#'   \code{glance()}, a one-row summary with the design, effect, headline sample
-#'   sizes, the test degrees of freedom, the unit, and the assurance ceiling.
+#' @return A one-row \code{data.frame}. For \code{tidy()}, the columns
+#'   \code{term}, \code{estimate}, and \code{power}. For \code{glance()}, the
+#'   wide summary described above.
 #'
 #' @examples
 #' result <- ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2,
 #'   levels_B = 3, effect = "factor_B")
 #'
-#' # One-row wide view: pull a quantity out by name, no row indexing needed.
+#' # Compact estimate view, as in DMAR: the sample size and its power.
 #' tidy(result)
-#' tidy(result)$necessary_sample_size
-#' tidy(result)$total_N
+#' tidy(result)$estimate
 #'
-#' # One-row model-level summary.
+#' # One-row wide view: every quantity and echoed input as a column.
 #' glance(result)
+#' glance(result)$total_N
 #'
 #' @name bucss_tidiers
 #' @author Ken Kelley (\email{kkelley@@nd.edu})
@@ -58,8 +58,25 @@ generics::glance
 #' @rdname bucss_tidiers
 #' @exportS3Method generics::tidy
 tidy.bucss_power <- function(x, ...) {
+  power <- x$value[x$term == "actual_power"]
+  if (length(power) == 0L) power <- NA_real_
+  data.frame(
+    term     = "sample_size",
+    estimate = x$value[x$term %in% .BUCSS_SIZE_TERMS][1],
+    power    = power,
+    stringsAsFactors = FALSE
+  )
+}
+
+#' @rdname bucss_tidiers
+#' @exportS3Method generics::glance
+glance.bucss_power <- function(x, ...) {
   wide <- as.data.frame(as.list(stats::setNames(x$value, x$term)),
                         stringsAsFactors = FALSE)
+  effect <- attr(x, "effect")
+  wide$design <- attr(x, "design")
+  if (!is.null(effect)) wide$effect <- effect
+  wide$sample_size_unit <- attr(x, "sample_size_unit")
   df_effect <- attr(x, "df_effect")
   df_error <- attr(x, "df_error")
   if (!is.null(df_effect)) wide$df_effect <- df_effect
@@ -67,29 +84,4 @@ tidy.bucss_power <- function(x, ...) {
   ceiling <- attr(x, "assurance_ceiling")
   if (!is.null(ceiling)) wide$assurance_ceiling <- ceiling
   wide
-}
-
-#' @rdname bucss_tidiers
-#' @exportS3Method generics::glance
-glance.bucss_power <- function(x, ...) {
-  effect <- attr(x, "effect")
-  if (is.null(effect)) effect <- NA_character_
-  ceiling <- attr(x, "assurance_ceiling")
-  if (is.null(ceiling)) ceiling <- NA_real_
-  df_effect <- attr(x, "df_effect")
-  if (is.null(df_effect)) df_effect <- NA_real_
-  df_error <- attr(x, "df_error")
-  if (is.null(df_error)) df_error <- NA_real_
-  total_N <- if ("total_N" %in% x$term) x$value[x$term == "total_N"] else NA_real_
-  data.frame(
-    design                = attr(x, "design"),
-    effect                = effect,
-    necessary_sample_size = x$value[x$term == "necessary_sample_size"],
-    total_N               = total_N,
-    df_effect             = df_effect,
-    df_error              = df_error,
-    sample_size_unit      = attr(x, "sample_size_unit"),
-    assurance_ceiling     = ceiling,
-    stringsAsFactors      = FALSE
-  )
 }

@@ -52,8 +52,8 @@ prior independent *t* test with *t* = 3.00 and 20 per group:
 ```{r}
 assurances <- c(.5, .6, .7, .8, .9)
 n_by_assurance <- sapply(assurances, function(a) {
-  r <- ss_buc_independent_t(t_observed = 3, n = 20, assurance = a, power = .80)
-  r$value[r$term == "necessary_sample_size"]
+  r <- ss_buc_independent_t(t_observed = 3, n = 20, assurance = a, desired_power = .80)
+  r$value[r$term == "necessary_n_per_group"]
 })
 data.frame(assurance = assurances, necessary_n_per_group = n_by_assurance)
 ```
@@ -72,7 +72,7 @@ assurance the prior result can support so you know exactly how far to step back:
 
 ```{r eval = FALSE}
 # Not run: this stops with an informative error.
-ss_buc_independent_t(t_observed = 3, n = 20, assurance = .95, power = .80)
+ss_buc_independent_t(t_observed = 3, n = 20, assurance = .95, desired_power = .80)
 #> Error: Sample size planning is not possible with these settings. After
 #> correcting the prior study's effect for publication bias and uncertainty
 #> at the requested level of assurance, the corrected noncentrality
@@ -133,8 +133,8 @@ less publication bias:
 alphas <- c(.05, .10, .20, .50, 1)
 n_by_alpha <- sapply(alphas, function(ap) {
   r <- ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = ap, assurance = .80,
-                   power = .80)
-  r$value[r$term == "necessary_sample_size"]
+                   desired_power = .80)
+  r$value[r$term == "necessary_n_per_group"]
 })
 data.frame(alpha_prior = alphas, necessary_n_per_group = n_by_alpha)
 ```

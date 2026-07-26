@@ -50,7 +50,7 @@ also corrects for uncertainty.
 
 ``` r
 ss_buc_independent_t(t_observed = 3, n = c(50, 55), alpha_prior = .05,
-               alpha_planned = .05, power = .80, assurance = .90)
+               alpha_planned = .05, desired_power = .80, assurance = .90)
 ```
 
 This yields a necessary sample size of $n_1=n_2=1485$ per group (i.e.,
@@ -59,27 +59,30 @@ original grid-search method; as of BUCSS 2.0.0 the bias and uncertainty adjusted
 noncentrality parameter is found by direct root finding, which gives 1485 (see
 `NEWS.md`).
 
-The functions return a tidy object of class `bucss_power`. It prints a readable
-summary, and because it is an ordinary `data.frame` underneath you can pull the
-two quantities out directly:
+The functions return a tidy object of class `bucss_power`, shaped like the
+result tables in the [`DMAR`](https://github.com/yelleKneK/DMAR) package: an
+ordinary `data.frame` of `term`/`value` rows holding the design results (the
+size row is named for its unit, here `necessary_n_per_group`) followed by rows
+echoing the planning inputs, so the assumptions travel with the result:
 
 ``` r
-result <- ss_buc_independent_t(t_observed = 3, n = c(50, 55), power = .80,
+result <- ss_buc_independent_t(t_observed = 3, n = c(50, 55), desired_power = .80,
                          assurance = .90)
 
-result$value[result$term == "necessary_sample_size"]  # 1485
+result$value[result$term == "necessary_n_per_group"]  # 1485
+result$value[result$term == "actual_power"]           # power at that size
 result$value[result$term == "ncp_adjusted"]           # adjusted noncentrality
 ```
 
-For a programmer-friendly view, the broom verbs give the convenient shapes (as
-in the [`DMAR`](https://github.com/yelleKneK/DMAR) package): `tidy()` returns a
-one-row data frame with one column per quantity, so you pull a value out by
-name, and `glance()` returns a one-row summary:
+The broom verbs give the two convenient views, again exactly as in `DMAR`:
+`tidy()` is the compact estimate view and `glance()` the one-row wide view
+with every quantity and echoed input as a column:
 
 ``` r
-tidy(result)$necessary_sample_size  # 1485
-tidy(result)                        # necessary_sample_size, total_N, ncp_adjusted, ...
-glance(result)
+tidy(result)            # term = "sample_size", estimate = 1485, power
+tidy(result)$estimate   # 1485
+glance(result)          # every row as a column, plus design metadata
+planning_sentence(result)  # the sentence for a manuscript
 ```
 
 ## A Note on Function Names

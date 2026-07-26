@@ -9,7 +9,7 @@
 # differs from the 1.2.1 grid value are flagged inline. See NEWS for the full
 # accounting.
 
-ss  <- function(x) x$value[x$term == "necessary_sample_size"]
+ss  <- function(x) x$value[x$term %in% BUCSS:::.BUCSS_SIZE_TERMS][1]
 ncp <- function(x) x$value[x$term == "ncp_adjusted"]
 
 expect_oracle <- function(result, sample_size, ncp_adjusted) {
@@ -20,7 +20,7 @@ expect_oracle <- function(result, sample_size, ncp_adjusted) {
 test_that("independent t test (scalar n)", {
   expect_oracle(
     ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05, alpha_planned = .05,
-                   assurance = .80, power = .80),
+                   assurance = .80, desired_power = .80),
     130, 1.105)
 })
 
@@ -28,21 +28,21 @@ test_that("independent t test (unequal n vector)", {
   # 1.2.1 grid gave 1482; uniroot gives 1485 (same rounded ncp).
   expect_oracle(
     ss_buc_independent_t(t_observed = 3, n = c(50, 55), alpha_prior = .05,
-                   alpha_planned = .05, power = .80, assurance = .90),
+                   alpha_planned = .05, desired_power = .80, assurance = .90),
     1485, 0.526)
 })
 
 test_that("dependent t test", {
   expect_oracle(
     ss_buc_paired_t(t_observed = 3, N = 40, alpha_prior = .05, alpha_planned = .05,
-                    assurance = .80, power = .80),
+                    assurance = .80, desired_power = .80),
     255, 1.115)
 })
 
 test_that("one-way between-subjects ANOVA", {
   expect_oracle(
     ss_buc_one_way_anova(F_observed = 5, N = 120, levels_A = 4, alpha_prior = .05,
-                         alpha_planned = .05, assurance = .80, power = .80),
+                         alpha_planned = .05, assurance = .80, desired_power = .80),
     89, 3.737)
 })
 
@@ -50,7 +50,7 @@ test_that("two-way between-subjects ANOVA", {
   expect_oracle(
     ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2, levels_B = 3,
                            effect = "factor_B", alpha_prior = .05,
-                           alpha_planned = .05, assurance = .80, power = .80),
+                           alpha_planned = .05, assurance = .80, desired_power = .80),
     659, 0.293)
 })
 
@@ -59,7 +59,7 @@ test_that("between-subjects ANOVA (general) matches the two-way result at df_den
     ss_buc_factorial_anova_general(F_observed = 5, N = 120, cells = 6,
                                    df_numerator = 2, df_denominator = 114,
                                    alpha_prior = .05, alpha_planned = .05,
-                                   assurance = .80, power = .80),
+                                   assurance = .80, desired_power = .80),
     659, 0.293)
 })
 
@@ -68,7 +68,7 @@ test_that("within-subjects ANOVA", {
   expect_oracle(
     ss_buc_rm_anova(F_observed = 5, N = 60, levels_A = 2, levels_B = 3,
                     effect = "factor_B", alpha_prior = .05, alpha_planned = .05,
-                    assurance = .80, power = .80),
+                    assurance = .80, desired_power = .80),
     1902, 0.304)
 })
 
@@ -76,7 +76,7 @@ test_that("within-subjects ANOVA (general)", {
   expect_oracle(
     ss_buc_rm_anova_general(F_observed = 6.5, N = 80, df_numerator = 1,
                             alpha_prior = .05, alpha_planned = .05,
-                            assurance = .50, power = .80),
+                            assurance = .50, desired_power = .80),
     256, 2.474)
 })
 
@@ -85,7 +85,7 @@ test_that("split-plot ANOVA", {
   expect_oracle(
     ss_buc_mixed_anova(F_observed = 5, N = 60, levels_between = 2,
                        levels_within = 3, effect = "within", alpha_prior = .05,
-                       alpha_planned = .05, assurance = .80, power = .80),
+                       alpha_planned = .05, assurance = .80, desired_power = .80),
     969, 0.299)
 })
 
@@ -95,21 +95,21 @@ test_that("split-plot ANOVA (general)", {
     ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2,
                                num_groups = 3, effect = "between_only",
                                df_num_within = 3, alpha_prior = .05,
-                               alpha_planned = .05, assurance = .80, power = .80),
+                               alpha_planned = .05, assurance = .80, desired_power = .80),
     1489, 0.194)
 })
 
 test_that("regression single coefficient", {
   expect_oracle(
     ss_buc_reg_coef(t_observed = 3, N = 150, p = 3, alpha_prior = .05,
-                    alpha_planned = .05, assurance = .80, power = .80),
+                    alpha_planned = .05, assurance = .80, desired_power = .80),
     624, 1.893)
 })
 
 test_that("regression model R2", {
   expect_oracle(
     ss_buc_R2(F_observed = 5, N = 150, p = 4, alpha_prior = .05,
-              alpha_planned = .05, assurance = .80, power = .80),
+              alpha_planned = .05, assurance = .80, desired_power = .80),
     234, 7.816)
 })
 
@@ -118,27 +118,27 @@ test_that("regression joint test", {
   expect_oracle(
     ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2,
                      alpha_prior = .05, alpha_planned = .05, assurance = .80,
-                     power = .80),
+                     desired_power = .80),
     3960, 0.365)
 })
 
 test_that("effect size aliases are identical to their test-named functions", {
   expect_identical(
-    ss_buc_smd(t_observed = 3, n = 20, assurance = .80, power = .80),
-    ss_buc_independent_t(t_observed = 3, n = 20, assurance = .80, power = .80))
+    ss_buc_smd(t_observed = 3, n = 20, assurance = .80, desired_power = .80),
+    ss_buc_independent_t(t_observed = 3, n = 20, assurance = .80, desired_power = .80))
   expect_identical(
-    ss_buc_smd_paired(t_observed = 3, N = 40, assurance = .80, power = .80),
-    ss_buc_paired_t(t_observed = 3, N = 40, assurance = .80, power = .80))
+    ss_buc_smd_paired(t_observed = 3, N = 40, assurance = .80, desired_power = .80),
+    ss_buc_paired_t(t_observed = 3, N = 40, assurance = .80, desired_power = .80))
 })
 
 test_that("df_denominator functions: more nuisance parameters call for a larger sample", {
   base <- ss_buc_factorial_anova_general(F_observed = 5, N = 120, cells = 6,
                                          df_numerator = 2, df_denominator = 114,
-                                         assurance = .80, power = .80)
+                                         assurance = .80, desired_power = .80)
   with_covariates <- ss_buc_factorial_anova_general(F_observed = 5, N = 120,
                                                     cells = 6, df_numerator = 2,
                                                     df_denominator = 104,
-                                                    assurance = .80, power = .80)
+                                                    assurance = .80, desired_power = .80)
   expect_gt(ss(with_covariates), ss(base))
   # df_denominator = 104 with N - cells = 114 carries 10 nuisance parameters
   # (e.g., covariates) into the planned study. These pin the 2.0.0 output so the
@@ -152,7 +152,7 @@ test_that("the adjusted noncentrality parameter is no longer capped at 100", {
   # uniroot bracket auto-expands, verified against an independent root solve.
   expect_oracle(
     ss_buc_one_way_anova(F_observed = 60, N = 120, levels_A = 4,
-                         assurance = .80, power = .80),
+                         assurance = .80, desired_power = .80),
     4, 148.482)
 })
 
@@ -163,7 +163,7 @@ test_that("the round-down branch binds when the prior N does not divide evenly",
   # which no evenly divisible case can (the branches coincide there).
   expect_oracle(
     ss_buc_one_way_anova(F_observed = 5, N = 121, levels_A = 3,
-                         assurance = .80, power = .80),
+                         assurance = .80, desired_power = .80),
     1280, 0.302)
 })
 
@@ -175,13 +175,13 @@ test_that("previously unpinned planner arms match their verified values", {
   expect_oracle(
     ss_buc_mixed_anova_general(F_observed = 5, N = 90, num_groups = 3,
                                df_numerator = 2, effect = "within_only",
-                               assurance = .80, power = .80),
+                               assurance = .80, desired_power = .80),
     704, 0.411)
   expect_oracle(
     ss_buc_rm_anova(F_observed = 6.5, N = 80, levels_A = 3,
-                    assurance = .80, power = .80),
+                    assurance = .80, desired_power = .80),
     200, 3.897)
   expect_oracle(
-    ss_buc_independent_t(t_observed = 3, N = 41, assurance = .80, power = .80),
+    ss_buc_independent_t(t_observed = 3, N = 41, assurance = .80, desired_power = .80),
     132, 1.105)
 })

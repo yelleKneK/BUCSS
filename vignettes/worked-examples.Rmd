@@ -29,7 +29,7 @@ returned sample size is per group.
 
 ```{r}
 ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05, alpha_planned = .05,
-               assurance = .80, power = .80)
+               assurance = .80, desired_power = .80)
 ```
 
 `ss_buc_smd` is the same planner under an effect size name, for when you are
@@ -43,7 +43,7 @@ size is the number of pairs.
 
 ```{r}
 ss_buc_paired_t(t_observed = 3, N = 40, alpha_prior = .05, alpha_planned = .05,
-                assurance = .80, power = .80)
+                assurance = .80, desired_power = .80)
 ```
 
 The alias `ss_buc_smd_paired` serves the standardized mean difference framing of
@@ -57,7 +57,7 @@ the omnibus effect. The returned sample size is per group.
 
 ```{r}
 ss_buc_one_way_anova(F_observed = 5, N = 120, levels_A = 4, alpha_prior = .05,
-                     alpha_planned = .05, assurance = .80, power = .80)
+                     alpha_planned = .05, assurance = .80, desired_power = .80)
 ```
 
 A two-way fully between-subjects design takes the levels of both factors and the
@@ -68,7 +68,7 @@ The returned sample size is per cell.
 ```{r}
 ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2, levels_B = 3,
                        effect = "factor_B", alpha_prior = .05,
-                       alpha_planned = .05, assurance = .80, power = .80)
+                       alpha_planned = .05, assurance = .80, desired_power = .80)
 ```
 
 When the effect of interest is not a standard main effect or interaction, or the
@@ -83,7 +83,7 @@ parameters and calls for a larger sample.
 ss_buc_factorial_anova_general(F_observed = 5, N = 120, cells = 6,
                                df_numerator = 2, df_denominator = 114,
                                alpha_prior = .05, alpha_planned = .05,
-                               assurance = .80, power = .80)
+                               assurance = .80, desired_power = .80)
 ```
 
 ## Within-Subjects ANOVA
@@ -96,7 +96,7 @@ subjects.
 ```{r}
 ss_buc_rm_anova(F_observed = 5, N = 60, levels_A = 2, levels_B = 3,
                 effect = "factor_B", alpha_prior = .05, alpha_planned = .05,
-                assurance = .80, power = .80)
+                assurance = .80, desired_power = .80)
 ```
 
 The general form takes the numerator degrees of freedom directly and works for
@@ -106,7 +106,7 @@ which corrects for publication bias only.
 ```{r}
 ss_buc_rm_anova_general(F_observed = 6.5, N = 80, df_numerator = 1,
                         alpha_prior = .05, alpha_planned = .05, assurance = .50,
-                        power = .80)
+                        desired_power = .80)
 ```
 
 ## Split-Plot (Mixed) ANOVA
@@ -120,7 +120,7 @@ effect. The returned sample size is per between-subjects cell.
 ```{r}
 ss_buc_mixed_anova(F_observed = 5, N = 60, levels_between = 2, levels_within = 3,
                    effect = "within", alpha_prior = .05, alpha_planned = .05,
-                   assurance = .80, power = .80)
+                   assurance = .80, desired_power = .80)
 ```
 
 The general form takes the numerator degrees of freedom and the number of
@@ -132,7 +132,7 @@ involves a within-subjects component. The returned sample size is per group.
 ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2,
                            num_groups = 3, effect = "between_only",
                            alpha_prior = .05, alpha_planned = .05,
-                           assurance = .80, power = .80)
+                           assurance = .80, desired_power = .80)
 ```
 
 ## Multiple Regression
@@ -147,7 +147,7 @@ The returned sample size is the total.
 
 ```{r}
 ss_buc_reg_coef(t_observed = 3, N = 150, p = 3, alpha_prior = .05,
-                alpha_planned = .05, assurance = .80, power = .80)
+                alpha_planned = .05, assurance = .80, desired_power = .80)
 ```
 
 For the omnibus test of the model R-squared, supply the model *F* statistic.
@@ -155,7 +155,7 @@ Here a prior study with *N* = 150 and 4 predictors reported *F* = 5.00.
 
 ```{r}
 ss_buc_R2(F_observed = 5, N = 150, p = 4, alpha_prior = .05,
-          alpha_planned = .05, assurance = .80, power = .80)
+          alpha_planned = .05, assurance = .80, desired_power = .80)
 ```
 
 For a joint test of a subset of predictors, also supply `p_joint`, the number of
@@ -164,7 +164,7 @@ predictors tested together. Here 2 of the 4 predictors are tested jointly.
 ```{r}
 ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2,
                  alpha_prior = .05, alpha_planned = .05, assurance = .80,
-                 power = .80)
+                 desired_power = .80)
 ```
 
 ## References

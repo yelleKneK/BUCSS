@@ -86,6 +86,16 @@
 #'   desired level of assurance. We encourage users to make the adjustments as
 #'   minimal as possible.
 #'
+#'   The returned \code{actual_power} is the power the planned study
+#'   attains at the returned sample size, evaluated at the returned
+#'   (adjusted) noncentrality parameter. For the designs that round the prior
+#'   study's implied cell size both up and down (the conservative two-sided
+#'   rounding), the returned sample size is the larger of the two branch
+#'   answers while the returned noncentrality parameter is the smaller, so
+#'   \code{actual_power} is evaluated under the more conservative branch and
+#'   is a lower bound on the power the plan achieves; for the single-branch
+#'   designs it is exact. It always meets or exceeds \code{desired_power}.
+#'
 #'   The observed \emph{t} may be entered with either sign. The publication
 #'   rule the correction assumes is two-sided and the truncated likelihood
 #'   is symmetric in the sign of \emph{t}, so only the magnitude enters the
@@ -140,7 +150,7 @@
 #'
 #' @examples
 #' result <- ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05,
-#'   alpha_planned = .05, assurance = .80, power = .80)
+#'   alpha_planned = .05, assurance = .80, desired_power = .80)
 #' result
 #' result$value[result$term == "necessary_sample_size"]
 #'
@@ -157,12 +167,12 @@
 #'
 #' @template references
 ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_planned = .05,
-                           assurance = .80, power = .80) {
-  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, power)
+                           assurance = .80, desired_power = .80) {
+  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, desired_power)
   alpha_prior <- v$alpha_prior
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
-  power <- v$power
+  desired_power <- v$desired_power
 
   .check_scalar_finite(t_observed, "t_observed")
 
@@ -177,7 +187,7 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
       # The round-down branch has df = 2 * floor(N / 2) - 2, so N = 3 would
       # already drive the error df to 0; the smallest workable total is 4.
       .check_count(N, "N", min = 4)
-      if (!missing(n)) stop("Because you specified 'N' you should not specify 'n'.")
+      if (!missing(n)) stop("Because you specified 'N' you should not specify 'n'.", call. = FALSE)
       if (missing(n)) {
         n_ru <- ceiling(N / 2)
         N_ru <- 2 * n_ru
@@ -191,7 +201,7 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
   }
 
   if (missing(N)) {
-    if (!(length(n) %in% c(1, 2))) stop("The value of 'n' should be a vector of length two or a single value (for equal group sample sizes).")
+    if (!(length(n) %in% c(1, 2))) stop("The value of 'n' should be a vector of length two or a single value (for equal group sample sizes).", call. = FALSE)
     for (n_i in n) .check_count(n_i, "n", min = 2)
     if (length(n) == 2) {
       n_1 <- n[1]
@@ -215,7 +225,7 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
 
   ## Rounding up
   value_critical_ru <- qt(1 - alpha_prior / 2, df = DF_ru)
-  if (t_stat <= value_critical_ru) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.")
+  if (t_stat <= value_critical_ru) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.", call. = FALSE)
 
   solution_ru <- .solve_ncp_assurance(
     .tm_t(t_stat, value_critical_ru, DF_ru), assurance)
@@ -230,11 +240,11 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
     (1 - pt(critical_t, df = denom_df, ncp = scaled)) +
       pt(-1 * critical_t, df = denom_df, ncp = scaled)
   }
-  repn_ru <- .smallest_n_for_power(function(k) power_at(k, n_ru, ncp_ru), power)
+  repn_ru <- .smallest_n_for_power(function(k) power_at(k, n_ru, ncp_ru), desired_power)
 
   ## Rounding down
   value_critical_rd <- qt(1 - alpha_prior / 2, df = DF_rd)
-  if (t_stat <= value_critical_rd) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.")
+  if (t_stat <= value_critical_rd) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.", call. = FALSE)
 
   solution_rd <- .solve_ncp_assurance(
     .tm_t(t_stat, value_critical_rd, DF_rd), assurance)
@@ -242,12 +252,16 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
 
   if (ncp_rd == 0) .stop_zero_ncp(solution_rd$ceiling)
 
-  repn_rd <- .smallest_n_for_power(function(k) power_at(k, n_rd, ncp_rd), power)
+  repn_rd <- .smallest_n_for_power(function(k) power_at(k, n_rd, ncp_rd), desired_power)
 
   output_n <- max(repn_ru, repn_rd)
   df_error <- 2 * output_n - 2
+  actual_power <- if (ncp_rd <= ncp_ru) power_at(output_n, n_rd, ncp_rd) else
+    power_at(output_n, n_ru, ncp_ru)
   .bucss_power_result(
     sample_size = output_n,
+    size_term = "necessary_n_per_group",
+    actual_power = actual_power,
     df_effect = 1,
     df_error = df_error,
     ncp = min(ncp_ru, ncp_rd),
@@ -260,7 +274,7 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
                   N = if (missing(N) || is.null(N)) NULL else N,
                   alpha_prior = alpha_prior_input,
                   alpha_planned = alpha_planned, assurance = assurance,
-                  power = power)
+                  desired_power = desired_power)
   )
 }
 

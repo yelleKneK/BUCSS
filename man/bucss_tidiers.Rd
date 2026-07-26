@@ -17,20 +17,20 @@ function.}
 \item{...}{Ignored.}
 }
 \value{
-A one-row \code{data.frame}. For \code{tidy()}, one column per
-  planned-study quantity (\code{necessary_sample_size}, \code{total_N} where
-  applicable, \code{ncp_adjusted}, the planned test's degrees of freedom
-  \code{df_effect} and \code{df_error}, and \code{assurance_ceiling}). For
-  \code{glance()}, a one-row summary with the design, effect, headline sample
-  sizes, the test degrees of freedom, the unit, and the assurance ceiling.
+A one-row \code{data.frame}. For \code{tidy()}, the columns
+  \code{term}, \code{estimate}, and \code{power}. For \code{glance()}, the
+  wide summary described above.
 }
 \description{
-\code{tidy()} returns the planned-study quantities as a one-row
-\code{data.frame} with one column per quantity (the "wide" view), which is
-the convenient way to pull a single value out by name or to plot or join the
-result. \code{glance()} returns a one-row model-level summary (the design,
-the effect tested, the headline sample sizes, and the assurance ceiling the
-prior result supports).
+\code{tidy()} returns the compact estimate view, mirroring the sibling
+package \code{DMAR}'s sample size planners: one row with \code{term}
+(\code{"sample_size"}), \code{estimate} (the necessary sample size in the
+design's unit), and \code{power} (the conservative achieved power at that
+sample size; see the planner's help page). \code{glance()} returns the
+one-row wide view: the estimate plus one column per row of the result
+(\code{total_N} where applicable, \code{ncp_adjusted}, and every echoed
+planning input) together with the design, the effect tested, the unit, the
+planned test's degrees of freedom, and the assurance ceiling.
 }
 \details{
 These methods come from the \pkg{generics} package and need no extra setup;
@@ -38,19 +38,19 @@ the verbs are re-exported by \pkg{BUCSS}, so \code{tidy(result)} and
 \code{glance(result)} work as soon as the package is loaded. The result is
 also an ordinary \code{data.frame}, so the long view and the stored full
 precision values remain available directly, for example
-\code{result$value[result$term == "necessary_sample_size"]}.
+\code{result$value[result$term == "ncp_adjusted"]}.
 }
 \examples{
 result <- ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2,
   levels_B = 3, effect = "factor_B")
 
-# One-row wide view: pull a quantity out by name, no row indexing needed.
+# Compact estimate view, as in DMAR: the sample size and its power.
 tidy(result)
-tidy(result)$necessary_sample_size
-tidy(result)$total_N
+tidy(result)$estimate
 
-# One-row model-level summary.
+# One-row wide view: every quantity and echoed input as a column.
 glance(result)
+glance(result)$total_N
 
 }
 \author{

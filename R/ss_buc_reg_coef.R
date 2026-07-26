@@ -80,6 +80,16 @@
 #'   desired level of assurance. We encourage users to make the adjustments as
 #'   minimal as possible.
 #'
+#'   The returned \code{actual_power} is the power the planned study
+#'   attains at the returned sample size, evaluated at the returned
+#'   (adjusted) noncentrality parameter. For the designs that round the prior
+#'   study's implied cell size both up and down (the conservative two-sided
+#'   rounding), the returned sample size is the larger of the two branch
+#'   answers while the returned noncentrality parameter is the smaller, so
+#'   \code{actual_power} is evaluated under the more conservative branch and
+#'   is a lower bound on the power the plan achieves; for the single-branch
+#'   designs it is exact. It always meets or exceeds \code{desired_power}.
+#'
 #'   The coefficient's observed \emph{t} may be entered with either sign.
 #'   The publication rule the correction assumes is two-sided and the
 #'   statistic enters on the \emph{F} scale as \eqn{t^2}, so only the
@@ -106,7 +116,7 @@
 #'
 #' @examples
 #' result <- ss_buc_reg_coef(t_observed = 3, N = 150, p = 3, alpha_prior = .05,
-#'   alpha_planned = .05, assurance = .80, power = .80)
+#'   alpha_planned = .05, assurance = .80, desired_power = .80)
 #' result
 #'
 #' # Requesting more assurance than the prior result can support stops with an
@@ -121,26 +131,26 @@
 #'   appropriately powered regression studies: A tutorial using BUCSS.
 #'   \emph{Psychological Methods, 26,} 513--526. \doi{10.1037/met0000366}
 ss_buc_reg_coef <- function(t_observed, N, p, alpha_prior = .05,
-                          alpha_planned = .05, assurance = .80, power = .80) {
-  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, power)
+                          alpha_planned = .05, assurance = .80, desired_power = .80) {
+  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, desired_power)
   alpha_prior <- v$alpha_prior
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
-  power <- v$power
+  desired_power <- v$desired_power
 
-  if (missing(N)) stop("You need to specify 'N', which is the total sample size of the original study.")
-  if (missing(p)) stop("You need to specify 'p', the number of predictors in the model.")
+  if (missing(N)) stop("You need to specify 'N', which is the total sample size of the original study.", call. = FALSE)
+  if (missing(p)) stop("You need to specify 'p', the number of predictors in the model.", call. = FALSE)
   .check_scalar_finite(t_observed, "t_observed")
   .check_count(N, "N", min = 2)
   .check_count(p, "p", min = 1)
-  if (N - p - 1 < 1) stop("The combination of your sample size and number of predictors leads to 0 or negative degrees of freedom.")
+  if (N - p - 1 < 1) stop("The combination of your sample size and number of predictors leads to 0 or negative degrees of freedom.", call. = FALSE)
 
   df_numerator <- 1
   df_denominator <- N - p - 1
 
   value_critical <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator)
 
-  if (t_observed^2 <= value_critical) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.")
+  if (t_observed^2 <= value_critical) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.", call. = FALSE)
 
   ncp_solution <- .solve_ncp_assurance(
     .tm_f(t_observed^2, value_critical, df_numerator, df_denominator), assurance)
@@ -153,11 +163,14 @@ ss_buc_reg_coef <- function(t_observed, N, p, alpha_prior = .05,
     critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
     1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / N) * ncp)
   }
-  output_n <- .smallest_n_for_power(power_at, power, start = 2 + p + 1)
+  output_n <- .smallest_n_for_power(power_at, desired_power, start = 2 + p + 1)
 
   df_error <- output_n - p - 1
+  actual_power <- power_at(output_n)
   .bucss_power_result(
     sample_size = output_n,
+    size_term = "necessary_N",
+    actual_power = actual_power,
     df_effect = df_numerator,
     df_error = df_error,
     ncp = ncp,
@@ -166,6 +179,6 @@ ss_buc_reg_coef <- function(t_observed, N, p, alpha_prior = .05,
     assurance_ceiling = ncp_solution$ceiling,
     inputs = list(t_observed = t_observed, N = N, p = p,
                   alpha_prior = alpha_prior_input, alpha_planned = alpha_planned,
-                  assurance = assurance, power = power)
+                  assurance = assurance, desired_power = desired_power)
   )
 }

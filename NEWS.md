@@ -60,15 +60,23 @@ fixes").
 
 * Arguments are renamed to snake_case (for example `t.observed` becomes
   `t_observed`, `alpha.prior` becomes `alpha_prior`, `df.numerator` becomes
-  `df_numerator`), and `effect` values are snake_case (`"factor.A"` becomes
-  `"factor_A"`, `"between.only"` becomes `"between_only"`, and so on).
+  `df_numerator`), the 1.x `power` argument is now `desired_power` (matching
+  the `DMAR` package's planners and the `desired_power` row it echoes), and
+  `effect` values are snake_case (`"factor.A"` becomes `"factor_A"`,
+  `"between.only"` becomes `"between_only"`, and so on).
 
 * The functions now return a tidy object of class `bucss_power` rather than a
-  printed two-element list. It is a `data.frame` with a character `term` column
-  and a numeric `value` column whose rows are `necessary_sample_size` and
-  `ncp_adjusted` (plus `total_N` for per-group and per-cell designs). The design,
-  effect, sample size unit, assurance ceiling, and planning inputs travel on
-  attributes and are shown by the print method.
+  printed two-element list, shaped like the result tables of the sibling
+  package `DMAR`. It is a `data.frame` with a character `term` column and a
+  numeric `value` column. The design results come first: the necessary sample
+  size, named for its unit (`necessary_n_per_group`, `necessary_n_per_cell`,
+  or `necessary_N`); `total_N`, the implied total, for per-group and per-cell
+  designs; `actual_power`, the conservative achieved power at the returned
+  size; and `ncp_adjusted`. Rows echoing the planning inputs follow (a
+  length-2 prior `n` echoes as `n_1`/`n_2`), so the assumptions travel with
+  the result through subsetting and CSV export. Only non-numeric metadata
+  (the design label, the effect tested, the unit) plus the assurance ceiling
+  and the planned test's degrees of freedom travel on attributes.
 
 ## Backward Compatibility: 1.x Names Are Deprecated, Not Removed
 
@@ -97,11 +105,12 @@ fixes").
   names (`ss_buc_smd`, `ss_buc_smd_paired`) for the standardized mean
   difference. The two names in each pair are the same function.
 
-* Added `print.bucss_power()`, which formats the result for humans (design,
-  effect of interest, necessary sample size with its unit, the implied total
-  sample size where applicable, the adjusted noncentrality parameter, the
-  assurance ceiling the prior result supports, and the planning inputs). The
-  printed noncentrality parameter respects `options(bucss.digits)`.
+* Added `print.bucss_power()`, which prints the aligned `term`/`value` table
+  in the `DMAR` display style (whole numbers clean, other values at
+  `options(bucss.digits)` significant figures, stored values never rounded)
+  and closes with factual footer lines naming the design, the unit the sample
+  size is counted in, and the largest assurance the prior result supports. A
+  `knitr::knit_print` method renders the same table as a kable in R Markdown.
 
 * The `effect` argument also accepts case-insensitive shorthand in the two-way
   between-subjects, within-subjects, and split-plot planners, for example `"A"`
@@ -110,11 +119,23 @@ fixes").
   the result always records the canonical one.
 
 * Added `tidy()` and `glance()` methods for `bucss_power` results (from the
-  `generics` package, as in the `DMAR` package). `tidy()` returns a one-row data
-  frame with one column per quantity, so a single value is pulled out by name
-  (`tidy(result)$necessary_sample_size`); `glance()` returns a one-row summary.
-  Both report the planned study's test degrees of freedom (`df_effect`,
-  `df_error`).
+  `generics` package), with the same division of labor as `DMAR`'s planners:
+  `tidy()` is the compact estimate view (`term = "sample_size"`, `estimate`,
+  and `power`), and `glance()` is the one-row wide view with every quantity
+  and echoed planning input as a column, plus the design metadata and the
+  planned study's test degrees of freedom (`df_effect`, `df_error`).
+
+* Every planner reports `actual_power`, the power the planned study attains at
+  the returned sample size, evaluated at the returned (adjusted) noncentrality
+  parameter. For the designs with the conservative two-sided rounding the
+  returned size and parameter come from the more conservative branch, so
+  `actual_power` is a lower bound there and exact for the single-branch
+  designs; it always meets or exceeds `desired_power`. Each help page states
+  this definition.
+
+* Added `planning_sentence()`, which turns a result into the sentence an
+  author writes in a manuscript's planning section (the analog of `DMAR`'s
+  `results_sentence()`).
 
 * When the correction drives the corrected noncentrality parameter to zero, the
   error reports the largest assurance the prior result can support (the

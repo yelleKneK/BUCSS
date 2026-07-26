@@ -134,7 +134,7 @@ ss.power.it <- function(t.observed, n, N, alpha.prior = .05, alpha.planned = .05
   .deprecate_once("ss.power.it", "'ss_buc_independent_t'")
   ss_buc_independent_t(t_observed = t.observed, n = n, N = N,
                        alpha_prior = alpha.prior, alpha_planned = alpha.planned,
-                       assurance = assurance, power = power)
+                       assurance = assurance, desired_power = power)
 }
 
 #' @rdname bucss-deprecated
@@ -144,7 +144,7 @@ ss.power.dt <- function(t.observed, N, alpha.prior = .05, alpha.planned = .05,
   .deprecate_once("ss.power.dt", "'ss_buc_paired_t'")
   ss_buc_paired_t(t_observed = t.observed, N = N,
                   alpha_prior = alpha.prior, alpha_planned = alpha.planned,
-                  assurance = assurance, power = power)
+                  assurance = assurance, desired_power = power)
 }
 
 #' @rdname bucss-deprecated
@@ -158,13 +158,13 @@ ss.power.ba <- function(F.observed, N, levels.A, levels.B = NULL,
   if (is.null(levels.B)) {
     ss_buc_one_way_anova(F_observed = F.observed, N = N, levels_A = levels.A,
                          alpha_prior = alpha.prior, alpha_planned = alpha.planned,
-                         assurance = assurance, power = power)
+                         assurance = assurance, desired_power = power)
   } else {
     effect <- .translate_effect(effect, c("factor.A", "factor.B", "interaction"))
     ss_buc_factorial_anova(F_observed = F.observed, N = N, levels_A = levels.A,
                            levels_B = levels.B, effect = effect,
                            alpha_prior = alpha.prior, alpha_planned = alpha.planned,
-                           assurance = assurance, power = power)
+                           assurance = assurance, desired_power = power)
   }
 }
 
@@ -179,7 +179,7 @@ ss.power.ba.general <- function(F.observed, N, cells, df.numerator, df.denominat
                                  df_denominator = df.denominator,
                                  alpha_prior = alpha.prior,
                                  alpha_planned = alpha.planned,
-                                 assurance = assurance, power = power)
+                                 assurance = assurance, desired_power = power)
 }
 
 #' @rdname bucss-deprecated
@@ -193,7 +193,7 @@ ss.power.wa <- function(F.observed, N, levels.A, levels.B = NULL,
   ss_buc_rm_anova(F_observed = F.observed, N = N, levels_A = levels.A,
                   levels_B = levels.B, effect = effect,
                   alpha_prior = alpha.prior, alpha_planned = alpha.planned,
-                  assurance = assurance, power = power)
+                  assurance = assurance, desired_power = power)
 }
 
 #' @rdname bucss-deprecated
@@ -205,7 +205,7 @@ ss.power.wa.general <- function(F.observed, N, df.numerator,
   ss_buc_rm_anova_general(F_observed = F.observed, N = N,
                           df_numerator = df.numerator,
                           alpha_prior = alpha.prior, alpha_planned = alpha.planned,
-                          assurance = assurance, power = power)
+                          assurance = assurance, desired_power = power)
 }
 
 #' @rdname bucss-deprecated
@@ -220,7 +220,7 @@ ss.power.spa <- function(F.observed, N, levels.between, levels.within,
                      levels_between = levels.between, levels_within = levels.within,
                      effect = effect, alpha_prior = alpha.prior,
                      alpha_planned = alpha.planned, assurance = assurance,
-                     power = power)
+                     desired_power = power)
 }
 
 #' @rdname bucss-deprecated
@@ -236,7 +236,7 @@ ss.power.spa.general <- function(F.observed, N, df.numerator, num.groups,
   args <- list(F_observed = F.observed, N = N, df_numerator = df.numerator,
                num_groups = num.groups, effect = effect,
                alpha_prior = alpha.prior, alpha_planned = alpha.planned,
-               assurance = assurance, power = power)
+               assurance = assurance, desired_power = power)
   if (!missing(df.num.within)) args$df_num_within <- df.num.within
   do.call(ss_buc_mixed_anova_general, args)
 }
@@ -248,7 +248,7 @@ ss.power.reg1 <- function(t.observed, N, p, alpha.prior = .05, alpha.planned = .
   .deprecate_once("ss.power.reg1", "'ss_buc_reg_coef'")
   ss_buc_reg_coef(t_observed = t.observed, N = N, p = p,
                   alpha_prior = alpha.prior, alpha_planned = alpha.planned,
-                  assurance = assurance, power = power)
+                  assurance = assurance, desired_power = power)
 }
 
 #' @rdname bucss-deprecated
@@ -258,7 +258,7 @@ ss.power.reg.all <- function(F.observed, N, p, alpha.prior = .05, alpha.planned 
   .deprecate_once("ss.power.reg.all", "'ss_buc_R2'")
   ss_buc_R2(F_observed = F.observed, N = N, p = p,
             alpha_prior = alpha.prior, alpha_planned = alpha.planned,
-            assurance = assurance, power = power)
+            assurance = assurance, desired_power = power)
 }
 
 #' @rdname bucss-deprecated
@@ -269,7 +269,7 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
   .deprecate_once("ss.power.reg.joint", "'ss_buc_reg_joint'")
   ss_buc_reg_joint(F_observed = F.observed, N = N, p = p, p_joint = p.joint,
                    alpha_prior = alpha.prior, alpha_planned = alpha.planned,
-                   assurance = assurance, power = power)
+                   assurance = assurance, desired_power = power)
 }
 
 #' Positional extraction from a bias and uncertainty corrected sample size result
@@ -301,7 +301,7 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
   if (!missing(i) && length(i) == 1L && is.numeric(i) && i %in% c(1, 2)) {
     term <- .subset2(x, "term")
     value <- .subset2(x, "value")
-    if (i == 1) return(value[term == "necessary_sample_size"])
+    if (i == 1) return(value[term %in% .BUCSS_SIZE_TERMS][1])
     return(value[term == "ncp_adjusted"])
   }
   NextMethod()

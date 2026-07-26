@@ -26,18 +26,21 @@ result <- ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2,
 
 ## 1. Read It as a Printed Summary
 
-Printing the object gives a readable summary: the design, the necessary sample
-size with the unit it is counted in (and, for per-group and per-cell designs,
-the implied total sample size on the same line), the bias and uncertainty
-adjusted noncentrality parameter, the largest assurance this prior result can
-support, and the planning inputs you supplied.
+Printing the object shows the aligned `term`/`value` table, exactly as in
+**DMAR**: the design results first (the necessary sample size, named for its
+unit; the implied total sample size for per-group and per-cell designs; the
+achieved power at the returned size; and the bias and uncertainty adjusted
+noncentrality parameter), then the rows echoing the planning inputs you
+supplied. Footer lines close with the design, the unit the sample size is
+counted in, and the largest assurance this prior result can support.
 
 ```{r}
 result
 ```
 
-The displayed noncentrality parameter is rounded for reading; the stored value
-keeps full precision. Change the display with `options(bucss.digits = )`.
+Displayed values are rounded for reading (whole numbers print clean; other
+values print at three significant figures); the stored values keep full
+precision. Change the display with `options(bucss.digits = )`.
 
 ```{r}
 options(bucss.digits = 5)
@@ -48,12 +51,14 @@ options(bucss.digits = 3)  # restore the default
 ## 2. Pull a Single Number Out
 
 The object is an ordinary `data.frame` with a character `term` column and a
-numeric `value` column, so you can index it like any data frame. The rows are
-`necessary_sample_size`, `ncp_adjusted`, and, for per-group and per-cell
-designs, `total_N`.
+numeric `value` column, so you can index it like any data frame. The design
+results come first (here `necessary_n_per_cell`, `total_N`, `actual_power`,
+and `ncp_adjusted`; the size row is `necessary_n_per_group` or `necessary_N`
+in other designs), followed by one row per planning input, so the assumptions
+travel with the result through subsetting and `write.csv()`.
 
 ```{r}
-result$value[result$term == "necessary_sample_size"]
+result$value[result$term == "necessary_n_per_cell"]
 result$value[result$term == "total_N"]
 ```
 
@@ -62,20 +67,21 @@ out by name.
 
 ## 3. The Broom Verbs: `tidy()` and `glance()`
 
-`tidy()` returns a one-row data frame with one column per quantity (the "wide"
-view), so a single value comes out by name with no row indexing. It also
-includes the planned test's degrees of freedom and the assurance ceiling.
+`tidy()` returns the compact estimate view, the same shape as **DMAR**'s
+sample size planners: one row with `term` (`"sample_size"`), `estimate` (the
+necessary sample size in the design's unit), and `power` (the achieved power
+at that size).
 
 ```{r}
 tidy(result)
-tidy(result)$necessary_sample_size
-tidy(result)$total_N
+tidy(result)$estimate
 ```
 
-`glance()` returns a one-row model-level summary: the design, the effect tested,
-the headline sample sizes, the planned test's degrees of freedom, the unit, and
-the assurance ceiling. It is the convenient shape for collecting many results
-into one table for reporting.
+`glance()` returns the one-row wide view: every quantity and echoed planning
+input as a column, plus the design, the effect tested, the unit, the planned
+test's degrees of freedom, and the assurance ceiling. It is the convenient
+shape for pulling one value out by name or collecting many results into one
+table for reporting.
 
 ```{r}
 glance(result)
@@ -84,16 +90,23 @@ glance(result)
 Both verbs come from the **generics** package and are re-exported by BUCSS, so
 they work as soon as the package is loaded, with no extra setup. The full
 precision values are always available in the object itself, since only the
-printed display rounds.
+printed display rounds. And for a manuscript's method section,
+`planning_sentence()` writes the sentence:
+
+```{r}
+planning_sentence(result)
+```
 
 ## What Lives Where
 
-* The planned-study quantities (`necessary_sample_size`, `total_N`,
-  `ncp_adjusted`) are rows of the `value` column, so they survive any further
-  arithmetic you do on the object.
-* The design label, the effect tested, the unit, the assurance ceiling, the
-  planned test's degrees of freedom, and the planning inputs travel on
-  attributes and are surfaced by the print method and by `tidy()`/`glance()`.
+* Everything numeric is a row of the `value` column: the design results (the
+  size row named for its unit, `total_N`, `actual_power`, `ncp_adjusted`) and
+  the echoed planning inputs. Rows survive any further arithmetic, subsetting,
+  or export you do on the object.
+* Only non-numeric metadata travels on attributes: the design label, the
+  effect tested, the unit, plus the assurance ceiling and the planned test's
+  degrees of freedom. All of it is surfaced by the print method and by
+  `glance()`.
 
 ## References
 

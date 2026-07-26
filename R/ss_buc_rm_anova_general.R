@@ -80,6 +80,16 @@
 #'   desired level of assurance. We encourage users to make the adjustments as
 #'   minimal as possible.
 #'
+#'   The returned \code{actual_power} is the power the planned study
+#'   attains at the returned sample size, evaluated at the returned
+#'   (adjusted) noncentrality parameter. For the designs that round the prior
+#'   study's implied cell size both up and down (the conservative two-sided
+#'   rounding), the returned sample size is the larger of the two branch
+#'   answers while the returned noncentrality parameter is the smaller, so
+#'   \code{actual_power} is evaluated under the more conservative branch and
+#'   is a lower bound on the power the plan achieves; for the single-branch
+#'   designs it is exact. It always meets or exceeds \code{desired_power}.
+#'
 #'   \code{ss_buc_rm_anova_general} assumes sphericity for the within-subjects
 #'   effects.
 #'
@@ -96,7 +106,7 @@
 #'
 #' @examples
 #' result <- ss_buc_rm_anova_general(F_observed = 6.5, N = 80, df_numerator = 1,
-#'   alpha_prior = .05, alpha_planned = .05, assurance = .50, power = .80)
+#'   alpha_prior = .05, alpha_planned = .05, assurance = .50, desired_power = .80)
 #' result
 #'
 #' # Requesting more assurance than the prior result can support stops with an
@@ -110,15 +120,15 @@
 #' @template references
 ss_buc_rm_anova_general <- function(F_observed, N, df_numerator, alpha_prior = .05,
                                 alpha_planned = .05, assurance = .80,
-                                power = .80) {
-  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, power)
+                                desired_power = .80) {
+  v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, desired_power)
   alpha_prior <- v$alpha_prior
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
-  power <- v$power
+  desired_power <- v$desired_power
 
-  if (missing(N)) stop("You must specify 'N', which is the total sample size.")
-  if (missing(df_numerator)) stop("You must specify 'df_numerator', the numerator degrees of freedom for the effect of interest.")
+  if (missing(N)) stop("You must specify 'N', which is the total sample size.", call. = FALSE)
+  if (missing(df_numerator)) stop("You must specify 'df_numerator', the numerator degrees of freedom for the effect of interest.", call. = FALSE)
   .check_scalar_finite(F_observed, "F_observed")
   .check_count(N, "N", min = 2)
   .check_count(df_numerator, "df_numerator", min = 1)
@@ -128,7 +138,7 @@ ss_buc_rm_anova_general <- function(F_observed, N, df_numerator, alpha_prior = .
   df_denominator <- df_numerator * (n - 1)
 
   crit_F <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator)
-  if (F_observed <= crit_F) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.")
+  if (F_observed <= crit_F) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.", call. = FALSE)
 
   ncp_solution <- .solve_ncp_assurance(
     .tm_f(F_observed, crit_F, df_numerator, df_denominator), assurance)
@@ -141,11 +151,14 @@ ss_buc_rm_anova_general <- function(F_observed, N, df_numerator, alpha_prior = .
     critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
     1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / n) * ncp)
   }
-  output_n <- .smallest_n_for_power(power_at, power)
+  output_n <- .smallest_n_for_power(power_at, desired_power)
 
   df_error <- df_numerator * (output_n - 1)
+  actual_power <- power_at(output_n)
   .bucss_power_result(
     sample_size = output_n,
+    size_term = "necessary_N",
+    actual_power = actual_power,
     df_effect = df_numerator,
     df_error = df_error,
     ncp = ncp,
@@ -154,6 +167,6 @@ ss_buc_rm_anova_general <- function(F_observed, N, df_numerator, alpha_prior = .
     assurance_ceiling = ncp_solution$ceiling,
     inputs = list(F_observed = F_observed, N = N, df_numerator = df_numerator,
                   alpha_prior = alpha_prior_input, alpha_planned = alpha_planned,
-                  assurance = assurance, power = power)
+                  assurance = assurance, desired_power = desired_power)
   )
 }

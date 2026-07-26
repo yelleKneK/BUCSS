@@ -1,36 +1,62 @@
 # Internal constructor and print method shared by every ss_buc_* function.
 
+# The size-row vocabulary, mirroring DMAR's .SS_POWER_SIZE_TERMS: the size row
+# is named for its unit rather than carrying one generic name, so a BUCSS
+# table reads like a DMAR table and DMAR's tidiers could absorb it. Every
+# consumer that needs "the" sample size (the legacy `[[` method, the broom
+# verbs, the characterization harness, the oracles' helper) looks the row up
+# through this vector rather than hard-coding a name.
+.BUCSS_SIZE_TERMS <- c("necessary_n_per_group", "necessary_n_per_cell",
+                       "necessary_N")
+
 # Build the tidy result object returned by every ss_buc_* function.
 #
-# The planned-study quantities (the necessary sample size, the implied total
-# sample size for per-group and per-cell designs, and the bias and uncertainty
-# adjusted prior-study noncentrality parameter) live as rows of a numeric
-# `value` column so the object behaves like an ordinary data.frame for
-# downstream arithmetic; tidy() pivots them to a one-row wide view. The
-# `necessary_sample_size` and `ncp_adjusted` term names are fixed (the
-# regression oracles read them). The `total_N` row is present only when a
-# `total_n` is supplied (the per-group and per-cell designs). Everything else
-# (the human design label, the unit, the effect tested, the assurance ceiling
-# the prior supports, and the planning inputs) travels on attributes.
-.bucss_power_result <- function(sample_size, ncp, design, sample_size_unit,
+# Everything numeric lives as rows of the `value` column, in DMAR's echoed-
+# inputs style: the design results first (the size row named by `size_term`,
+# the implied `total_N` for per-group and per-cell designs, the conservative
+# `actual_power`, and the bias and uncertainty adjusted prior-study
+# noncentrality parameter `ncp_adjusted`), followed by rows echoing the
+# user's planning inputs, so the assumptions travel with the result through
+# subsetting and CSV export. A length-2 prior `n` echoes as `n_1`/`n_2` rows.
+# Only non-numeric metadata (the human design label, the unit, the effect
+# tested) plus the assurance ceiling and the planned test's df travel on
+# attributes.
+.bucss_power_result <- function(sample_size, size_term, ncp,
+                                actual_power = NULL, design, sample_size_unit,
                                 effect = NULL, assurance_ceiling = NULL,
                                 total_n = NULL, df_effect = NULL, df_error = NULL,
                                 inputs = list()) {
-  if (is.null(total_n)) {
-    out <- data.frame(term = c("necessary_sample_size", "ncp_adjusted"),
-                      value = c(sample_size, ncp), stringsAsFactors = FALSE)
-  } else {
-    out <- data.frame(term = c("necessary_sample_size", "total_N", "ncp_adjusted"),
-                      value = c(sample_size, total_n, ncp), stringsAsFactors = FALSE)
+  stopifnot(size_term %in% .BUCSS_SIZE_TERMS)
+  terms <- size_term
+  values <- sample_size
+  if (!is.null(total_n)) {
+    terms <- c(terms, "total_N")
+    values <- c(values, total_n)
   }
+  if (!is.null(actual_power)) {
+    terms <- c(terms, "actual_power")
+    values <- c(values, actual_power)
+  }
+  terms <- c(terms, "ncp_adjusted")
+  values <- c(values, ncp)
   inputs <- inputs[!vapply(inputs, is.null, logical(1))]
+  for (nm in names(inputs)) {
+    v <- inputs[[nm]]
+    if (nm == "n" && length(v) == 2L) {
+      terms <- c(terms, "n_1", "n_2")
+      values <- c(values, v[1], v[2])
+    } else {
+      terms <- c(terms, nm)
+      values <- c(values, v)
+    }
+  }
+  out <- data.frame(term = terms, value = values, stringsAsFactors = FALSE)
   attr(out, "design") <- design
   attr(out, "sample_size_unit") <- sample_size_unit
   attr(out, "effect") <- effect
   attr(out, "assurance_ceiling") <- assurance_ceiling
   attr(out, "df_effect") <- df_effect
   attr(out, "df_error") <- df_error
-  attr(out, "inputs") <- inputs
   class(out) <- c("bucss_power", "data.frame")
   out
 }
@@ -42,7 +68,7 @@
 # .validate_planning_inputs(), the four planning inputs.
 .check_scalar_finite <- function(x, name) {
   if (!is.numeric(x) || length(x) != 1L || !is.finite(x))
-    stop("'", name, "' must be a single finite number.", call. = FALSE)
+    stop("'", name, "' must be a single finite numeric value.", call. = FALSE)
   invisible(x)
 }
 
@@ -67,11 +93,11 @@
 # the value the user supplied, echoed back in the result's planning inputs.
 # call. = FALSE keeps this internal helper out of the error the user sees.
 .validate_planning_inputs <- function(alpha_prior, alpha_planned, assurance,
-                                      power) {
+                                      desired_power) {
   .check_scalar_finite(alpha_prior, "alpha_prior")
   .check_scalar_finite(alpha_planned, "alpha_planned")
   .check_scalar_finite(assurance, "assurance")
-  .check_scalar_finite(power, "power")
+  .check_scalar_finite(desired_power, "desired_power")
   if (alpha_prior > 1 | alpha_prior <= 0) stop("There is a problem with 'alpha_prior' of the prior study (i.e., the Type I error rate), please specify as a value between 0 and 1 (the default is .05).", call. = FALSE)
   alpha_prior_input <- alpha_prior
   if (alpha_prior == 1) alpha_prior <- .999
@@ -82,11 +108,11 @@
   if (assurance <= 0 | assurance >= 1) stop("There is a problem with 'assurance' (i.e., the proportion of times statistical power is at or above the desired value), please specify as a value strictly between 0 and 1 (the default is .80). An 'assurance' of exactly 0 or 1 does not define a plannable study; note that 100 entered as a percentage means 1.", call. = FALSE)
   if (assurance < .5) warning("The 'assurance' you have entered is < .5, which implies you will have under a 50% chance at achieving your desired level of power.", call. = FALSE)
 
-  if (power >= 1) power <- power / 100
-  if (power <= 0 | power >= 1) stop("There is a problem with 'power' (i.e., desired statistical power), please specify as a value strictly between 0 and 1 (the default is .80). A planned power of exactly 0 or 1 is not attainable; note that 100 entered as a percentage means 1.", call. = FALSE)
+  if (desired_power >= 1) desired_power <- desired_power / 100
+  if (desired_power <= 0 | desired_power >= 1) stop("There is a problem with 'desired_power' (i.e., desired statistical power), please specify as a value strictly between 0 and 1 (the default is .80). A planned power of exactly 0 or 1 is not attainable; note that 100 entered as a percentage means 1.", call. = FALSE)
 
   list(alpha_prior = alpha_prior, alpha_prior_input = alpha_prior_input,
-       assurance = assurance, power = power)
+       assurance = assurance, desired_power = desired_power)
 }
 
 # Map common shorthand for the `effect` argument to its canonical value, so a
@@ -283,16 +309,33 @@
   )
 }
 
+# Format a value column for display the way DMAR's dmar_tbl print does: whole
+# numbers print clean (no decimal part), everything else at 'digits'
+# significant figures, never scientific notation. Display only; the stored
+# values keep full precision.
+.format_bucss_value <- function(v, digits) {
+  vapply(v, function(x) {
+    if (is.na(x)) return(NA_character_)
+    if (is.finite(x) && x == floor(x) && abs(x) < 1e15) {
+      return(format(x, scientific = FALSE))
+    }
+    format(signif(x, digits), scientific = FALSE)
+  }, character(1))
+}
+
 #' Print a bias and uncertainty corrected sample size result
 #'
-#' Formats the object returned by the \code{ss_buc_*} functions for humans:
-#' the design, the necessary planned-study sample size with the unit it is
-#' counted in, the bias and uncertainty adjusted prior-study noncentrality
-#' parameter, and the planning inputs. The object itself is an ordinary
-#' \code{data.frame} with \code{term} and numeric \code{value} columns, so the
-#' two quantities remain available as \code{x$value[x$term == "..."]}.
+#' Prints the aligned \code{term}/\code{value} table (the planned-study
+#' results followed by the rows echoing the planning inputs), then factual
+#' footer lines naming the design, the unit the sample size is counted in,
+#' and the largest assurance the prior result can support. Whole numbers
+#' print clean; other values print at \code{getOption("bucss.digits", 3)}
+#' significant figures. Only the display is rounded; the stored values keep
+#' full precision.
 #'
 #' @param x An object of class \code{bucss_power}.
+#' @param digits Significant figures for non-integer values; defaults to
+#'   \code{getOption("bucss.digits", 3)}.
 #' @param ... Further arguments, ignored.
 #'
 #' @return \code{x}, invisibly.
@@ -300,43 +343,26 @@
 #' @aliases bucss_power
 #' @export
 #' @keywords internal
-print.bucss_power <- function(x, ...) {
-  sample_size <- x$value[x$term == "necessary_sample_size"]
-  ncp <- x$value[x$term == "ncp_adjusted"]
-  design <- attr(x, "design")
-  unit <- attr(x, "sample_size_unit")
-  effect <- attr(x, "effect")
-  total_n <- x$value[x$term == "total_N"]
-  if (length(total_n) == 0L) total_n <- NULL
-  assurance_ceiling <- attr(x, "assurance_ceiling")
-  inputs <- attr(x, "inputs")
+print.bucss_power <- function(x, digits = getOption("bucss.digits", 3L), ...) {
+  shown <- data.frame(term = x$term,
+                      value = .format_bucss_value(x$value, digits),
+                      stringsAsFactors = FALSE)
+  print.data.frame(shown, row.names = FALSE, right = FALSE)
 
-  cat("Bias and uncertainty corrected sample size\n")
-  if (!is.null(design)) cat("Design: ", design, "\n", sep = "")
-  if (!is.null(effect)) cat("Effect of interest: ", effect, "\n", sep = "")
+  design <- attr(x, "design")
+  effect <- attr(x, "effect")
+  unit <- attr(x, "sample_size_unit")
+  assurance_ceiling <- attr(x, "assurance_ceiling")
   cat("\n")
-  if (!is.null(total_n)) {
-    cat("Necessary sample size (", unit, "): ", sample_size,
-        "  (total N = ", total_n, ")\n", sep = "")
-  } else {
-    cat("Necessary sample size (", unit, "): ", sample_size, "\n", sep = "")
+  if (!is.null(design)) {
+    cat("Design: ", design,
+        if (!is.null(effect)) paste0(" (", effect, ")"), "\n", sep = "")
   }
-  cat("Adjusted noncentrality parameter: ",
-      format(signif(ncp, getOption("bucss.digits", 3L))), "\n", sep = "")
+  if (!is.null(unit)) cat("Sample size unit: ", unit, "\n", sep = "")
   if (!is.null(assurance_ceiling)) {
     cval <- floor(assurance_ceiling * 100 + 1e-9) / 100
-    cat("Assurance this prior can support (ceiling): about ",
+    cat("Largest supportable assurance: ",
         sub("^0", "", sprintf("%.2f", cval)), "\n", sep = "")
   }
-  if (length(inputs) > 0L) {
-    cat("\nPlanning inputs:\n")
-    nms <- names(inputs)
-    for (i in seq_along(inputs)) {
-      cat("  ", nms[i], " = ",
-          paste(format(inputs[[i]]), collapse = ", "), "\n", sep = "")
-    }
-  }
-  cat("\nUse tidy() for these quantities as a one-row data frame, ",
-      "or glance() for a summary.\n", sep = "")
   invisible(x)
 }

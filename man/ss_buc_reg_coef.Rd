@@ -13,7 +13,7 @@ ss_buc_reg_coef(
   alpha_prior = 0.05,
   alpha_planned = 0.05,
   assurance = 0.8,
-  power = 0.8
+  desired_power = 0.8
 )
 }
 \arguments{
@@ -38,27 +38,31 @@ times that the planned study power will reach or surpass the desired level
 (assurance > .5 corrects for uncertainty; assurance < .5 is not
 recommended). Enter it as a proportion in (0, 1) or as a percentage greater
 than 1 (for example, 80 is read as .80); a value of exactly 1 is read as 1
-percent. A percentage is echoed in the result's stored planning inputs as
+percent. A percentage is echoed in the result's planning-input rows as
 the coerced proportion (80 is echoed as .80); the same applies to
-\code{power}.}
+\code{desired_power}.}
 
-\item{power}{Desired level of statistical power for the planned study. Enter
-it as a proportion in (0, 1) or as a percentage greater than 1; a value of
-exactly 1 is read as 1 percent.}
+\item{desired_power}{Desired level of statistical power for the planned
+study. Enter it as a proportion in (0, 1) or as a percentage greater than
+1; a value of exactly 1 is read as 1 percent.}
 }
 \value{
 An object of class \code{bucss_power}: a \code{data.frame} with a
-  character \code{term} column and a numeric \code{value} column. The rows
-  are \code{necessary_sample_size} (the suggested total sample size for the
-  planned study), then, for the designs whose sample size is counted per
-  group or per cell, \code{total_N} (the implied total sample size), and
-  \code{ncp_adjusted} (the publication bias and uncertainty adjusted prior
-  study noncentrality parameter). The design, the unit the sample size is
-  counted in, the largest assurance this prior can support (the assurance
-  ceiling), the planned test's degrees of freedom (\code{df_effect} and
-  \code{df_error}), and the planning inputs travel on attributes; they are
-  shown by \code{print.bucss_power}, and \code{tidy()} and \code{glance()}
-  return them as columns.
+  character \code{term} column and a numeric \code{value} column, in the
+  same shape as the sibling package \code{DMAR}'s planners. The design
+  results come first: the necessary total sample size for the planned
+  study, named for its unit (\code{necessary_n_per_group},
+  \code{necessary_n_per_cell}, or \code{necessary_N}); for the per-group
+  and per-cell designs, \code{total_N}, the implied total sample size;
+  \code{actual_power}, the conservative achieved power at the returned
+  sample size (see Details); and \code{ncp_adjusted}, the publication bias
+  and uncertainty adjusted prior study noncentrality parameter. Rows
+  echoing the planning inputs follow, so the assumptions travel with the
+  result. The design, the unit the sample size is counted in, the largest
+  assurance this prior can support (the assurance ceiling), and the
+  planned test's degrees of freedom (\code{df_effect} and \code{df_error})
+  travel on attributes; they are shown by \code{print.bucss_power}, and
+  \code{tidy()} and \code{glance()} give the compact and wide views.
 }
 \description{
 \code{ss_buc_reg_coef} returns the necessary total sample size to
@@ -140,6 +144,16 @@ Researchers often use the sample effect size from a prior study as
   desired level of assurance. We encourage users to make the adjustments as
   minimal as possible.
 
+  The returned \code{actual_power} is the power the planned study
+  attains at the returned sample size, evaluated at the returned
+  (adjusted) noncentrality parameter. For the designs that round the prior
+  study's implied cell size both up and down (the conservative two-sided
+  rounding), the returned sample size is the larger of the two branch
+  answers while the returned noncentrality parameter is the smaller, so
+  \code{actual_power} is evaluated under the more conservative branch and
+  is a lower bound on the power the plan achieves; for the single-branch
+  designs it is exact. It always meets or exceeds \code{desired_power}.
+
   The coefficient's observed \emph{t} may be entered with either sign.
   The publication rule the correction assumes is two-sided and the
   statistic enters on the \emph{F} scale as \eqn{t^2}, so only the
@@ -152,7 +166,7 @@ Researchers often use the sample effect size from a prior study as
 }
 \examples{
 result <- ss_buc_reg_coef(t_observed = 3, N = 150, p = 3, alpha_prior = .05,
-  alpha_planned = .05, assurance = .80, power = .80)
+  alpha_planned = .05, assurance = .80, desired_power = .80)
 result
 
 # Requesting more assurance than the prior result can support stops with an

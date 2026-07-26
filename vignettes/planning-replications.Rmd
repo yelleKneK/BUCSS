@@ -152,7 +152,7 @@ across replications.
 ```{r}
 ss_buc_independent_t(t_observed = 2.52, n = 25,
                      alpha_prior = .05, alpha_planned = .05,
-                     assurance = .50, power = .80)
+                     assurance = .50, desired_power = .80)
 ```
 
 Even correcting for publication bias alone, BUCSS calls for far more
@@ -169,7 +169,7 @@ number:
 ```{r, error = TRUE}
 ss_buc_independent_t(t_observed = 2.52, n = 25,
                      alpha_prior = .05, alpha_planned = .05,
-                     assurance = .80, power = .80)
+                     assurance = .80, desired_power = .80)
 ```
 
 The message is itself the lesson: an underpowered original study cannot anchor a
@@ -188,7 +188,7 @@ summary, or pull the pieces out programmatically:
 ```{r}
 plan <- ss_buc_independent_t(t_observed = 2.52, n = 25, assurance = .50)
 tidy(plan)
-tidy(plan)$necessary_sample_size
+tidy(plan)$estimate
 ```
 
 The classic dotted name still works for scripts written against earlier
