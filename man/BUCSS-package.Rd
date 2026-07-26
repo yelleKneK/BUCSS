@@ -28,7 +28,8 @@ confidence intervals, and sample size planning across additional frameworks.
 
 The bias and uncertainty adjusted noncentrality parameter is found by solving
 the truncated-likelihood equation directly with \code{\link[stats]{uniroot}},
-so it is not capped at any maximum and needs no resolution argument.
+so it is no longer capped at 100 (the 1.x grid bound) and needs no
+resolution argument.
 }
 \references{
 Anderson, S. F., & Kelley, K. (2024). Sample size planning for replication

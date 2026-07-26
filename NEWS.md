@@ -181,6 +181,11 @@ fixes").
   `p_joint`) and a prior `N` too small for the design (fewer than two
   observations per cell or group) are now reported with an informative message.
 
+* `ss_buc_independent_t()` now echoes the prior study's sample size (`n` or
+  `N`, whichever was supplied) in the stored planning inputs and the printed
+  "Planning inputs" block, as every other planner already did, so a saved or
+  printed result can be traced back to the prior study.
+
 * Every planner now validates that its observed statistic is a single finite
   number and that its design counts (`n`, `N`, levels, `cells`, `num_groups`,
   `p`, `p_joint`, prior degrees of freedom) are single whole numbers, naming

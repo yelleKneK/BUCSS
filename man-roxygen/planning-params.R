@@ -7,7 +7,9 @@
 #'   (assurance > .5 corrects for uncertainty; assurance < .5 is not
 #'   recommended). Enter it as a proportion in (0, 1) or as a percentage greater
 #'   than 1 (for example, 80 is read as .80); a value of exactly 1 is read as 1
-#'   percent.
+#'   percent. A percentage is echoed in the result's stored planning inputs as
+#'   the coerced proportion (80 is echoed as .80); the same applies to
+#'   \code{power}.
 #' @param power Desired level of statistical power for the planned study. Enter
 #'   it as a proportion in (0, 1) or as a percentage greater than 1; a value of
 #'   exactly 1 is read as 1 percent.

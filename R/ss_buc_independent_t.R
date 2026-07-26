@@ -236,7 +236,10 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
     sample_size_unit = "per group",
     assurance_ceiling = min(solution_ru$ceiling, solution_rd$ceiling),
     total_n = 2 * output_n,
-    inputs = list(t_observed = t_observed, alpha_prior = alpha_prior_input,
+    inputs = list(t_observed = t_observed,
+                  n = if (missing(n)) NULL else n,
+                  N = if (missing(N) || is.null(N)) NULL else N,
+                  alpha_prior = alpha_prior_input,
                   alpha_planned = alpha_planned, assurance = assurance,
                   power = power)
   )

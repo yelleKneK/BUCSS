@@ -48,7 +48,9 @@ times that the planned study power will reach or surpass the desired level
 (assurance > .5 corrects for uncertainty; assurance < .5 is not
 recommended). Enter it as a proportion in (0, 1) or as a percentage greater
 than 1 (for example, 80 is read as .80); a value of exactly 1 is read as 1
-percent.}
+percent. A percentage is echoed in the result's stored planning inputs as
+the coerced proportion (80 is echoed as .80); the same applies to
+\code{power}.}
 
 \item{power}{Desired level of statistical power for the planned study. Enter
 it as a proportion in (0, 1) or as a percentage greater than 1; a value of
@@ -56,12 +58,17 @@ exactly 1 is read as 1 percent.}
 }
 \value{
 An object of class \code{bucss_power}: a \code{data.frame} with a
-  character \code{term} column and a numeric \code{value} column whose two
-  rows are \code{necessary_sample_size} (the suggested per-group sample size for
-  the planned study) and \code{ncp_adjusted} (the publication bias and
-  uncertainty adjusted prior study noncentrality parameter). The design, the
-  unit the sample size is counted in, and the planning inputs travel on
-  attributes and are shown by \code{print.bucss_power}.
+  character \code{term} column and a numeric \code{value} column. The rows
+  are \code{necessary_sample_size} (the suggested per-group sample size for the
+  planned study), then, for the designs whose sample size is counted per
+  group or per cell, \code{total_N} (the implied total sample size), and
+  \code{ncp_adjusted} (the publication bias and uncertainty adjusted prior
+  study noncentrality parameter). The design, the unit the sample size is
+  counted in, the largest assurance this prior can support (the assurance
+  ceiling), the planned test's degrees of freedom (\code{df_effect} and
+  \code{df_error}), and the planning inputs travel on attributes; they are
+  shown by \code{print.bucss_power}, and \code{tidy()} and \code{glance()}
+  return them as columns.
 }
 \description{
 \code{ss_buc_independent_t} returns the necessary per-group sample size

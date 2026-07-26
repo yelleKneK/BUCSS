@@ -124,7 +124,7 @@
 #' # Pull the planned per-cell sample size, the implied total sample size, and
 #' # the adjusted noncentrality parameter out of the result:
 #' result$value[result$term == "necessary_sample_size"]  # per cell
-#' attr(result, "total_n")                                # total across all cells
+#' result$value[result$term == "total_N"]                 # total across all cells
 #' result$value[result$term == "ncp_adjusted"]
 #'
 #' # Requesting more assurance than the prior result can support stops with an
