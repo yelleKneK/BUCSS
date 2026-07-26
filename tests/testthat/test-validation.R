@@ -57,6 +57,36 @@ test_that("a nonsignificant prior t is rejected", {
                "nonsignificant", fixed = TRUE)
 })
 
+test_that("a negative prior t plans from its magnitude (two-sided rule)", {
+  # The publication rule is two-sided and TM is symmetric in the sign of
+  # t, so t = -3 is the same evidence as t = 3; the sign is the analyst's
+  # coding of the comparison, and the planned sample size must not depend
+  # on it. The signed value is still echoed in the stored inputs.
+  neg <- ss_buc_independent_t(t_observed = -3, n = 20)
+  pos <- ss_buc_independent_t(t_observed = 3, n = 20)
+  expect_equal(neg$value, pos$value)
+  expect_identical(attr(neg, "inputs")$t_observed, -3)
+
+  neg_p <- ss_buc_paired_t(t_observed = -3, N = 40)
+  pos_p <- ss_buc_paired_t(t_observed = 3, N = 40)
+  expect_equal(neg_p$value, pos_p$value)
+  expect_identical(attr(neg_p, "inputs")$t_observed, -3)
+
+  neg_r <- ss_buc_reg_coef(t_observed = -3, N = 150, p = 3)
+  pos_r <- ss_buc_reg_coef(t_observed = 3, N = 150, p = 3)
+  expect_equal(neg_r$value, pos_r$value)
+  expect_identical(attr(neg_r, "inputs")$t_observed, -3)
+
+  # A magnitude below the two-tailed cutoff is still rejected, whatever
+  # its sign, and the alpha_prior remedy in the message is now reachable.
+  expect_error(ss_buc_independent_t(t_observed = -1, n = 20),
+               "nonsignificant", fixed = TRUE)
+  expect_error(ss_buc_paired_t(t_observed = -1, N = 40),
+               "nonsignificant", fixed = TRUE)
+  expect_error(ss_buc_reg_coef(t_observed = -1, N = 150, p = 3),
+               "nonsignificant", fixed = TRUE)
+})
+
 test_that("a nonsignificant prior F is rejected", {
   expect_error(
     ss_buc_factorial_anova(F_observed = 1, N = 120, levels_A = 2, levels_B = 3,
@@ -227,4 +257,125 @@ test_that("a prior 'N' too small for the design is rejected with a clear message
   expect_error(ss_buc_factorial_anova_general(F_observed = 5, N = 11, cells = 6,
                                               df_numerator = 2, df_denominator = 5),
                "too small", fixed = TRUE)
+})
+
+test_that("every remaining documented guard fires with its message", {
+  # Data-driven sweep of the stop() branches not covered by the targeted tests
+  # above: one row per (call, fixed substring the error must contain). The
+  # nonsignificant-statistic rows are the load-bearing ones; if one of those
+  # guards silently vanished, planning would proceed from a nonsignificant
+  # prior.
+  guard_cases <- list(
+    # validator: percentages above 100 are out of range after the coercion
+    list(quote(ss_buc_independent_t(t_observed = 3, n = 20, assurance = 150)),
+         "assurance"),
+    list(quote(ss_buc_independent_t(t_observed = 3, n = 20, power = 150)),
+         "power"),
+    # independent t structural guards
+    list(quote(ss_buc_independent_t(t_observed = 3, n = 20, N = 40)),
+         "should not specify 'n'"),
+    list(quote(ss_buc_independent_t(t_observed = 3, n = c(10, 10, 10))),
+         "vector of length two"),
+    # paired t
+    list(quote(ss_buc_paired_t(t_observed = 3)), "number of pairs"),
+    list(quote(ss_buc_paired_t(t_observed = 1, N = 40)), "nonsignificant"),
+    # one-way ANOVA
+    list(quote(ss_buc_one_way_anova(F_observed = 5, levels_A = 4)),
+         "must specify 'N'"),
+    list(quote(ss_buc_one_way_anova(F_observed = 5, N = 120)), "levels_A"),
+    list(quote(ss_buc_one_way_anova(F_observed = 1, N = 120, levels_A = 4)),
+         "nonsignificant"),
+    # factorial ANOVA
+    list(quote(ss_buc_factorial_anova(F_observed = 5, N = 120, levels_B = 3)),
+         "levels_A"),
+    list(quote(ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2)),
+         "levels_B"),
+    list(quote(ss_buc_factorial_anova(F_observed = 5, N = 10, levels_A = 2,
+                                      levels_B = 3)),
+         "too small"),
+    # factorial general
+    list(quote(ss_buc_factorial_anova_general(F_observed = 5, cells = 6,
+                                              df_numerator = 2,
+                                              df_denominator = 114)),
+         "must specify 'N'"),
+    list(quote(ss_buc_factorial_anova_general(F_observed = 1, N = 120,
+                                              cells = 6, df_numerator = 2,
+                                              df_denominator = 114)),
+         "nonsignificant"),
+    # within-subjects designs
+    list(quote(ss_buc_rm_anova(F_observed = 5, levels_A = 3)),
+         "must specify 'N'"),
+    list(quote(ss_buc_rm_anova(F_observed = 5, N = 60)), "levels_A"),
+    list(quote(ss_buc_rm_anova(F_observed = 1, N = 60, levels_A = 3)),
+         "nonsignificant"),
+    list(quote(ss_buc_rm_anova_general(F_observed = 5, df_numerator = 2)),
+         "must specify 'N'"),
+    list(quote(ss_buc_rm_anova_general(F_observed = 1, N = 60,
+                                       df_numerator = 2)),
+         "nonsignificant"),
+    # split-plot designs
+    list(quote(ss_buc_mixed_anova(F_observed = 5, levels_between = 2,
+                                  levels_within = 3)),
+         "must specify 'N'"),
+    list(quote(ss_buc_mixed_anova(F_observed = 5, N = 60,
+                                  levels_between = 2)),
+         "within-subjects factor"),
+    list(quote(ss_buc_mixed_anova(F_observed = 5, N = 60,
+                                  levels_within = 3)),
+         "between-subjects factor"),
+    list(quote(ss_buc_mixed_anova(F_observed = 1, N = 60, levels_between = 2,
+                                  levels_within = 3)),
+         "nonsignificant"),
+    list(quote(ss_buc_mixed_anova_general(F_observed = 5, df_numerator = 1,
+                                          num_groups = 2)),
+         "must specify 'N'"),
+    list(quote(ss_buc_mixed_anova_general(F_observed = 5, N = 60,
+                                          df_numerator = 1, num_groups = 2,
+                                          effect = "between_within")),
+         "df_num_within"),
+    list(quote(ss_buc_mixed_anova_general(F_observed = 5, N = 3,
+                                          df_numerator = 1, num_groups = 2)),
+         "too small"),
+    list(quote(ss_buc_mixed_anova_general(F_observed = 1, N = 60,
+                                          df_numerator = 1, num_groups = 2)),
+         "nonsignificant"),
+    # regression designs
+    list(quote(ss_buc_reg_coef(t_observed = 3, p = 3)), "total sample size"),
+    list(quote(ss_buc_reg_coef(t_observed = 1, N = 150, p = 3)),
+         "nonsignificant"),
+    list(quote(ss_buc_reg_coef(t_observed = 3, N = 10, p = 9)),
+         "degrees of freedom"),
+    list(quote(ss_buc_R2(F_observed = 5, p = 3)), "total sample size"),
+    list(quote(ss_buc_R2(F_observed = 1, N = 150, p = 3)), "nonsignificant"),
+    list(quote(ss_buc_reg_joint(F_observed = 5, N = 150, p = 3, p_joint = 4)),
+         "cannot exceed"),
+    list(quote(ss_buc_reg_joint(F_observed = 1, N = 150, p = 4, p_joint = 2)),
+         "nonsignificant"),
+    # an unrecognized effect value falls through .match_effect to match.arg
+    list(quote(ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2,
+                                      levels_B = 3, effect = "bogus")),
+         "should be one of")
+  )
+  for (case in guard_cases) {
+    expect_error(suppressWarnings(eval(case[[1]])), case[[2]], fixed = TRUE,
+                 label = paste(deparse(case[[1]]), collapse = " "))
+  }
+})
+
+test_that("the Mode 2 zero-NCP message says alpha_prior is the only lever", {
+  # A barely significant prior has a ceiling below the .5 assurance floor, so
+  # the message must switch from "re-run at or below the ceiling" (Mode 1) to
+  # naming alpha_prior as the only remaining remedy.
+  expect_error(ss_buc_independent_t(t_observed = 2.03, n = 20,
+                                    assurance = .95),
+               "only remaining lever", fixed = TRUE)
+})
+
+test_that("the noncentrality safety cap warns and names the remedy", {
+  # A finite but absurd statistic drives the root past the 1e7 bracket cap;
+  # the planner warns (rather than looping forever) and asks the user to
+  # verify the inputs. The paired design has a single branch, so exactly one
+  # warning fires.
+  expect_warning(ss_buc_paired_t(t_observed = 5e7, N = 25),
+                 "verify", fixed = TRUE)
 })
