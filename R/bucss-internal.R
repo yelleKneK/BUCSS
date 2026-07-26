@@ -312,8 +312,8 @@ print.bucss_power <- function(x, ...) {
   inputs <- attr(x, "inputs")
 
   cat("Bias and uncertainty corrected sample size\n")
-  if (!is.null(design)) cat("Design:", design, "\n")
-  if (!is.null(effect)) cat("Effect of interest:", effect, "\n")
+  if (!is.null(design)) cat("Design: ", design, "\n", sep = "")
+  if (!is.null(effect)) cat("Effect of interest: ", effect, "\n", sep = "")
   cat("\n")
   if (!is.null(total_n)) {
     cat("Necessary sample size (", unit, "): ", sample_size,
