@@ -57,7 +57,8 @@ test_that("each deprecated function forwards to its ss_buc_* replacement", {
 
 test_that("deprecation warning fires once per session and names the replacement", {
   # Clear the per-session warning record so the first call below warns.
-  rm(list = ls(envir = .bucss_deprecated_warned), envir = .bucss_deprecated_warned)
+  rm(list = ls(envir = BUCSS:::.bucss_deprecated_warned),
+     envir = BUCSS:::.bucss_deprecated_warned)
   w <- testthat::capture_warnings(ss.power.it(t.observed = 3, n = 20))
   expect_match(w, "deprecated", all = FALSE)
   expect_match(w, "ss_buc_independent_t", all = FALSE)
