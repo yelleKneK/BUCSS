@@ -11,10 +11,17 @@ suppressMessages(pkgload::load_all(".", quiet = TRUE))
 
 grids <- list(
   ss_buc_independent_t = function() {
-    g <- expand.grid(t_observed = c(2.5, 3, 4, 6), n = c(15, 20, 40),
+    # t = 30 exercises the uncapped root (adjusted parameter far above the 1.x
+    # grid bound of 100).
+    g <- expand.grid(t_observed = c(2.5, 3, 4, 6, 30), n = c(15, 20, 40),
                      alpha_prior = c(.05, .10, 1), assurance = c(.5, .8, .9),
                      power = c(.8, .9), KEEP.OUT.ATTRS = FALSE)
-    lapply(seq_len(nrow(g)), function(i) as.list(g[i, ]))
+    rows <- lapply(seq_len(nrow(g)), function(i) as.list(g[i, ]))
+    # add a total-N slice (odd N exercises the N path's own two-branch rounding)
+    g2 <- expand.grid(t_observed = c(3, 4), N = c(41, 80),
+                      alpha_prior = c(.05, 1), assurance = c(.5, .8, .9),
+                      power = .8, KEEP.OUT.ATTRS = FALSE)
+    c(rows, lapply(seq_len(nrow(g2)), function(i) as.list(g2[i, ])))
   },
   ss_buc_paired_t = function() {
     g <- expand.grid(t_observed = c(2.5, 3, 4, 6), N = c(20, 40, 80),
@@ -23,7 +30,10 @@ grids <- list(
     lapply(seq_len(nrow(g)), function(i) as.list(g[i, ]))
   },
   ss_buc_one_way_anova = function() {
-    g <- expand.grid(F_observed = c(4, 6, 10), N = c(60, 120), levels_A = c(3, 4),
+    # F = 60 exercises the uncapped root; N = 121 does not divide evenly, so
+    # the round-down branch of the conservative two-sided rounding can bind.
+    g <- expand.grid(F_observed = c(4, 6, 10, 60), N = c(60, 120, 121),
+                     levels_A = c(3, 4),
                      alpha_prior = c(.05, .10, 1), assurance = c(.5, .8, .9),
                      power = c(.8), KEEP.OUT.ATTRS = FALSE)
     lapply(seq_len(nrow(g)), function(i) as.list(g[i, ]))
@@ -76,7 +86,14 @@ grids <- list(
                       effect = "between_within", df_num_within = 3,
                       alpha_prior = c(.05, 1), assurance = c(.5, .8, .9), power = .8,
                       stringsAsFactors = FALSE, KEEP.OUT.ATTRS = FALSE)
-    c(rows, lapply(seq_len(nrow(g2)), function(i) as.list(g2[i, ])))
+    # and a within_only slice, so all three effect arms are characterized
+    g3 <- expand.grid(F_observed = c(4, 6, 10), N = 90, df_numerator = 2, num_groups = 3,
+                      effect = "within_only", alpha_prior = c(.05, 1),
+                      assurance = c(.5, .8, .9), power = .8,
+                      stringsAsFactors = FALSE, KEEP.OUT.ATTRS = FALSE)
+    c(rows,
+      lapply(seq_len(nrow(g2)), function(i) as.list(g2[i, ])),
+      lapply(seq_len(nrow(g3)), function(i) as.list(g3[i, ])))
   },
   ss_buc_reg_coef = function() {
     g <- expand.grid(t_observed = c(2.5, 3, 4, 6), N = c(80, 150), p = c(2, 3, 5),

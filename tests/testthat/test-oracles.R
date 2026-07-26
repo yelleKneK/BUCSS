@@ -145,3 +145,43 @@ test_that("df_denominator functions: more nuisance parameters call for a larger 
   # functional df_denominator path cannot drift unnoticed.
   expect_oracle(with_covariates, 737, 0.262)
 })
+
+test_that("the adjusted noncentrality parameter is no longer capped at 100", {
+  # The flagship engine fix: the 1.x grid stopped at 100, so this prior (whose
+  # implied parameter is 148.48) returned the capped, wrong pair 5 / 100. The
+  # uniroot bracket auto-expands, verified against an independent root solve.
+  expect_oracle(
+    ss_buc_one_way_anova(F_observed = 60, N = 120, levels_A = 4,
+                         assurance = .80, power = .80),
+    4, 148.482)
+})
+
+test_that("the round-down branch binds when the prior N does not divide evenly", {
+  # With N = 121 in 3 groups the conservative two-sided rounding matters: the
+  # round-up branch alone would plan 1277; the round-down branch requires 1280,
+  # and the max-n / min-NCP rule must select it. Guards the conservatism rule,
+  # which no evenly divisible case can (the branches coincide there).
+  expect_oracle(
+    ss_buc_one_way_anova(F_observed = 5, N = 121, levels_A = 3,
+                         assurance = .80, power = .80),
+    1280, 0.302)
+})
+
+test_that("previously unpinned planner arms match their verified values", {
+  # Each of these three arms had no oracle: the within_only effect of the
+  # general split-plot planner, the one-way within-subjects success path, and
+  # the independent t total-N path with odd N (its own two-branch rounding).
+  # All three values are verified matches of the CRAN 1.2.1 grid at step .001.
+  expect_oracle(
+    ss_buc_mixed_anova_general(F_observed = 5, N = 90, num_groups = 3,
+                               df_numerator = 2, effect = "within_only",
+                               assurance = .80, power = .80),
+    704, 0.411)
+  expect_oracle(
+    ss_buc_rm_anova(F_observed = 6.5, N = 80, levels_A = 3,
+                    assurance = .80, power = .80),
+    200, 3.897)
+  expect_oracle(
+    ss_buc_independent_t(t_observed = 3, N = 41, assurance = .80, power = .80),
+    132, 1.105)
+})
