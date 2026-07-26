@@ -18,7 +18,9 @@ ss_buc_reg_coef(
 }
 \arguments{
 \item{t_observed}{Observed \emph{t} value from a previous study used to plan
-sample size for a planned study.}
+sample size for a planned study. Either sign is accepted: the
+publication rule is two-sided, so only the magnitude enters the
+correction (see Details).}
 
 \item{N}{Total sample size of the previous study.}
 
@@ -137,6 +139,16 @@ Researchers often use the sample effect size from a prior study as
   for uncertainty only by setting \code{alpha_prior = 1} and choosing the
   desired level of assurance. We encourage users to make the adjustments as
   minimal as possible.
+
+  The coefficient's observed \emph{t} may be entered with either sign.
+  The publication rule the correction assumes is two-sided and the
+  statistic enters on the \emph{F} scale as \eqn{t^2}, so only the
+  magnitude affects the computation: \code{t_observed = -3} plans
+  exactly the sample size that \code{t_observed = 3} plans. When
+  planning a replication, confirm that the magnitude belongs to a
+  coefficient in the direction the planned study is designed to detect
+  (Anderson & Kelley, 2024): the correction adjusts the size of the
+  prior effect, not its direction.
 }
 \examples{
 result <- ss_buc_reg_coef(t_observed = 3, N = 150, p = 3, alpha_prior = .05,

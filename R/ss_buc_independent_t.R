@@ -86,6 +86,17 @@
 #'   desired level of assurance. We encourage users to make the adjustments as
 #'   minimal as possible.
 #'
+#'   The observed \emph{t} may be entered with either sign. The publication
+#'   rule the correction assumes is two-sided and the truncated likelihood
+#'   is symmetric in the sign of \emph{t}, so only the magnitude enters the
+#'   computation: \code{t_observed = -3} plans exactly the sample size that
+#'   \code{t_observed = 3} plans. The sign of a two-group \emph{t} records
+#'   which group was subtracted from which, an arbitrary coding choice
+#'   rather than evidence. When planning a replication, confirm that the
+#'   magnitude belongs to an effect in the direction the planned study is
+#'   designed to detect (Anderson & Kelley, 2024): the correction adjusts
+#'   the size of the prior effect, not its direction.
+#'
 #'   If you are working from a standardized mean difference (Cohen's \eqn{d})
 #'   rather than a \emph{t} statistic, convert it before calling: for two
 #'   independent groups \eqn{t = d / \sqrt{1/n_1 + 1/n_2}}, which equals
@@ -113,7 +124,9 @@
 #'   precision in estimating an appropriate planned study \emph{n}.
 #'
 #' @param t_observed Observed \emph{t} value from a previous study used to plan
-#'   sample size for a planned study.
+#'   sample size for a planned study. Either sign is accepted: the
+#'   publication rule is two-sided, so only the magnitude enters the
+#'   correction (see Details).
 #' @param n Per group sample size (if equal) or the two group sample sizes of
 #'   the previous study (enter either a single number or a vector of length 2).
 #' @param N Total sample size of the previous study, assumed equal across groups
@@ -152,6 +165,12 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
   power <- v$power
 
   .check_scalar_finite(t_observed, "t_observed")
+
+  # The publication rule is two-sided and TM is symmetric in the sign of t,
+  # so only the magnitude enters the correction; the sign records which group
+  # was subtracted from which, a coding choice, not evidence. The user's
+  # signed value is echoed unchanged in the stored inputs.
+  t_stat <- abs(t_observed)
 
   if (!missing(N)) {
     if (!is.null(N)) {
@@ -196,10 +215,10 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
 
   ## Rounding up
   value_critical_ru <- qt(1 - alpha_prior / 2, df = DF_ru)
-  if (t_observed <= value_critical_ru) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.")
+  if (t_stat <= value_critical_ru) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.")
 
   solution_ru <- .solve_ncp_assurance(
-    .tm_t(t_observed, value_critical_ru, DF_ru), assurance)
+    .tm_t(t_stat, value_critical_ru, DF_ru), assurance)
   ncp_ru <- solution_ru$ncp
 
   if (ncp_ru == 0) .stop_zero_ncp(solution_ru$ceiling)
@@ -215,10 +234,10 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
 
   ## Rounding down
   value_critical_rd <- qt(1 - alpha_prior / 2, df = DF_rd)
-  if (t_observed <= value_critical_rd) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.")
+  if (t_stat <= value_critical_rd) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.")
 
   solution_rd <- .solve_ncp_assurance(
-    .tm_t(t_observed, value_critical_rd, DF_rd), assurance)
+    .tm_t(t_stat, value_critical_rd, DF_rd), assurance)
   ncp_rd <- solution_rd$ncp
 
   if (ncp_rd == 0) .stop_zero_ncp(solution_rd$ceiling)

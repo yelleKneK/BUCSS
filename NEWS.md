@@ -141,6 +141,25 @@ fixes").
 
 ## Bug fixes
 
+* A negative observed *t* is now accepted by all three *t*-based planners
+  (`ss_buc_independent_t()`, `ss_buc_paired_t()`, `ss_buc_reg_coef()`),
+  which plan from its magnitude. The publication rule the correction
+  assumes is two-sided and the truncated likelihood is symmetric in the
+  sign of *t*, so `t_observed = -3` is the same evidence as
+  `t_observed = 3`; the sign records which group was subtracted from
+  which (or the direction of the paired difference, or the coefficient's
+  coding), never the strength of the prior result. In 1.x and the
+  earlier 2.0.0 drafts the two *t*-test planners rejected any negative
+  *t* as "nonsignificant", however large its magnitude, with advice
+  (raise `alpha_prior`) that could not help, while
+  `ss.power.reg1`/`ss_buc_reg_coef` silently accepted the same input;
+  the three planners now agree. The signed value is still echoed in the
+  stored planning inputs, and a genuinely nonsignificant magnitude is
+  still rejected. Scripts (and the designingexperiments.com apps) that
+  previously received an error for a significant negative *t* now
+  receive the plan its magnitude implies; no result that was previously
+  returned has changed.
+
 * An `assurance` or `power` of exactly 0 or 1 (after the percentage coercion,
   so also `power = 100`) is now rejected with a clear error. In 1.x these
   endpoint values were accepted and silently returned meaningless results: an

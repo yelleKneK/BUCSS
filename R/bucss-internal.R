@@ -146,6 +146,11 @@
 }
 
 .tm_t <- function(stat, crit, df) {
+  # The two tail masses below are taken beyond +stat and -stat, which is
+  # only the two-sided tail area when stat is nonnegative; a raw negative
+  # statistic would produce TM values outside [0, 1]. The publication rule
+  # is symmetric in the sign of t, so the magnitude is the statistic.
+  stat <- abs(stat)
   function(ncp) {
     power <- (1 - pt(crit, df = df, ncp = ncp)) + pt(-crit, df = df, ncp = ncp)
     area_above <- (1 - pt(stat, df = df, ncp = ncp)) + pt(-stat, df = df, ncp = ncp)

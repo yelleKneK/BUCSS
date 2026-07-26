@@ -87,13 +87,26 @@
 #'   desired level of assurance. We encourage users to make the adjustments as
 #'   minimal as possible.
 #'
+#'   The observed \emph{t} may be entered with either sign. The publication
+#'   rule the correction assumes is two-sided and the truncated likelihood
+#'   is symmetric in the sign of \emph{t}, so only the magnitude enters the
+#'   computation: \code{t_observed = -3} plans exactly the sample size that
+#'   \code{t_observed = 3} plans. The sign of a paired \emph{t} records the
+#'   direction the within-pair difference was taken, an arbitrary coding
+#'   choice rather than evidence. When planning a replication, confirm that
+#'   the magnitude belongs to an effect in the direction the planned study
+#'   is designed to detect (Anderson & Kelley, 2024): the correction
+#'   adjusts the size of the prior effect, not its direction.
+#'
 #'   If you are working from a standardized mean difference (Cohen's \eqn{d_z})
 #'   of the difference scores rather than a \emph{t} statistic, convert it before
 #'   calling: for a paired design \eqn{t = d_z\sqrt{N}}, where \emph{N} is the
 #'   number of pairs.
 #'
 #' @param t_observed Observed \emph{t} value from a previous study used to plan
-#'   sample size for a planned study.
+#'   sample size for a planned study. Either sign is accepted: the
+#'   publication rule is two-sided, so only the magnitude enters the
+#'   correction (see Details).
 #' @param N Total sample size (the number of pairs) of the previous study.
 #' @template planning-params
 #'
@@ -128,15 +141,22 @@ ss_buc_paired_t <- function(t_observed, N, alpha_prior = .05, alpha_planned = .0
 
   if (missing(N)) stop("You need to specify a sample size (i.e., the number of pairs) used in the original study.")
   .check_scalar_finite(t_observed, "t_observed")
+
+  # The publication rule is two-sided and TM is symmetric in the sign of t,
+  # so only the magnitude enters the correction; the sign records the
+  # direction the paired difference was taken, a coding choice, not
+  # evidence. The user's signed value is echoed unchanged in the stored
+  # inputs.
+  t_stat <- abs(t_observed)
   .check_count(N, "N", min = 2)
 
   DF <- N - 1
 
   value_critical <- qt(1 - alpha_prior / 2, df = DF)
-  if (t_observed <= value_critical) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.")
+  if (t_stat <= value_critical) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.")
 
   ncp_solution <- .solve_ncp_assurance(
-    .tm_t(t_observed, value_critical, DF), assurance)
+    .tm_t(t_stat, value_critical, DF), assurance)
   ncp <- ncp_solution$ncp
 
   if (ncp == 0) .stop_zero_ncp(ncp_solution$ceiling)

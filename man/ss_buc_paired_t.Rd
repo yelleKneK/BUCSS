@@ -27,7 +27,9 @@ ss_buc_smd_paired(
 }
 \arguments{
 \item{t_observed}{Observed \emph{t} value from a previous study used to plan
-sample size for a planned study.}
+sample size for a planned study. Either sign is accepted: the
+publication rule is two-sided, so only the magnitude enters the
+correction (see Details).}
 
 \item{N}{Total sample size (the number of pairs) of the previous study.}
 
@@ -150,6 +152,17 @@ Researchers often use the sample effect size from a prior study as
   for uncertainty only by setting \code{alpha_prior = 1} and choosing the
   desired level of assurance. We encourage users to make the adjustments as
   minimal as possible.
+
+  The observed \emph{t} may be entered with either sign. The publication
+  rule the correction assumes is two-sided and the truncated likelihood
+  is symmetric in the sign of \emph{t}, so only the magnitude enters the
+  computation: \code{t_observed = -3} plans exactly the sample size that
+  \code{t_observed = 3} plans. The sign of a paired \emph{t} records the
+  direction the within-pair difference was taken, an arbitrary coding
+  choice rather than evidence. When planning a replication, confirm that
+  the magnitude belongs to an effect in the direction the planned study
+  is designed to detect (Anderson & Kelley, 2024): the correction
+  adjusts the size of the prior effect, not its direction.
 
   If you are working from a standardized mean difference (Cohen's \eqn{d_z})
   of the difference scores rather than a \emph{t} statistic, convert it before
