@@ -141,6 +141,15 @@ fixes").
 
 ## Bug fixes
 
+* An `assurance` or `power` of exactly 0 or 1 (after the percentage coercion,
+  so also `power = 100`) is now rejected with a clear error. In 1.x these
+  endpoint values were accepted and silently returned meaningless results: an
+  `assurance` of 0 has no solution, so the reported noncentrality parameter was
+  an artifact of the internal search bound, and a target power of exactly 1 is
+  unattainable, so the returned sample size was where the computed power
+  crossed 1 by floating-point error. The documented rule that an `assurance` or
+  `power` of exactly 1 is read as 1 percent is unchanged.
+
 * `df_denominator` now functions in `ss_buc_factorial_anova_general()`. In 1.x
   it was accepted but silently ignored, and the documented example supplied an
   impossible value (`df_denominator = 117` with `N = 120` and `cells = 6`, for

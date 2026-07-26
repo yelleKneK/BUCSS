@@ -20,6 +20,28 @@ test_that("out-of-range assurance is rejected", {
                "assurance", fixed = TRUE)
 })
 
+test_that("endpoint assurance and power are rejected, not silently planned", {
+  # assurance = 0 has no root (TM is strictly positive): the old behavior
+  # returned the uniroot bracket endpoint as the adjusted NCP.
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 50, assurance = 0),
+               "assurance", fixed = TRUE)
+  # power = 100 coerces to a target of exactly 1.0, which the search can only
+  # "reach" by floating-point error in pt(); power = 0 trivially returned n = 2.
+  expect_error(ss_buc_paired_t(t_observed = 3, N = 25, power = 100),
+               "power", fixed = TRUE)
+  expect_error(ss_buc_paired_t(t_observed = 3, N = 25, power = 0),
+               "power", fixed = TRUE)
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, assurance = 100),
+               "assurance", fixed = TRUE)
+  # The documented percentage rule is untouched: exactly 1 still means 1
+  # percent (coercion runs before the range check), so power = 1 plans at a
+  # .01 target without error, and assurance = 1 reaches the < .5 warning
+  # rather than the range stop.
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, power = 1), NA)
+  expect_warning(ss_buc_independent_t(t_observed = 3, n = 20, assurance = 1),
+                 "< .5", fixed = TRUE)
+})
+
 test_that("assurance below .5 warns but still computes", {
   expect_warning(ss_buc_independent_t(t_observed = 3, n = 20, assurance = .4),
                  "< .5", fixed = TRUE)
