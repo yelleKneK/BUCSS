@@ -200,14 +200,28 @@
 # 'target' is the answer. 'start' is the smallest admissible size (2 for most
 # designs; larger when nuisance-parameter or predictor degrees of freedom must
 # be absorbed before the error df is positive). Every planner routes its
-# planned-n search through this helper so the incremental search, and its
-# off-by-one, lives in one place rather than being re-derived per design; each
-# planner supplies a 'power_at' closure carrying its own degrees-of-freedom and
-# noncentrality scaling.
+# planned-n search through this helper so the search, and its off-by-one, lives
+# in one place rather than being re-derived per design; each planner supplies a
+# 'power_at' closure carrying its own degrees-of-freedom and noncentrality
+# scaling. The bracket doubles until the target is enclosed and then bisects,
+# so the cost is logarithmic in the answer where the 1.x incremental search was
+# linear (a plan near the assurance ceiling can need a sample size in the
+# millions); monotonicity guarantees the same integer the incremental search
+# returned. Arithmetic is in doubles so a huge answer cannot overflow the
+# integer counter.
 .smallest_n_for_power <- function(power_at, target, start = 2L) {
-  n_rep <- start
-  while (power_at(n_rep) < target) n_rep <- n_rep + 1L
-  n_rep
+  lo <- as.numeric(start)
+  if (power_at(lo) >= target) return(lo)
+  hi <- lo * 2                       # invariant: power_at(lo) < target
+  while (power_at(hi) < target) {
+    lo <- hi
+    hi <- hi * 2
+  }
+  while (hi - lo > 1) {              # invariant: power_at(hi) >= target
+    mid <- floor((lo + hi) / 2)
+    if (power_at(mid) < target) lo <- mid else hi <- mid
+  }
+  hi
 }
 
 # Stop with a single, informative error when the bias and uncertainty

@@ -204,6 +204,15 @@ fixes").
   (`.solve_ncp_assurance`, `.tm_f`/`.tm_t`, and `.smallest_n_for_power`), shared
   by all twelve planners, so the numerical core is maintained in one place.
 
+* The planned-sample-size search brackets by doubling and then bisects instead
+  of stepping by one, so its cost is logarithmic in the answer. Requests whose
+  planned sample size runs to the millions (an `assurance` just below the
+  prior's ceiling) now return instantly instead of iterating for minutes, and
+  a huge answer can no longer overflow the integer step counter. Power is
+  monotone in the sample size, so the returned value is the identical integer
+  the incremental search produced (verified case for case on the developer
+  characterization grid).
+
 * Factored the shared planning-input validation into a single internal helper,
   and moved the duplicated `@references`, planning-argument, and `@return`
   documentation into `man-roxygen` templates, so each is maintained in one place
