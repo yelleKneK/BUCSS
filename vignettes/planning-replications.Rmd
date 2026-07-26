@@ -1,9 +1,9 @@
 ---
-title: "Planning replication studies"
+title: "Planning Replication Studies"
 author: "Ken Kelley, Samantha F. Anderson, and Scott E. Maxwell"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Planning replication studies}
+  %\VignetteIndexEntry{Planning Replication Studies}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -25,7 +25,7 @@ sample size plan.
 library(BUCSS)
 ```
 
-## A literature built from underpowered studies
+## A Literature Built From Underpowered Studies
 
 Imagine a true effect that is real but small. Many laboratories run a two-group
 experiment to detect it, each with a modest sample size, and (as is the norm)
@@ -101,7 +101,7 @@ average (solid line) is well above the true value (dashed red line). A reader of
 this literature sees only the filled points and naturally concludes the effect
 is much larger than it is.
 
-## Why planning at face value underpowers the replication
+## Why Planning at Face Value Underpowers the Replication
 
 Now put yourself in the position of a researcher who wants to replicate one of
 these published findings. Suppose the published study you are working from used
@@ -136,7 +136,7 @@ does not just lose a little power; it leaves the replication almost as
 underpowered as the original. A field that plans this way keeps running studies
 that cannot succeed.
 
-## The BUCSS correction
+## The BUCSS Correction
 
 BUCSS breaks this cycle. Instead of trusting the published effect, it treats the
 published test statistic as a draw from a *truncated* distribution, truncated
@@ -180,7 +180,7 @@ make an informed, minimal adjustment rather than a blind one. A well-powered
 original study would support assurance of .80 or .95 comfortably; this one does
 not, and that is worth knowing before you collect data.
 
-## Reading and using the result
+## Reading and Using the Result
 
 Every `ss_buc_*` function returns a tidy object. Print it for a readable
 summary, or pull the pieces out programmatically:
@@ -203,7 +203,7 @@ legacy[[1]]   # necessary sample size per group
 (Calling the dotted name once per session also prints a deprecation note
 pointing to `ss_buc_independent_t()`; new code should use the new name.)
 
-## The bigger picture
+## The Bigger Picture
 
 Detecting the effect again is only one possible goal of a replication. Anderson
 and Kelley (2024) describe four, each with its own sample size logic: inferring

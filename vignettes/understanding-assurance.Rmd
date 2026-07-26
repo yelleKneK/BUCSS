@@ -1,9 +1,9 @@
 ---
-title: "Assurance and the publication bias correction"
+title: "Assurance and the Publication Bias Correction"
 author: "Ken Kelley, Samantha F. Anderson, and Scott E. Maxwell"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Assurance and the publication bias correction}
+  %\VignetteIndexEntry{Assurance and the Publication Bias Correction}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -20,7 +20,7 @@ size responds as you turn each knob. The correction is described by Anderson,
 Kelley, and Maxwell (2017) and builds on the truncated noncentral distribution
 of Taylor and Muller (1996).
 
-## Assurance: correcting for uncertainty
+## Assurance: Correcting for Uncertainty
 
 Assurance is the long-run proportion of replications whose realized power meets
 or exceeds the target. If you plan for 80% power with `assurance = .80`, then in
@@ -61,7 +61,7 @@ data.frame(assurance = assurances, necessary_n_per_group = n_by_assurance)
 The climb is steep. A prior effect this uncertain calls for 130 per group at
 80% assurance and over 5000 per group at 90%.
 
-### When the correction cannot be made
+### When the Correction Cannot Be Made
 
 Push assurance high enough on a weak or uncertain prior effect and the corrected
 noncentrality parameter is driven to zero. That is the method telling you the
@@ -103,7 +103,7 @@ prior can support", so you can see how much headroom remains before the
 correction breaks down. The printed result also gives the implied total sample
 size for per-group and per-cell designs, saving you the multiplication.
 
-## alpha_prior: modeling publication bias
+## alpha_prior: Modeling Publication Bias
 
 `alpha_prior` is the significance threshold that governs publication in the
 prior study's literature. Setting `alpha_prior = .05` assumes the field
@@ -142,7 +142,7 @@ data.frame(alpha_prior = alphas, necessary_n_per_group = n_by_alpha)
 Assuming the strongest bias (`alpha_prior = .05`) calls for 130 per group;
 assuming none (`alpha_prior = 1`) calls for 37.
 
-## Practical guidance
+## Practical Guidance
 
 * Make the corrections as minimal as you can defend. Each knob trades a modeling
   assumption for a smaller sample, and overstating either bias or uncertainty

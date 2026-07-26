@@ -4,40 +4,40 @@ template:
   bootstrap: 5
 
 reference:
-- title: t tests
+- title: t Tests
   desc: >
     Independent and dependent (paired) t test designs, that is, the
     standardized mean difference.
   contents:
   - ss_buc_independent_t
   - ss_buc_paired_t
-- title: Between-subjects ANOVA
+- title: Between-Subjects ANOVA
   contents:
   - ss_buc_one_way_anova
   - ss_buc_factorial_anova
   - ss_buc_factorial_anova_general
-- title: Within-subjects ANOVA
+- title: Within-Subjects ANOVA
   contents:
   - ss_buc_rm_anova
   - ss_buc_rm_anova_general
-- title: Split-plot (mixed) ANOVA
+- title: Split-Plot (Mixed) ANOVA
   contents:
   - ss_buc_mixed_anova
   - ss_buc_mixed_anova_general
-- title: Multiple regression
+- title: Multiple Regression
   contents:
   - ss_buc_reg_coef
   - ss_buc_R2
   - ss_buc_reg_joint
-- title: The result object
+- title: The Result Object
   desc: Working with the tidy bucss_power object the planners return.
   contents:
   - print.bucss_power
   - bucss_tidiers
-- title: Deprecated 1.x functions
+- title: Deprecated 1.x Functions
   contents:
   - bucss-deprecated
-- title: Package overview
+- title: Package Overview
   contents:
   - BUCSS-package
 

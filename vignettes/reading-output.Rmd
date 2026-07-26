@@ -1,9 +1,9 @@
 ---
-title: "Reading and using BUCSS output"
+title: "Reading and Using BUCSS Output"
 author: "Ken Kelley, Samantha F. Anderson, and Scott E. Maxwell"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Reading and using BUCSS output}
+  %\VignetteIndexEntry{Reading and Using BUCSS Output}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -24,7 +24,7 @@ result <- ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2,
                                  levels_B = 3, effect = "factor_B")
 ```
 
-## 1. Read it as a printed summary
+## 1. Read It as a Printed Summary
 
 Printing the object gives a readable summary: the design, the necessary sample
 size with the unit it is counted in (and, for per-group and per-cell designs,
@@ -45,7 +45,7 @@ result
 options(bucss.digits = 3)  # restore the default
 ```
 
-## 2. Pull a single number out
+## 2. Pull a Single Number Out
 
 The object is an ordinary `data.frame` with a character `term` column and a
 numeric `value` column, so you can index it like any data frame. The rows are
@@ -60,7 +60,7 @@ result$value[result$term == "total_N"]
 That works, but the `tidy()` view below is usually tidier for pulling one value
 out by name.
 
-## 3. The broom verbs: `tidy()` and `glance()`
+## 3. The Broom Verbs: `tidy()` and `glance()`
 
 `tidy()` returns a one-row data frame with one column per quantity (the "wide"
 view), so a single value comes out by name with no row indexing. It also
@@ -86,7 +86,7 @@ they work as soon as the package is loaded, with no extra setup. The full
 precision values are always available in the object itself, since only the
 printed display rounds.
 
-## What lives where
+## What Lives Where
 
 * The planned-study quantities (`necessary_sample_size`, `total_N`,
   `ncp_adjusted`) are rows of the `value` column, so they survive any further

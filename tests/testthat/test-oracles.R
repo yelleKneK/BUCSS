@@ -122,7 +122,7 @@ test_that("regression joint test", {
     3960, 0.365)
 })
 
-test_that("effect-size aliases are identical to their test-named functions", {
+test_that("effect size aliases are identical to their test-named functions", {
   expect_identical(
     ss_buc_smd(t_observed = 3, n = 20, assurance = .80, power = .80),
     ss_buc_independent_t(t_observed = 3, n = 20, assurance = .80, power = .80))

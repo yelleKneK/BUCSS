@@ -120,7 +120,7 @@
 #'   alpha_planned = .05, assurance = .80, power = .80)
 #' result
 #'
-#' # ss_buc_smd_paired is the same function under an effect-size name
+#' # ss_buc_smd_paired is the same function under an effect size name
 #' ss_buc_smd_paired(t_observed = 3, N = 40)
 #'
 #' # Requesting more assurance than the prior result can support stops with an

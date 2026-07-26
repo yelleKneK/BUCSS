@@ -10,7 +10,7 @@
 BUCSS is an R package for implementing Bias and Uncertainty Corrected Sample
 Size planning. BUCSS implements a method of correcting for publication bias and
 uncertainty when planning the sample size of a future study from an original
-study. See [Anderson, Kelley, &amp; Maxwell (2017; *Psychological Science*, *28*, 1547--1562)](https://www3.nd.edu/~kkelley/publications/articles/Anderson_Kelley_Maxwell_Psychological_Science_2017.pdf).
+study. See [Anderson, Kelley, &amp; Maxwell (2017; *Psychological Science*, *28*, 1547--1562)](https://kenkelley.org/wp-content/uploads/articles/Anderson_Kelley_Maxwell_Psychological_Science_2017.pdf).
 
 ## Installing `BUCSS`
 
@@ -40,7 +40,7 @@ remotes::install_github("yelleKneK/BUCSS")
 Consider an original study in which two independent groups are used to test the
 null hypothesis of no difference in the population means of the two groups
 (e.g., a treatment and a control group). Suppose the independent samples
-$t$-test in the original study reported $t=3.00$ based on sample sizes per group
+$t$ test in the original study reported $t=3.00$ based on sample sizes per group
 of $n_1=50$ and $n_2=55$ with a Type I error rate of $\alpha=.05$. The planned
 study seeks a statistical power of .80 with 90% assurance that the power will be
 at least 80%. Assurance is the probability that a study planned with this method
@@ -82,13 +82,13 @@ tidy(result)                        # necessary_sample_size, total_N, ncp_adjust
 glance(result)
 ```
 
-## A note on function names
+## A Note on Function Names
 
 BUCSS 2.0.0 renamed the function family to the `ss_buc_*` prefix (for example
 `ss_buc_independent_t()` in place of the former `ss.power.it()`), so the names make
 clear that these planners apply the bias and uncertainty correction, rather than
 ordinary power analysis. The independent and paired *t* test planners also carry
-effect-size aliases (`ss_buc_smd()` and `ss_buc_smd_paired()`), and the
+effect size aliases (`ss_buc_smd()` and `ss_buc_smd_paired()`), and the
 between-subjects ANOVA is now split into a one-way planner
 (`ss_buc_one_way_anova()`) and a two-way planner (`ss_buc_factorial_anova()`).
 Each function returns a tidy `bucss_power` object rather than a two-element list.

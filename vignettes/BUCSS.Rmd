@@ -1,9 +1,9 @@
 ---
-title: "Getting started with BUCSS"
+title: "Getting Started With BUCSS"
 author: "Ken Kelley, Samantha F. Anderson, and Scott E. Maxwell"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Getting started with BUCSS}
+  %\VignetteIndexEntry{Getting Started With BUCSS}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -12,7 +12,7 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-## Why not plan from the observed effect size?
+## Why Not Plan From the Observed Effect Size?
 
 A natural way to plan a new study is to take the effect size from a prior study
 and compute the sample size that would give, say, 80% power for an effect of
@@ -38,7 +38,7 @@ than an equally sized underestimate raises it (by planning a larger one).
 Symmetric error in the estimate therefore produces an asymmetric loss of power,
 which is why correcting for uncertainty, not just bias, matters.
 
-## What BUCSS does
+## What BUCSS Does
 
 BUCSS ("Bias and Uncertainty Corrected Sample Size") corrects the prior study's
 effect before planning. It uses the prior study's test statistic and design to
@@ -53,7 +53,7 @@ Kelley, and Maxwell (2017).
 library(BUCSS)
 ```
 
-## A first example
+## A First Example
 
 Suppose a prior study used an independent samples *t* test with 20 participants
 per group and reported *t* = 3.00. We want to plan a new study with 80% power,
@@ -69,7 +69,7 @@ result
 The correction calls for 130 participants per group, far more than a face-value
 calculation from *t* = 3.00 would suggest.
 
-## Reading the result
+## Reading the Result
 
 Every `ss_buc_*` function returns a tidy object that prints the design, the
 necessary sample size with the unit it is counted in, the implied total sample
@@ -102,7 +102,7 @@ tidy(result)$necessary_sample_size
 glance(result)
 ```
 
-## The replication example
+## The Replication Example
 
 When the prior study has unequal group sizes, you can pass both. Here a prior
 study reported *t* = 3.00 with group sizes of 50 and 55, and we ask for 90%
@@ -119,7 +119,7 @@ dependable replication. Anderson et al. (2017) quoted 1482 for this example
 under the original grid-search method; as of BUCSS 2.0.0 the adjusted
 noncentrality parameter is found by direct root finding, which gives 1485.
 
-## The function family
+## The Function Family
 
 BUCSS covers a range of designs, one function per analysis. Each summarizes the
 prior study with a single test statistic plus the design.

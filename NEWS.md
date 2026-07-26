@@ -12,7 +12,7 @@ makes them more accurate. The general between-subjects function's
 `df_denominator` argument, silently ignored in 1.x, now functions (see "Bug
 fixes").
 
-## Engine: root finding instead of a fixed grid
+## Engine: Root Finding Instead of a Fixed Grid
 
 * The bias and uncertainty adjusted noncentrality parameter is found by solving
   the truncated-likelihood equation directly with `stats::uniroot()`, replacing
@@ -36,13 +36,13 @@ fixes").
   any grid resolution setting are gone, since root finding has no resolution
   parameter.
 
-## API modernization
+## API Modernization
 
 * The exported functions are renamed to the `ss_buc_*` prefix, so the names make
   clear that these planners apply the bias and uncertainty correction rather
   than ordinary power analysis. The between-subjects ANOVA planner is split into
   a one-way and a two-way function, and the two *t* test planners gain
-  effect-size aliases:
+  effect size aliases:
 
   | 1.x | 2.0.0 |
   | --- | --- |
@@ -70,7 +70,7 @@ fixes").
   effect, sample size unit, assurance ceiling, and planning inputs travel on
   attributes and are shown by the print method.
 
-## Backward compatibility: 1.x names are deprecated, not removed
+## Backward Compatibility: 1.x Names Are Deprecated, Not Removed
 
 * The dot-named 1.x functions (`ss.power.it`, `ss.power.dt`, `ss.power.ba`,
   `ss.power.ba.general`, `ss.power.wa`, `ss.power.wa.general`, `ss.power.spa`,
@@ -90,10 +90,10 @@ fixes").
   values the 1.x functions returned as an unnamed list. Column and name access
   (`result$value`, `result[["value"]]`) are unaffected.
 
-## New features
+## New Features
 
 * The independent and paired *t* test planners are available under both
-  test-specific names (`ss_buc_independent_t`, `ss_buc_paired_t`) and effect-size
+  test-specific names (`ss_buc_independent_t`, `ss_buc_paired_t`) and effect size
   names (`ss_buc_smd`, `ss_buc_smd_paired`) for the standardized mean
   difference. The two names in each pair are the same function.
 
@@ -133,13 +133,15 @@ fixes").
 
 * Added an `inst/CITATION` file. `citation("BUCSS")` returns the package
   reference, so that the version and CRAN source are credited, together with the
-  Anderson, Kelley, and Maxwell (2017) and Anderson and Kelley (2024) articles.
+  four articles behind the methods: Anderson, Kelley, and Maxwell (2017),
+  Anderson and Kelley (2024), Anderson and Maxwell (2017), and the Anderson
+  (2021) regression tutorial.
 
 * Added a vignette on planning replication studies, which walks through why a
   literature built from underpowered studies inflates effect sizes and how the
   bias and uncertainty correction repairs the resulting sample size plan.
 
-## Bug fixes
+## Bug Fixes
 
 * A negative observed *t* is now accepted by all three *t*-based planners
   (`ss_buc_independent_t()`, `ss_buc_paired_t()`, `ss_buc_reg_coef()`),
@@ -224,11 +226,11 @@ fixes").
 ## Internal
 
 * The noncentrality search, the truncated-likelihood construction, and the
-  planned-sample-size search each live in a single internal helper
+  planned sample size search each live in a single internal helper
   (`.solve_ncp_assurance`, `.tm_f`/`.tm_t`, and `.smallest_n_for_power`), shared
   by all twelve planners, so the numerical core is maintained in one place.
 
-* The planned-sample-size search brackets by doubling and then bisects instead
+* The planned sample size search brackets by doubling and then bisects instead
   of stepping by one, so its cost is logarithmic in the answer. Requests whose
   planned sample size runs to the millions (an `assurance` just below the
   prior's ceiling) now return instantly instead of iterating for minutes, and

@@ -27,7 +27,7 @@ test_that("alpha_prior = 1 models no publication bias and is echoed as entered",
   expect_lt(no_bias$value[no_bias$term == "necessary_sample_size"],
             default$value[default$term == "necessary_sample_size"])
   # pin the .999-substitution path's output (a verified 1.2.1 match), so the
-  # no-publication-bias computation cannot drift while the class and echo
+  # alpha_prior = 1 computation cannot drift while the class and echo
   # assertions above keep passing
   expect_equal(no_bias$value[no_bias$term == "necessary_sample_size"], 37)
   expect_equal(round(no_bias$value[no_bias$term == "ncp_adjusted"], 3), 2.090)

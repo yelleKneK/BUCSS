@@ -1,9 +1,9 @@
 ---
-title: "Worked examples across designs"
+title: "Worked Examples Across Designs"
 author: "Ken Kelley, Samantha F. Anderson, and Scott E. Maxwell"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Worked examples across designs}
+  %\VignetteIndexEntry{Worked Examples Across Designs}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -22,7 +22,7 @@ Maxwell, 2017). Every example uses
 `alpha_prior` settings, see
 `vignette("understanding-assurance", package = "BUCSS")`.
 
-## Independent *t* test
+## Independent *t* Test
 
 A prior two-group study reported *t* = 3.00 with 20 participants per group. The
 returned sample size is per group.
@@ -32,11 +32,11 @@ ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05, alpha_planned = 
                assurance = .80, power = .80)
 ```
 
-`ss_buc_smd` is the same planner under an effect-size name, for when you are
+`ss_buc_smd` is the same planner under an effect size name, for when you are
 working from a standardized mean difference rather than a raw *t*; prefer
 `ss_buc_independent_t` when the prior *t* was computed from unstandardized data.
 
-## Dependent (paired) *t* test
+## Dependent (Paired) *t* Test
 
 A prior within-pairs study of 40 pairs reported *t* = 3.00. The returned sample
 size is the number of pairs.
@@ -49,7 +49,7 @@ ss_buc_paired_t(t_observed = 3, N = 40, alpha_prior = .05, alpha_planned = .05,
 The alias `ss_buc_smd_paired` serves the standardized mean difference framing of
 the same comparison.
 
-## Between-subjects ANOVA
+## Between-Subjects ANOVA
 
 A one-way fully between-subjects design takes the number of levels of the single
 factor. Here a four-group design with total *N* = 120 reported *F* = 5.00 for
@@ -86,7 +86,7 @@ ss_buc_factorial_anova_general(F_observed = 5, N = 120, cells = 6,
                                assurance = .80, power = .80)
 ```
 
-## Within-subjects ANOVA
+## Within-Subjects ANOVA
 
 For a fully within-subjects design, supply the factor levels and the effect.
 Here a 2 x 3 within-subjects design with *N* = 60 reported *F* = 5.00 for the
@@ -109,7 +109,7 @@ ss_buc_rm_anova_general(F_observed = 6.5, N = 80, df_numerator = 1,
                         power = .80)
 ```
 
-## Split-plot (mixed) ANOVA
+## Split-Plot (Mixed) ANOVA
 
 A split-plot design crosses a between-subjects factor with a within-subjects
 factor. Supply the levels of each and the effect (`between`, `within`, or
@@ -135,7 +135,7 @@ ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2,
                            assurance = .80, power = .80)
 ```
 
-## Multiple regression
+## Multiple Regression
 
 Anderson (2021) is a step-by-step tutorial for planning regression studies with
 BUCSS, and is the best starting point for the three regression planners below.

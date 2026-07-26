@@ -144,7 +144,7 @@
 #' result
 #' result$value[result$term == "necessary_sample_size"]
 #'
-#' # ss_buc_smd is the same function under an effect-size name
+#' # ss_buc_smd is the same function under an effect size name
 #' ss_buc_smd(t_observed = 3, n = 20)
 #'
 #' # Asking for more assurance than the prior result can support stops with an
