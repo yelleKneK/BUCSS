@@ -17,6 +17,14 @@ units, documented in `NEWS.md`. The other deliberate change from 1.x is the
 but silently ignored and which now functions. The regression tests in
 `tests/testthat/` pin every documented example.
 
+The update also repairs the released version on current R: in 1.2.1 the
+one-way paths of `ss.power.ba` and `ss.power.wa` fail under R >= 4.2 with the
+length-greater-than-one condition error, and a prior study whose implied
+noncentrality parameter exceeds the old grid's cap of 100 silently returns an
+incorrect (capped or grid-noise) result. Both are fixed by the 2.0.0 engine,
+so users on current R are better served by this submission than by the
+version CRAN currently hosts.
+
 ## Test environments
 
 * local: macOS (arm64), R 4.5.2

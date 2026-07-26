@@ -1,6 +1,8 @@
 if (!exists("meta") || is.null(meta)) meta <- packageDescription("BUCSS")
 year <- sub("-.*", "", meta$Date)
-if (length(year) == 0L || is.na(year) || !nzchar(year)) year <- format(Sys.Date(), "%Y")
+# Fall back to the release year, not the reader's current year, so the package
+# citation stays stable after 2026; update alongside the next release.
+if (length(year) == 0L || is.na(year) || !nzchar(year)) year <- "2026"
 note <- sprintf("R package version %s", meta$Version)
 
 citHeader(
