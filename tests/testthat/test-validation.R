@@ -382,3 +382,12 @@ test_that("the noncentrality safety cap warns and names the remedy", {
   expect_warning(ss_buc_paired_t(t_observed = 5e7, N = 25),
                  "verify", fixed = TRUE)
 })
+
+test_that("independent t without any prior sample size gets a friendly error", {
+  # Previously: raw 'argument "n" is missing' for neither, and the cryptic
+  # 'object DF_ru not found' for N = NULL with no n.
+  expect_error(ss_buc_independent_t(t_observed = 3),
+               "either 'n'", fixed = TRUE)
+  expect_error(ss_buc_independent_t(t_observed = 3, N = NULL),
+               "either 'n'", fixed = TRUE)
+})

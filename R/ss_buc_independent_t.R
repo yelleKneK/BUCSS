@@ -176,6 +176,12 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
 
   .check_scalar_finite(t_observed, "t_observed")
 
+  # Treat N = NULL as absent so both no-size paths get the friendly error
+  # rather than a cryptic missing-argument or undefined-object failure.
+  if ((missing(N) || is.null(N)) && missing(n)) {
+    stop("You must specify the prior study's sample size: either 'n' (the per group size, or the two group sizes as a length-2 vector) or 'N' (the total).", call. = FALSE)
+  }
+
   # The publication rule is two-sided and TM is symmetric in the sign of t,
   # so only the magnitude enters the correction; the sign records which group
   # was subtracted from which, a coding choice, not evidence. The user's
