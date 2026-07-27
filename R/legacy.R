@@ -89,6 +89,16 @@
 #'   the implied parameter exceeds 100. The \code{step} argument is accepted for
 #'   call compatibility and ignored.
 #'
+#'   Three further 1.x behaviors deliberately changed, so a 1.x call can now
+#'   error where it used to return a number. \code{ss.power.ba.general} rejects
+#'   a \code{df.denominator} greater than \code{N - cells} (1.x accepted such a
+#'   value and ignored the argument entirely, including in its own documented
+#'   example). An \code{assurance} or \code{power} of exactly 0 or 1, and a
+#'   \code{power} of 100, are rejected rather than returning an artifact of the
+#'   internal search. Non-scalar, non-finite, and fractional inputs are rejected
+#'   with a message naming the argument. See \code{NEWS} for the full
+#'   accounting.
+#'
 #' @param t.observed,F.observed The observed \emph{t} or \emph{F} statistic from
 #'   the prior study (the 1.x spelling of \code{t_observed} / \code{F_observed}).
 #' @param N Total sample size of the prior study (number of pairs for
@@ -155,6 +165,14 @@ ss.power.ba <- function(F.observed, N, levels.A, levels.B = NULL,
                         assurance = .80, power = .80, step = .001) {
   .deprecate_once("ss.power.ba",
                   "'ss_buc_one_way_anova' (one factor) or 'ss_buc_factorial_anova' (two factors)")
+  # 1.x refused to plan a two-factor effect without the second factor. Keep
+  # that refusal: dispatching to the one-way planner instead would silently
+  # return the Factor A plan for a user who asked for Factor B or the
+  # interaction.
+  if (is.null(levels.B) && !identical(match.arg(effect), "factor.A")) {
+    stop("You cannot select 'effect = \"", match.arg(effect),
+         "\"' if you do not specify 'levels.B'.", call. = FALSE)
+  }
   if (is.null(levels.B)) {
     ss_buc_one_way_anova(F_observed = F.observed, N = N, levels_A = levels.A,
                          alpha_prior = alpha.prior, alpha_planned = alpha.planned,
@@ -298,7 +316,15 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
 #' @keywords internal
 #' @export
 `[[.bucss_power` <- function(x, i, ...) {
-  if (!missing(i) && length(i) == 1L && is.numeric(i) && i %in% c(1, 2)) {
+  # Two guards keep the legacy shim from firing on base R's own internals.
+  # nargs() == 2L limits it to the single-subscript form, so the matrix-style
+  # x[[i, j]] still selects a cell. is.double(i) limits it to a subscript the
+  # user typed as a literal: base R's column loops (format.data.frame, str,
+  # lapply, data.matrix, and friends) index with integers from seq_len(), and
+  # without this they would receive the legacy scalars in place of the term
+  # and value columns.
+  if (nargs() == 2L && !missing(i) && length(i) == 1L && is.double(i) &&
+      i %in% c(1, 2)) {
     term <- .subset2(x, "term")
     value <- .subset2(x, "value")
     if (i == 1) return(value[term %in% .BUCSS_SIZE_TERMS][1])
@@ -323,9 +349,69 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
 #'
 #' @return A \code{data.frame} (or vector, under the usual \code{drop} rules).
 #'
+#' @name sub-.bucss_power
 #' @keywords internal
 #' @export
 `[.bucss_power` <- function(x, ...) {
   class(x) <- setdiff(class(x), "bucss_power")
   x[...]
+}
+
+# Modifying or stacking a result makes it something other than one planner's
+# answer, so the class (and with it the print contract, the broom verbs, the
+# legacy positional [[, and the attributes describing a single design) comes
+# off and an ordinary data.frame comes back. Without this, an added column
+# would be invisible to the print method, an assignment through the legacy [[
+# would write to a different place than it reads from, and a stack of results
+# would print, tidy, and narrate as though it were the first one alone.
+
+#' @rdname sub-.bucss_power
+#' @param i,j,value Passed to the \code{data.frame} method.
+#' @keywords internal
+#' @export
+`[<-.bucss_power` <- function(x, i, j, value) {
+  class(x) <- setdiff(class(x), "bucss_power")
+  NextMethod()
+}
+
+#' @rdname sub-.bucss_power
+#' @keywords internal
+#' @export
+`[[<-.bucss_power` <- function(x, i, j, value) {
+  # Reading x[[1]] gives the legacy sample size, but assigning to it would
+  # write the first *column*, so the two would mean different places and
+  # x[[1]] <- x[[1]] would silently overwrite the term column. Refuse the
+  # ambiguous subscript rather than corrupt the object.
+  if (nargs() == 3L && !missing(i) && length(i) == 1L && is.double(i) &&
+      i %in% c(1, 2)) {
+    stop("A 'bucss_power' result cannot be modified through the legacy ",
+         "positional '[[': reading 'x[[", i, "]]' gives the ",
+         if (i == 1) "necessary sample size" else "adjusted noncentrality parameter",
+         ", but assigning to it would write the '",
+         if (i == 1) "term" else "value", "' column. Assign by column name ",
+         "(for example x$value) or work on a copy from as.data.frame(x).",
+         call. = FALSE)
+  }
+  class(x) <- setdiff(class(x), "bucss_power")
+  NextMethod()
+}
+
+#' @rdname sub-.bucss_power
+#' @keywords internal
+#' @export
+`$<-.bucss_power` <- function(x, name, value) {
+  class(x) <- setdiff(class(x), "bucss_power")
+  NextMethod()
+}
+
+#' @rdname sub-.bucss_power
+#' @param deparse.level Passed to the \code{data.frame} method.
+#' @keywords internal
+#' @export
+rbind.bucss_power <- function(..., deparse.level = 1) {
+  args <- lapply(list(...), function(a) {
+    if (inherits(a, "bucss_power")) class(a) <- setdiff(class(a), "bucss_power")
+    a
+  })
+  do.call(rbind, c(args, list(deparse.level = deparse.level)))
 }

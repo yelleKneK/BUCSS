@@ -31,7 +31,12 @@ fixes").
     2017, under the grid method) to 1485, which is the smallest sample size that
     actually reaches the target power. Across the developer characterization
     grid, about 95% of sample sizes are unchanged and the rest move by a few
-    units.
+    units. Among the documented examples, five planned sample sizes move:
+    1482 to 1485 and 1904 to 1902 (`ss_buc_independent_t`), 968 to 969
+    (`ss_buc_mixed_anova`), 1491 to 1489 (`ss_buc_rm_anova`), and 3963 to 3960
+    (`ss_buc_reg_joint`). Each new value is the smallest sample size that
+    actually attains the target power at the exact noncentrality parameter;
+    they are pinned in the package's regression tests.
 * There is no grid-resolution argument or option. The 1.x `step` argument and
   any grid resolution setting are gone, since root finding has no resolution
   parameter.
@@ -126,12 +131,12 @@ fixes").
   planned study's test degrees of freedom (`df_effect`, `df_error`).
 
 * Every planner reports `actual_power`, the power the planned study attains at
-  the returned sample size, evaluated at the returned (adjusted) noncentrality
-  parameter. For the designs with the conservative two-sided rounding the
-  returned size and parameter come from the more conservative branch, so
-  `actual_power` is a lower bound there and exact for the single-branch
-  designs; it always meets or exceeds `desired_power`. Each help page states
-  this definition.
+  the returned sample size. For the designs with the conservative two-sided
+  rounding, each rounding of the prior study's implied cell size gives its own
+  reading of that study, and the reported value is the smaller of the two
+  powers the returned size attains, so it is the power the plan is assured of
+  under either reading; for the single-branch designs it is exact. It always
+  meets or exceeds `desired_power`. Each help page states this definition.
 
 * Added `planning_sentence()`, which turns a result into the sentence an
   author writes in a manuscript's planning section (the analog of `DMAR`'s

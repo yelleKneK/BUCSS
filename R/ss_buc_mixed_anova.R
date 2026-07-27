@@ -78,15 +78,15 @@
 #'   desired level of assurance. We encourage users to make the adjustments as
 #'   minimal as possible.
 #'
-#'   The returned \code{actual_power} is the power the planned study
-#'   attains at the returned sample size, evaluated at the returned
-#'   (adjusted) noncentrality parameter. For the designs that round the prior
+#'   The returned \code{actual_power} is the power the planned study attains
+#'   at the returned sample size, evaluated at the bias and uncertainty
+#'   adjusted noncentrality parameter. For the designs that round the prior
 #'   study's implied cell size both up and down (the conservative two-sided
-#'   rounding), the returned sample size is the larger of the two branch
-#'   answers while the returned noncentrality parameter is the smaller, so
-#'   \code{actual_power} is evaluated under the more conservative branch and
-#'   is a lower bound on the power the plan achieves; for the single-branch
-#'   designs it is exact. It always meets or exceeds \code{desired_power}.
+#'   rounding), each rounding gives its own reading of the prior study, and
+#'   \code{actual_power} is the smaller of the two powers the returned sample
+#'   size attains, so it is the power the plan is assured of under either
+#'   reading; for the single-branch designs it is exact. It always meets or
+#'   exceeds \code{desired_power}.
 #'
 #'   \code{ss_buc_mixed_anova} assumes that the planned study will have equal
 #'   \emph{n}. Unequal \emph{n} in the previous study is handled in the
@@ -214,8 +214,13 @@ ss_buc_mixed_anova <- function(F_observed, N, levels_between, levels_within,
 
   output_n <- max(repn_rd, repn_ru)
   df_error <- if (effect == "between") output_n * levels_between - levels_between else (output_n * levels_between - levels_between) * (levels_within - 1)
-  actual_power <- if (ncp_rd <= ncp_ru) power_at(output_n, n_rd, ncp_rd) else
-    power_at(output_n, n_ru, ncp_ru)
+  # The conservative report: the power the plan attains under EITHER reading
+  # of the prior study's group sizes. Branch power is ordered by the ratio of
+  # the branch NCP to its prior n, not by the NCP alone, so the smaller-NCP
+  # branch is usually the higher-powered one; taking the minimum is what makes
+  # this a genuine lower bound, matching the max-n/min-NCP rule.
+  actual_power <- min(power_at(output_n, n_ru, ncp_ru),
+                      power_at(output_n, n_rd, ncp_rd))
   .bucss_power_result(
     sample_size = output_n,
     size_term = "necessary_n_per_group",

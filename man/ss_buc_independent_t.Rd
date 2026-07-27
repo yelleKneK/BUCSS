@@ -162,15 +162,15 @@ Researchers often use the sample effect size from a prior study as
   desired level of assurance. We encourage users to make the adjustments as
   minimal as possible.
 
-  The returned \code{actual_power} is the power the planned study
-  attains at the returned sample size, evaluated at the returned
-  (adjusted) noncentrality parameter. For the designs that round the prior
+  The returned \code{actual_power} is the power the planned study attains
+  at the returned sample size, evaluated at the bias and uncertainty
+  adjusted noncentrality parameter. For the designs that round the prior
   study's implied cell size both up and down (the conservative two-sided
-  rounding), the returned sample size is the larger of the two branch
-  answers while the returned noncentrality parameter is the smaller, so
-  \code{actual_power} is evaluated under the more conservative branch and
-  is a lower bound on the power the plan achieves; for the single-branch
-  designs it is exact. It always meets or exceeds \code{desired_power}.
+  rounding), each rounding gives its own reading of the prior study, and
+  \code{actual_power} is the smaller of the two powers the returned sample
+  size attains, so it is the power the plan is assured of under either
+  reading; for the single-branch designs it is exact. It always meets or
+  exceeds \code{desired_power}.
 
   The observed \emph{t} may be entered with either sign. The publication
   rule the correction assumes is two-sided and the truncated likelihood

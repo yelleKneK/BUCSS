@@ -27,4 +27,14 @@ print clean; other values print at \code{getOption("bucss.digits", 3)}
 significant figures. Only the display is rounded; the stored values keep
 full precision.
 }
+\examples{
+result <- ss_buc_independent_t(t_observed = 3, n = c(50, 55),
+  assurance = .90)
+result
+
+# Display only: the stored values keep full precision.
+print(result, digits = 6)
+result$value[result$term == "ncp_adjusted"]
+
+}
 \keyword{internal}

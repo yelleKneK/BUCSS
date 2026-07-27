@@ -80,15 +80,15 @@
 #'   desired level of assurance. We encourage users to make the adjustments as
 #'   minimal as possible.
 #'
-#'   The returned \code{actual_power} is the power the planned study
-#'   attains at the returned sample size, evaluated at the returned
-#'   (adjusted) noncentrality parameter. For the designs that round the prior
+#'   The returned \code{actual_power} is the power the planned study attains
+#'   at the returned sample size, evaluated at the bias and uncertainty
+#'   adjusted noncentrality parameter. For the designs that round the prior
 #'   study's implied cell size both up and down (the conservative two-sided
-#'   rounding), the returned sample size is the larger of the two branch
-#'   answers while the returned noncentrality parameter is the smaller, so
-#'   \code{actual_power} is evaluated under the more conservative branch and
-#'   is a lower bound on the power the plan achieves; for the single-branch
-#'   designs it is exact. It always meets or exceeds \code{desired_power}.
+#'   rounding), each rounding gives its own reading of the prior study, and
+#'   \code{actual_power} is the smaller of the two powers the returned sample
+#'   size attains, so it is the power the plan is assured of under either
+#'   reading; for the single-branch designs it is exact. It always meets or
+#'   exceeds \code{desired_power}.
 #'
 #'   \code{ss_buc_mixed_anova_general} assumes that the planned study will have equal
 #'   \emph{n}. Unequal \emph{n} in the previous study is handled in the
@@ -129,14 +129,14 @@
 #'
 #' @examples
 #' result <- ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2,
-#'   num_groups = 3, effect = "between_only", df_num_within = 3,
+#'   num_groups = 3, effect = "between_only",
 #'   alpha_prior = .05, alpha_planned = .05, assurance = .80, desired_power = .80)
 #' result
 #'
 #' # Requesting more assurance than the prior result can support stops with an
 #' # informative error naming the largest workable assurance (here near .82):
 #' try(ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2,
-#'   num_groups = 3, effect = "between_only", df_num_within = 3,
+#'   num_groups = 3, effect = "between_only",
 #'   assurance = .95))
 #'
 #' @author Ken Kelley (\email{kkelley@@nd.edu}) and
@@ -217,8 +217,13 @@ ss_buc_mixed_anova_general <- function(F_observed, N, df_numerator, num_groups,
 
   output_n <- max(repn_rd, repn_ru)
   df_error <- ((output_n * num_groups) - num_groups) * denom_mult
-  actual_power <- if (ncp_rd <= ncp_ru) power_at(output_n, n_rd, ncp_rd) else
-    power_at(output_n, n_ru, ncp_ru)
+  # The conservative report: the power the plan attains under EITHER reading
+  # of the prior study's group sizes. Branch power is ordered by the ratio of
+  # the branch NCP to its prior n, not by the NCP alone, so the smaller-NCP
+  # branch is usually the higher-powered one; taking the minimum is what makes
+  # this a genuine lower bound, matching the max-n/min-NCP rule.
+  actual_power <- min(power_at(output_n, n_ru, ncp_ru),
+                      power_at(output_n, n_rd, ncp_rd))
   .bucss_power_result(
     sample_size = output_n,
     size_term = "necessary_n_per_group",

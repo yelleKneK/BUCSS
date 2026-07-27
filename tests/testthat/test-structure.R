@@ -165,3 +165,65 @@ test_that("row and column subsetting is not hijacked by the legacy [[ method", {
   expect_identical(res[[1]], res$value[res$term == "necessary_N"])
   expect_identical(res[[2]], res$value[res$term == "ncp_adjusted"])
 })
+
+test_that("base R operations on a result are not hijacked by the legacy [[", {
+  res <- ss_buc_paired_t(t_observed = 3, N = 40)
+  # base R's column loops index with integers from seq_len(); the legacy shim
+  # must not intercept them (format() used to return an all-NA frame with a
+  # "corrupt data frame" warning, and str() used to report both columns as the
+  # legacy scalars).
+  expect_no_warning(fmt <- format(res))
+  expect_identical(trimws(as.character(fmt$term)), res$term)
+  expect_identical(capture.output(str(res))[2],
+                   capture.output(str(as.data.frame(unclass(res)[c("term", "value")])))[2])
+  expect_identical(vapply(res, class, ""), c(term = "character", value = "numeric"))
+  expect_identical(data.matrix(res)[, "value"], unname(res$value))
+  # the matrix-style two-index form selects a cell, not the legacy scalar
+  expect_identical(res[[1, "term"]], res$term[1])
+  expect_identical(res[[2, "value"]], res$value[2])
+  # but the single-subscript legacy contract still holds
+  expect_identical(res[[1]], res$value[res$term == "necessary_N"])
+  expect_identical(res[[2]], res$value[res$term == "ncp_adjusted"])
+})
+
+test_that("modifying or stacking a result returns a plain data.frame", {
+  res <- ss_buc_paired_t(t_observed = 3, N = 40)
+  # assignment through any form drops the class, so the print contract, the
+  # broom verbs, and the legacy [[ do not claim to describe a mutated object
+  m1 <- res; m1$extra <- 1
+  m2 <- res; m2[["value"]] <- res$value
+  m3 <- res; m3[1, "value"] <- 99
+  for (m in list(m1, m2, m3)) expect_false(inherits(m, "bucss_power"))
+  # the read/write asymmetry is refused rather than silently corrupting: the
+  # legacy positional [[ reads the sample size, so assigning to it (which
+  # would write the term column) is an error
+  expect_error({m4 <- res; m4[[1]] <- 99}, "legacy positional", fixed = TRUE)
+  expect_error({m5 <- res; m5[[2]] <- 99}, "legacy positional", fixed = TRUE)
+  # stacking two results is not one planner's answer either
+  stacked <- rbind(res, res)
+  expect_false(inherits(stacked, "bucss_power"))
+  expect_identical(nrow(stacked), 2L * nrow(res))
+})
+
+test_that("actual_power is the smaller of the two rounding branches", {
+  # Branch power is ordered by ncp/prior-n, not by ncp alone, so the
+  # minimum-NCP branch is usually the higher-powered one; the reported value
+  # must be the minimum of the two so that it is a genuine lower bound.
+  res <- ss_buc_one_way_anova(F_observed = 5, N = 121, levels_A = 3)
+  n_ru <- ceiling(121 / 3)
+  n_rd <- floor(121 / 3)
+  branch_ncp <- function(n_prior) {
+    df_d <- n_prior * 3 - 3
+    crit <- qf(.95, 2, df_d)
+    BUCSS:::.solve_ncp_assurance(BUCSS:::.tm_f(5, crit, 2, df_d), .80)$ncp
+  }
+  branch_power <- function(n_rep, n_prior, ncp) {
+    df_d <- n_rep * 3 - 3
+    1 - pf(qf(.95, 2, df_d), 2, df_d, ncp = (n_rep / n_prior) * ncp)
+  }
+  size <- res$value[res$term == "necessary_n_per_group"]
+  powers <- c(branch_power(size, n_ru, branch_ncp(n_ru)),
+              branch_power(size, n_rd, branch_ncp(n_rd)))
+  expect_equal(res$value[res$term == "actual_power"], min(powers))
+  expect_gte(res$value[res$term == "actual_power"], .80)
+})

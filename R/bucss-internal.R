@@ -340,6 +340,15 @@
 #'
 #' @return \code{x}, invisibly.
 #'
+#' @examples
+#' result <- ss_buc_independent_t(t_observed = 3, n = c(50, 55),
+#'   assurance = .90)
+#' result
+#'
+#' # Display only: the stored values keep full precision.
+#' print(result, digits = 6)
+#' result$value[result$term == "ncp_adjusted"]
+#'
 #' @aliases bucss_power
 #' @export
 #' @keywords internal

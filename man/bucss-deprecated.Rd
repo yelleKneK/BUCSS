@@ -240,6 +240,16 @@ The replacements are:
   wrappers return can differ slightly from 1.x and are no longer capped when
   the implied parameter exceeds 100. The \code{step} argument is accepted for
   call compatibility and ignored.
+
+  Three further 1.x behaviors deliberately changed, so a 1.x call can now
+  error where it used to return a number. \code{ss.power.ba.general} rejects
+  a \code{df.denominator} greater than \code{N - cells} (1.x accepted such a
+  value and ignored the argument entirely, including in its own documented
+  example). An \code{assurance} or \code{power} of exactly 0 or 1, and a
+  \code{power} of 100, are rejected rather than returning an artifact of the
+  internal search. Non-scalar, non-finite, and fractional inputs are rejected
+  with a message naming the argument. See \code{NEWS} for the full
+  accounting.
 }
 \seealso{
 The \code{ss_buc_*} replacements listed above.

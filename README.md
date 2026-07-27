@@ -26,9 +26,8 @@ Then load the package:
 library(BUCSS)
 ```
 
-The `ss_buc_*` function family described below is the current BUCSS interface
-(introduced in 2.0.0). Until it reaches CRAN, install the development version
-from GitHub to use these names:
+The `ss_buc_*` function family described below is the current BUCSS interface,
+introduced in 2.0.0. The development version lives on GitHub:
 
 ``` r
 # install.packages("remotes")

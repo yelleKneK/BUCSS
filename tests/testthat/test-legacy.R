@@ -96,3 +96,21 @@ test_that("bucss_power keeps 1.x positional extraction working", {
   expect_identical(r[["value"]], r$value)
   expect_identical(r[["term"]], r$term)
 })
+
+test_that("ss.power.ba keeps the 1.x refusal to plan a two-factor effect alone", {
+  # 1.2.1 stopped with "You cannot select 'effect=interaction' if you do not
+  # specify 'levels.B'". Dispatching to the one-way planner instead would
+  # silently return the Factor A plan to a user who asked for something else.
+  expect_error(
+    suppressWarnings(ss.power.ba(F.observed = 5, N = 120, levels.A = 4,
+                                 effect = "interaction")),
+    "levels.B", fixed = TRUE)
+  expect_error(
+    suppressWarnings(ss.power.ba(F.observed = 5, N = 120, levels.A = 4,
+                                 effect = "factor.B")),
+    "levels.B", fixed = TRUE)
+  # the one-way dispatch itself still works
+  expect_s3_class(
+    suppressWarnings(ss.power.ba(F.observed = 5, N = 120, levels.A = 4)),
+    "bucss_power")
+})
