@@ -213,7 +213,7 @@ Researchers often use the sample effect size from a prior study as
 result <- ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05,
   alpha_planned = .05, assurance = .80, desired_power = .80)
 result
-result$value[result$term == "necessary_sample_size"]
+result$value[result$term == "necessary_n_per_group"]
 
 # ss_buc_smd is the same function under an effect size name
 ss_buc_smd(t_observed = 3, n = 20)

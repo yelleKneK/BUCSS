@@ -306,3 +306,26 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
   }
   NextMethod()
 }
+
+#' Subset a bias and uncertainty corrected sample size result
+#'
+#' Row and column subsetting returns a plain \code{data.frame}. The class is
+#' dropped first so that \code{[.data.frame}'s internal column extraction
+#' (which uses \code{[[} on columns 1 and 2) cannot collide with the legacy
+#' positional \code{[[} contract above; without this, \code{head(result)} and
+#' \code{result[i, ]} would silently return the legacy scalars in place of the
+#' \code{term} and \code{value} columns. A subset is no longer the full
+#' planning result (its attributes and print contract no longer apply), so the
+#' honest return is an ordinary \code{data.frame}.
+#'
+#' @param x A \code{bucss_power} object.
+#' @param ... Passed to the \code{data.frame} method.
+#'
+#' @return A \code{data.frame} (or vector, under the usual \code{drop} rules).
+#'
+#' @keywords internal
+#' @export
+`[.bucss_power` <- function(x, ...) {
+  class(x) <- setdiff(class(x), "bucss_power")
+  x[...]
+}

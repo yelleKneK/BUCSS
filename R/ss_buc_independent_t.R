@@ -152,7 +152,7 @@
 #' result <- ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05,
 #'   alpha_planned = .05, assurance = .80, desired_power = .80)
 #' result
-#' result$value[result$term == "necessary_sample_size"]
+#' result$value[result$term == "necessary_n_per_group"]
 #'
 #' # ss_buc_smd is the same function under an effect size name
 #' ss_buc_smd(t_observed = 3, n = 20)
@@ -206,7 +206,7 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
     }
   }
 
-  if (missing(N)) {
+  if (missing(N) || is.null(N)) {
     if (!(length(n) %in% c(1, 2))) stop("The value of 'n' should be a vector of length two or a single value (for equal group sample sizes).", call. = FALSE)
     for (n_i in n) .check_count(n_i, "n", min = 2)
     if (length(n) == 2) {

@@ -224,8 +224,8 @@ fixes").
   observations per cell or group) are now reported with an informative message.
 
 * `ss_buc_independent_t()` now echoes the prior study's sample size (`n` or
-  `N`, whichever was supplied) in the stored planning inputs and the printed
-  "Planning inputs" block, as every other planner already did, so a saved or
+  `N`, whichever was supplied) in the result's planning-input rows, and hence
+  in the printed table, as every other planner already did, so a saved or
   printed result can be traced back to the prior study.
 
 * Every planner now validates that its observed statistic is a single finite

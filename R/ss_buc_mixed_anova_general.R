@@ -210,10 +210,10 @@ ss_buc_mixed_anova_general <- function(F_observed, N, df_numerator, num_groups,
   repn_ru <- .smallest_n_for_power(function(k) power_at(k, n_ru, ncp_ru), desired_power)
 
   inputs <- list(F_observed = F_observed, N = N, df_numerator = df_numerator,
+                 df_num_within = if (effect == "between_within") df_num_within,
                  num_groups = num_groups, alpha_prior = alpha_prior_input,
                  alpha_planned = alpha_planned, assurance = assurance,
                  desired_power = desired_power)
-  if (effect == "between_within") inputs$df_num_within <- df_num_within
 
   output_n <- max(repn_rd, repn_ru)
   df_error <- ((output_n * num_groups) - num_groups) * denom_mult

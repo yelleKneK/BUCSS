@@ -176,7 +176,6 @@ ss_buc_factorial_anova_general <- function(F_observed, N, cells, df_numerator,
   .check_count(N, "N", min = 2)
   .check_count(cells, "cells", min = 2)
   .check_count(df_numerator, "df_numerator", min = 1)
-  if (df_denominator <= 0) stop("'df_denominator' must be a positive number.", call. = FALSE)
   .check_count(df_denominator, "df_denominator", min = 1)
 
   nuisance_df <- (N - cells) - df_denominator

@@ -132,11 +132,21 @@ test_that("df_denominator cannot exceed N - cells", {
     "cannot exceed", fixed = TRUE)
 })
 
-test_that("df_denominator must be positive", {
+test_that("df_denominator must be a positive whole number", {
+  # The count check runs before any comparison, so NA and vector inputs get
+  # the friendly message rather than a base-R condition failure.
   expect_error(
     ss_buc_factorial_anova_general(F_observed = 5, N = 120, cells = 6,
                                    df_numerator = 2, df_denominator = 0),
-    "must be a positive number", fixed = TRUE)
+    "must be at least 1", fixed = TRUE)
+  expect_error(
+    ss_buc_factorial_anova_general(F_observed = 5, N = 120, cells = 6,
+                                   df_numerator = 2, df_denominator = NA),
+    "must be a single whole number", fixed = TRUE)
+  expect_error(
+    ss_buc_factorial_anova_general(F_observed = 5, N = 120, cells = 6,
+                                   df_numerator = 2, df_denominator = c(114, 114)),
+    "must be a single whole number", fixed = TRUE)
 })
 
 test_that("a corrected noncentrality parameter of zero is rejected", {

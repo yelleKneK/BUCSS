@@ -147,3 +147,21 @@ test_that("planning_sentence() writes the manuscript sentence", {
   expect_match(s, "90% assurance", fixed = TRUE)
   expect_error(planning_sentence(1), "bucss_power", fixed = TRUE)
 })
+
+test_that("row and column subsetting is not hijacked by the legacy [[ method", {
+  # [.data.frame extracts columns with [[, which the legacy positional [[
+  # contract would otherwise intercept for columns 1 and 2 (term and value),
+  # silently replacing them with the sample size and the NCP.
+  res <- ss_buc_paired_t(t_observed = 3, N = 40)
+  expect_identical(head(res, 3)$term, res$term[1:3])
+  expect_identical(head(res, 3)$value, res$value[1:3])
+  expect_equal(res[res$term == "ncp_adjusted", ]$value,
+               res$value[res$term == "ncp_adjusted"])
+  expect_identical(res[, "term"], res$term)
+  expect_identical(nrow(res[res$term %in% c("necessary_N", "ncp_adjusted"), ]), 2L)
+  # a subset is a plain data.frame, and the legacy contract still holds on the
+  # unsubsetted object
+  expect_false(inherits(head(res, 2), "bucss_power"))
+  expect_identical(res[[1]], res$value[res$term == "necessary_N"])
+  expect_identical(res[[2]], res$value[res$term == "ncp_adjusted"])
+})
