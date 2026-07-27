@@ -103,6 +103,48 @@ fixes").
   values the 1.x functions returned as an unnamed list. Column and name access
   (`result$value`, `result[["value"]]`) are unaffected.
 
+## New Designs
+
+Six designs join the twelve the package has always covered. Three are exact
+within the published method and were already reachable by hand; three extend
+the correction to statistics the package did not previously accept.
+
+* `ss_buc_correlation()` plans from a prior Pearson correlation (or its *t*).
+  A correlation is the slope in a simple regression, so the correction is the
+  one `ss_buc_reg_coef()` applies with a single predictor. Planning is in the
+  fixed-predictor frame, which runs a few participants light relative to the
+  exact random-predictor calculation; the help page says so and suggests a
+  small margin.
+
+* `ss_buc_one_sample_t()` plans a one-sample *t* test. This is exactly the
+  computation `ss_buc_paired_t()` performs, reported with a one-sample design
+  label and a total sample size instead of a number of pairs.
+
+* `ss_buc_ancova()` plans an analysis of covariance from the number of
+  covariates, rather than requiring the user to work out the error degrees of
+  freedom for `ss_buc_factorial_anova_general()`. With no covariates it
+  reproduces the corresponding ANOVA planner exactly. The omnibus group effect
+  is the default; a single-degree-of-freedom contrast among the adjusted means
+  is available through `df_numerator = 1`.
+
+* `ss_buc_manova()` plans a two-group multivariate comparison (Hotelling's
+  *T* squared), taking either the *F* or the *T* squared. This is the
+  multivariate case whose hypothesis has rank one and therefore an exact
+  noncentral *F*; hypotheses of higher rank have an eigenvalue spectrum rather
+  than a single noncentrality parameter and are outside the method.
+
+* `ss_buc_chisq_diff()` plans from a nested model chi-square difference
+  (likelihood ratio) test, the test used for a constrained path in a
+  structural equation model. Its help page is explicit that the function is
+  *not* for an omnibus model fit chi-square, where a publishable result is a
+  small statistic and the selection region is inverted.
+
+* `ss_buc_welch_t()` plans a Welch (unequal variance) *t* test from the two
+  prior group sizes and an assumed ratio of standard deviations. A Welch
+  statistic is not exactly noncentral *t*, so this planner is an approximation
+  and its help page says which assumption it needs and suggests re-running
+  across a range of ratios.
+
 ## New Features
 
 * The independent and paired *t* test planners are available under both
@@ -130,13 +172,11 @@ fixes").
   and echoed planning input as a column, plus the design metadata and the
   planned study's test degrees of freedom (`df_effect`, `df_error`).
 
-* Every planner reports `actual_power`, the power the planned study attains at
-  the returned sample size. For the designs with the conservative two-sided
-  rounding, each rounding of the prior study's implied cell size gives its own
-  reading of that study, and the reported value is the smaller of the two
-  powers the returned size attains, so it is the power the plan is assured of
-  under either reading; for the single-branch designs it is exact. It always
-  meets or exceeds `desired_power`. Each help page states this definition.
+* Every planner reports `actual_power`, the statistical power of the plan it
+  reports: the power of a study of the returned sample size when the effect is
+  the returned adjusted noncentrality parameter. Because a sample size must be
+  a whole number, it is never below the requested `desired_power` and is
+  usually a little above it. Each help page states this definition.
 
 * Added `planning_sentence()`, which turns a result into the sentence an
   author writes in a manuscript's planning section (the analog of `DMAR`'s

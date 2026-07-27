@@ -1,18 +1,17 @@
-#' Necessary sample size to reach desired power for a within-subjects ANOVA with
-#' any number of factors using a publication bias and uncertainty correction
-#' procedure
+#' Necessary sample size to reach desired power for a nested model chi-square
+#' difference test using a publication bias and uncertainty correction procedure
 #'
-#' @description \code{ss_buc_rm_anova_general} returns the necessary total sample
-#'   size to achieve a desired level of statistical power for a planned study
-#'   testing any type of effect (omnibus, contrast) using a fully
-#'   within-subjects ANOVA with any number of factors, based on information
+#' @description \code{ss_buc_chisq_diff} returns the necessary total sample size
+#'   to achieve a desired level of statistical power for a planned study whose
+#'   effect of interest is tested by the chi-square difference between two
+#'   nested models (the likelihood ratio test used, for example, to test a
+#'   constrained path in a structural equation model), based on information
 #'   obtained from a previous study. The effect from the previous study can be
 #'   corrected for publication bias and/or uncertainty to provide a sample size
 #'   that will achieve more accurate statistical power for a planned study, when
 #'   compared to approaches that use a sample effect size at face value or rely
 #'   on sample size only. The bias and uncertainty adjusted previous study
-#'   noncentrality parameter is also returned, which can be transformed to
-#'   various effect size metrics.
+#'   noncentrality parameter is also returned.
 #'
 #' @details Researchers often use the sample effect size from a prior study as
 #'   an estimate of the likely size of an expected future effect in sample size
@@ -20,21 +19,29 @@
 #'   at face value to plan sample size, due to both publication bias and
 #'   uncertainty.
 #'
-#'   The approach implemented in \code{ss_buc_rm_anova_general} uses the observed
-#'   \emph{F} value and sample size from a previous study to correct the
-#'   noncentrality parameter associated with the effect of interest for
-#'   publication bias and/or uncertainty. This new estimated noncentrality
-#'   parameter is then used to calculate the necessary total sample size to
-#'   achieve the desired level of power in the planned study.
+#'   \strong{Scope, and one thing this function is not for.} The correction
+#'   applies to a test whose statistic is large when the effect is present, so
+#'   that publication selects large values. A chi-square difference test
+#'   between nested models is such a test: under the alternative it is
+#'   approximately noncentral chi-square with degrees of freedom equal to the
+#'   number of constraints released and a noncentrality parameter proportional
+#'   to sample size, and a paper reports the constrained path as supported when
+#'   the difference test is significant. The correction is therefore built for
+#'   the difference test.
 #'
-#'   The approach uses a likelihood function of a truncated noncentral
-#'   \emph{F} distribution, where the truncation occurs due to small effect
-#'   sizes being unobserved due to publication bias. The numerator of the
-#'   likelihood function is the density of a noncentral \emph{F} distribution.
-#'   The denominator is the power of the test, which serves to truncate the
-#'   distribution. Thus, the ratio of the numerator and the denominator is a
-#'   truncated noncentral \emph{F} distribution. (See Taylor & Muller, 1996,
-#'   Equation 2.1, and Anderson & Maxwell, 2017, for more details.)
+#'   It is \emph{not} appropriate for an omnibus model fit chi-square, where a
+#'   publishable result is a \emph{small} statistic (a model that fits). The
+#'   selection region is inverted there, so the truncated likelihood this
+#'   function builds does not describe it. Do not pass a model fit chi-square.
+#'
+#'   The correction uses a likelihood function of a truncated noncentral
+#'   chi-square distribution, the same construction the rest of the package uses
+#'   for the noncentral \emph{F} (see Taylor & Muller, 1996, Equation 2.1, and
+#'   Anderson & Maxwell, 2017): the truncated area between the critical value
+#'   and the observed statistic, divided by the power of the test. Because the
+#'   noncentrality parameter of a likelihood ratio test is proportional to
+#'   sample size, the planned study's noncentrality parameter is the corrected
+#'   one scaled by the ratio of the planned to the prior sample size.
 #'
 #'   Assurance is the proportion of times that power will be at or above the
 #'   desired level, if the experiment were to be reproduced many times. For
@@ -87,13 +94,15 @@
 #'   \code{actual_power} is never below the \code{desired_power} that was
 #'   requested and is usually a little above it.
 #'
-#'   \code{ss_buc_rm_anova_general} assumes sphericity for the within-subjects
-#'   effects.
+#'   The chi-square difference test is asymptotic, so both the correction and
+#'   the planned-study power inherit that approximation. Treat a planned sample
+#'   size in the low double digits with caution.
 #'
-#' @param F_observed Observed \emph{F} value from a previous study used to plan
-#'   sample size for a planned study.
+#' @param chisq_observed Observed chi-square difference between the two nested
+#'   models in the previous study.
 #' @param N Total sample size of the previous study.
-#' @param df_numerator Numerator degrees of freedom for the effect of interest.
+#' @param df_difference Degrees of freedom of the difference test, that is, the
+#'   number of constraints released between the two nested models.
 #' @template planning-params
 #'
 #' @templateVar size_phrase total sample size
@@ -102,68 +111,69 @@
 #' @export
 #'
 #' @examples
-#' result <- ss_buc_rm_anova_general(F_observed = 6.5, N = 80, df_numerator = 1,
-#'   alpha_prior = .05, alpha_planned = .05, assurance = .50, desired_power = .80)
+#' result <- ss_buc_chisq_diff(chisq_observed = 9.5, N = 250,
+#'   df_difference = 1, alpha_prior = .05, alpha_planned = .05,
+#'   assurance = .80, desired_power = .80)
 #' result
 #'
 #' # Requesting more assurance than the prior result can support stops with an
-#' # informative error naming the largest workable assurance (here near .74):
-#' try(ss_buc_rm_anova_general(F_observed = 6.5, N = 80, df_numerator = 1,
-#'   assurance = .95))
+#' # informative error naming the largest workable assurance (here near .95):
+#' try(ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_difference = 1,
+#'   assurance = .99))
 #'
 #' @author Ken Kelley (\email{kkelley@@nd.edu}) and
 #'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'
 #' @template references
-ss_buc_rm_anova_general <- function(F_observed, N, df_numerator, alpha_prior = .05,
-                                alpha_planned = .05, assurance = .80,
-                                desired_power = .80) {
+ss_buc_chisq_diff <- function(chisq_observed, N, df_difference,
+                              alpha_prior = .05, alpha_planned = .05,
+                              assurance = .80, desired_power = .80) {
   v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, desired_power)
   alpha_prior <- v$alpha_prior
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
   desired_power <- v$desired_power
 
-  if (missing(N)) stop("You must specify 'N', which is the total sample size.", call. = FALSE)
-  if (missing(df_numerator)) stop("You must specify 'df_numerator', the numerator degrees of freedom for the effect of interest.", call. = FALSE)
-  .check_scalar_finite(F_observed, "F_observed")
+  if (missing(N)) stop("You must specify 'N', which is the total sample size of the previous study.", call. = FALSE)
+  if (missing(df_difference)) stop("You must specify 'df_difference', the number of constraints released between the two nested models.", call. = FALSE)
+  .check_scalar_finite(chisq_observed, "chisq_observed")
   .check_count(N, "N", min = 2)
-  .check_count(df_numerator, "df_numerator", min = 1)
+  .check_count(df_difference, "df_difference", min = 1)
 
-  n <- N
+  value_critical <- qchisq(1 - alpha_prior, df = df_difference)
 
-  df_denominator <- df_numerator * (n - 1)
-
-  crit_F <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator)
-  if (F_observed <= crit_F) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.", call. = FALSE)
+  if (chisq_observed <= value_critical) stop("Your observed chi-square difference is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so the prior result exceeds the critical value.", call. = FALSE)
 
   ncp_solution <- .solve_ncp_assurance(
-    .tm_f(F_observed, crit_F, df_numerator, df_denominator), assurance)
+    .tm_chisq(chisq_observed, value_critical, df_difference), assurance)
   ncp <- ncp_solution$ncp
 
   if (ncp == 0) .stop_zero_ncp(ncp_solution$ceiling)
 
+  # The noncentrality parameter of a likelihood ratio test is proportional to
+  # sample size, so it scales by the ratio of planned to prior N. The degrees
+  # of freedom do not depend on the sample size.
+  critical_chisq <- qchisq(1 - alpha_planned, df = df_difference)
   power_at <- function(n_rep) {
-    denom_df <- df_numerator * (n_rep - 1)
-    critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
-    1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / n) * ncp)
+    1 - pchisq(critical_chisq, df = df_difference, ncp = (n_rep / N) * ncp)
   }
-  output_n <- .smallest_n_for_power(power_at, desired_power)
+  output_n <- .smallest_n_for_power(power_at, desired_power, start = 2)
 
-  df_error <- df_numerator * (output_n - 1)
   actual_power <- power_at(output_n)
   .bucss_power_result(
     sample_size = output_n,
     size_term = "necessary_N",
     actual_power = actual_power,
-    df_effect = df_numerator,
-    df_error = df_error,
+    df_effect = df_difference,
+    df_error = NULL,
     ncp = ncp,
-    design = "Within-subjects ANOVA (any number of factors)",
+    design = "Nested model chi-square difference test",
     sample_size_unit = "total",
     assurance_ceiling = ncp_solution$ceiling,
-    inputs = list(F_observed = F_observed, N = N, df_numerator = df_numerator,
-                  alpha_prior = alpha_prior_input, alpha_planned = alpha_planned,
-                  assurance = assurance, desired_power = desired_power)
+    inputs = list(chisq_observed = chisq_observed, N = N,
+                  df_difference = df_difference,
+                  alpha_prior = alpha_prior_input,
+                  alpha_planned = alpha_planned, assurance = assurance,
+                  desired_power = desired_power)
   )
 }

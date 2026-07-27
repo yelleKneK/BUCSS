@@ -205,25 +205,17 @@ test_that("modifying or stacking a result returns a plain data.frame", {
   expect_identical(nrow(stacked), 2L * nrow(res))
 })
 
-test_that("actual_power is the smaller of the two rounding branches", {
-  # Branch power is ordered by ncp/prior-n, not by ncp alone, so the
-  # minimum-NCP branch is usually the higher-powered one; the reported value
-  # must be the minimum of the two so that it is a genuine lower bound.
+test_that("actual_power is the power of the reported sample size and NCP", {
+  # It must describe the pair the function reports, so a user reading
+  # "actual_power" sees the power of this plan: the returned size evaluated at
+  # the returned adjusted noncentrality parameter.
   res <- ss_buc_one_way_anova(F_observed = 5, N = 121, levels_A = 3)
-  n_ru <- ceiling(121 / 3)
-  n_rd <- floor(121 / 3)
-  branch_ncp <- function(n_prior) {
-    df_d <- n_prior * 3 - 3
-    crit <- qf(.95, 2, df_d)
-    BUCSS:::.solve_ncp_assurance(BUCSS:::.tm_f(5, crit, 2, df_d), .80)$ncp
-  }
-  branch_power <- function(n_rep, n_prior, ncp) {
-    df_d <- n_rep * 3 - 3
-    1 - pf(qf(.95, 2, df_d), 2, df_d, ncp = (n_rep / n_prior) * ncp)
-  }
   size <- res$value[res$term == "necessary_n_per_group"]
-  powers <- c(branch_power(size, n_ru, branch_ncp(n_ru)),
-              branch_power(size, n_rd, branch_ncp(n_rd)))
-  expect_equal(res$value[res$term == "actual_power"], min(powers))
+  ncp <- res$value[res$term == "ncp_adjusted"]
+  # the reported NCP came from the round-down reading of the prior study
+  n_prior <- floor(121 / 3)
+  df_d <- size * 3 - 3
+  expected <- 1 - pf(qf(.95, 2, df_d), 2, df_d, ncp = (size / n_prior) * ncp)
+  expect_equal(res$value[res$term == "actual_power"], expected)
   expect_gte(res$value[res$term == "actual_power"], .80)
 })

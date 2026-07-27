@@ -1,25 +1,16 @@
-#' Necessary sample size to reach desired power for a dependent (paired) t test
-#' (or standardized mean difference) using a publication bias and uncertainty
-#' correction procedure
+#' Necessary sample size to reach desired power for a Welch (unequal variance) t
+#' test using a publication bias and uncertainty correction procedure
 #'
-#' @description \code{ss_buc_paired_t} returns the necessary sample size (the
-#'   number of pairs) to achieve a desired level of statistical power for a
-#'   planned study using a dependent \emph{t} test, based on information obtained
-#'   from a previous study. The effect from the previous study can be corrected
-#'   for publication bias and/or uncertainty to provide a sample size that will
-#'   achieve more accurate statistical power for a planned study, when compared
-#'   to approaches that use a sample effect size at face value or rely on sample
-#'   size only. The bias and uncertainty adjusted previous study noncentrality
-#'   parameter is also returned, which can be transformed to various effect size
-#'   metrics.
-#'
-#'   \code{ss_buc_smd_paired} is an alias for \code{ss_buc_paired_t}: the two are
-#'   the same function. The paired \emph{t} test and the standardized mean
-#'   difference of the difference scores describe the same comparison, so the
-#'   same planner serves both framings. Prefer the test-specific name
-#'   (\code{ss_buc_paired_t}) when the prior \emph{t} was computed from raw
-#'   (unstandardized) data, since the planner works directly from the observed
-#'   \emph{t}.
+#' @description \code{ss_buc_welch_t} returns the necessary per-group sample
+#'   size to achieve a desired level of statistical power for a planned study
+#'   using a Welch \emph{t} test, the two-group comparison that does not assume
+#'   equal variances, based on information obtained from a previous study. The
+#'   effect from the previous study can be corrected for publication bias and/or
+#'   uncertainty to provide a sample size that will achieve more accurate
+#'   statistical power for a planned study, when compared to approaches that use
+#'   a sample effect size at face value or rely on sample size only. The bias
+#'   and uncertainty adjusted previous study noncentrality parameter is also
+#'   returned, which can be transformed to various effect size metrics.
 #'
 #' @details Researchers often use the sample effect size from a prior study as
 #'   an estimate of the likely size of an expected future effect in sample size
@@ -27,12 +18,20 @@
 #'   at face value to plan sample size, due to both publication bias and
 #'   uncertainty.
 #'
-#'   The approach implemented in \code{ss_buc_paired_t} uses the observed
-#'   \emph{t} value and sample size from a previous study to correct the
-#'   noncentrality parameter associated with the effect of interest for
-#'   publication bias and/or uncertainty. This new estimated noncentrality
-#'   parameter is then used to calculate the necessary sample size to achieve
-#'   the desired level of power in the planned study.
+#'   \strong{This planner is an approximation, and needs one assumption the
+#'   others do not.} A Welch \emph{t} statistic is not exactly distributed as a
+#'   noncentral \emph{t}: its denominator degrees of freedom are estimated from
+#'   the data by the Welch-Satterthwaite formula, and they depend on the ratio
+#'   of the two population standard deviations. \code{ss_buc_welch_t} treats the
+#'   statistic as noncentral \emph{t} on the Welch-Satterthwaite degrees of
+#'   freedom implied by the prior study's group sizes and the standard deviation
+#'   ratio you supply, which is the usual approximation in power analysis for
+#'   this test. Planning also assumes that the ratio you supply is the ratio the
+#'   planned study will have. When the ratio is 1 this planner reduces to
+#'   \code{\link{ss_buc_independent_t}} with equal group sizes; when it is far
+#'   from 1, treat the answer as a good approximation rather than an exact
+#'   result, and consider the sensitivity of the plan to the assumed ratio by
+#'   re-running with a range of values.
 #'
 #'   The approach uses a likelihood function of a truncated noncentral
 #'   \emph{F} distribution, where the truncation occurs due to small effect
@@ -94,107 +93,117 @@
 #'   \code{actual_power} is never below the \code{desired_power} that was
 #'   requested and is usually a little above it.
 #'
-#'   The observed \emph{t} may be entered with either sign. The publication
-#'   rule the correction assumes is two-sided and the truncated likelihood
-#'   is symmetric in the sign of \emph{t}, so only the magnitude enters the
-#'   computation: \code{t_observed = -3} plans exactly the sample size that
-#'   \code{t_observed = 3} plans. The sign of a paired \emph{t} records the
-#'   direction the within-pair difference was taken, an arbitrary coding
-#'   choice rather than evidence. When planning a replication, confirm that
-#'   the magnitude belongs to an effect in the direction the planned study
-#'   is designed to detect (Anderson & Kelley, 2024): the correction
-#'   adjusts the size of the prior effect, not its direction.
+#'   The observed \emph{t} may be entered with either sign; the publication
+#'   rule the correction assumes is two-sided, so only the magnitude enters
+#'   the computation. The planned study is assumed to have equal group sizes,
+#'   which is the allocation that maximizes power when the variances are
+#'   equal and is a reasonable default otherwise.
 #'
-#'   If you are working from a standardized mean difference (Cohen's \eqn{d_z})
-#'   of the difference scores rather than a \emph{t} statistic, convert it before
-#'   calling: for a paired design \eqn{t = d_z\sqrt{N}}, where \emph{N} is the
-#'   number of pairs.
-#'
-#' @param t_observed Observed \emph{t} value from a previous study used to plan
-#'   sample size for a planned study. Either sign is accepted: the
-#'   publication rule is two-sided, so only the magnitude enters the
-#'   correction (see Details).
-#' @param N Total sample size (the number of pairs) of the previous study.
+#' @param t_observed Observed Welch \emph{t} value from a previous study used to
+#'   plan sample size for a planned study. Either sign is accepted.
+#' @param n_1,n_2 Group sample sizes of the previous study.
+#' @param sd_ratio Ratio of the second group's standard deviation to the first
+#'   group's, in the previous study, assumed to hold in the planned study as
+#'   well. A value of 1 means equal variances.
 #' @template planning-params
 #'
-#' @templateVar size_phrase number of pairs
+#' @templateVar size_phrase per-group sample size
 #' @template return
 #'
 #' @export
 #'
 #' @examples
-#' result <- ss_buc_paired_t(t_observed = 3, N = 40, alpha_prior = .05,
-#'   alpha_planned = .05, assurance = .80, desired_power = .80)
+#' # A prior study with 40 and 55 participants whose second group was half
+#' # again as variable as the first.
+#' result <- ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55,
+#'   sd_ratio = 1.5, alpha_prior = .05, alpha_planned = .05,
+#'   assurance = .80, desired_power = .80)
 #' result
 #'
-#' # ss_buc_smd_paired is the same function under an effect size name
-#' ss_buc_smd_paired(t_observed = 3, N = 40)
+#' # How sensitive is the plan to the assumed ratio?
+#' ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1)
+#' ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 2)
 #'
 #' # Requesting more assurance than the prior result can support stops with an
-#' # informative error naming the largest workable assurance (here near .90):
-#' try(ss_buc_paired_t(t_observed = 3, N = 40, assurance = .95))
+#' # informative error naming the largest workable assurance (here near .92):
+#' try(ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1.5,
+#'   assurance = .95))
+#'
+#' @seealso \code{\link{ss_buc_independent_t}} for the equal-variance test.
 #'
 #' @author Ken Kelley (\email{kkelley@@nd.edu}) and
 #'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'
 #' @template references
-ss_buc_paired_t <- function(t_observed, N, alpha_prior = .05, alpha_planned = .05,
-                            assurance = .80, desired_power = .80) {
+ss_buc_welch_t <- function(t_observed, n_1, n_2, sd_ratio = 1,
+                           alpha_prior = .05, alpha_planned = .05,
+                           assurance = .80, desired_power = .80) {
   v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, desired_power)
   alpha_prior <- v$alpha_prior
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
   desired_power <- v$desired_power
 
-  if (missing(N)) stop("You need to specify a sample size (i.e., the number of pairs) used in the original study.", call. = FALSE)
+  if (missing(n_1) || missing(n_2)) {
+    stop("You must specify both group sample sizes of the previous study, 'n_1' and 'n_2'.", call. = FALSE)
+  }
   .check_scalar_finite(t_observed, "t_observed")
+  .check_count(n_1, "n_1", min = 2)
+  .check_count(n_2, "n_2", min = 2)
+  .check_scalar_finite(sd_ratio, "sd_ratio")
+  if (sd_ratio <= 0) stop("'sd_ratio' must be a positive number.", call. = FALSE)
 
-  # The publication rule is two-sided and TM is symmetric in the sign of t,
-  # so only the magnitude enters the correction; the sign records the
-  # direction the paired difference was taken, a coding choice, not
-  # evidence. The user's signed value is echoed unchanged in the stored
-  # inputs.
   t_stat <- abs(t_observed)
-  .check_count(N, "N", min = 2)
 
-  DF <- N - 1
+  # Welch-Satterthwaite degrees of freedom, with the first group's standard
+  # deviation set to 1 without loss of generality.
+  welch_df <- function(a, b, ratio) {
+    v1 <- 1 / a
+    v2 <- ratio^2 / b
+    (v1 + v2)^2 / (v1^2 / (a - 1) + v2^2 / (b - 1))
+  }
+  df_prior <- welch_df(n_1, n_2, sd_ratio)
 
-  value_critical <- qt(1 - alpha_prior / 2, df = DF)
+  value_critical <- qt(1 - alpha_prior / 2, df = df_prior)
+
   if (t_stat <= value_critical) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.", call. = FALSE)
 
   ncp_solution <- .solve_ncp_assurance(
-    .tm_t(t_stat, value_critical, DF), assurance)
+    .tm_t(t_stat, value_critical, df_prior), assurance)
   ncp <- ncp_solution$ncp
 
   if (ncp == 0) .stop_zero_ncp(ncp_solution$ceiling)
 
+  # The noncentrality parameter is the mean difference divided by the standard
+  # error of that difference, so it rescales by the ratio of the prior standard
+  # error to the planned one. With equal planned group sizes the planned
+  # variance term is (1 + sd_ratio^2) / n_rep.
+  se2_prior <- 1 / n_1 + sd_ratio^2 / n_2
   power_at <- function(n_rep) {
-    denom_df <- n_rep - 1
+    denom_df <- welch_df(n_rep, n_rep, sd_ratio)
     critical_t <- qt(1 - alpha_planned / 2, df = denom_df)
-    scaled <- sqrt(n_rep / N) * ncp
+    se2_planned <- (1 + sd_ratio^2) / n_rep
+    scaled <- sqrt(se2_prior / se2_planned) * ncp
     (1 - pt(critical_t, df = denom_df, ncp = scaled)) +
       pt(-1 * critical_t, df = denom_df, ncp = scaled)
   }
-  output_n <- .smallest_n_for_power(power_at, desired_power)
+  output_n <- .smallest_n_for_power(power_at, desired_power, start = 2)
 
-  df_error <- output_n - 1
   actual_power <- power_at(output_n)
   .bucss_power_result(
     sample_size = output_n,
-    size_term = "necessary_N",
+    size_term = "necessary_n_per_group",
     actual_power = actual_power,
     df_effect = 1,
-    df_error = df_error,
+    df_error = welch_df(output_n, output_n, sd_ratio),
     ncp = ncp,
-    design = "Dependent (paired) t test",
-    sample_size_unit = "number of pairs",
+    design = "Welch (unequal variance) t test",
+    sample_size_unit = "per group",
     assurance_ceiling = ncp_solution$ceiling,
-    inputs = list(t_observed = t_observed, N = N, alpha_prior = alpha_prior_input,
+    total_n = 2 * output_n,
+    inputs = list(t_observed = t_observed, n_1 = n_1, n_2 = n_2,
+                  sd_ratio = sd_ratio, alpha_prior = alpha_prior_input,
                   alpha_planned = alpha_planned, assurance = assurance,
                   desired_power = desired_power)
   )
 }
-
-#' @rdname ss_buc_paired_t
-#' @export
-ss_buc_smd_paired <- ss_buc_paired_t

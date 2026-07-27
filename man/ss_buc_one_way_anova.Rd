@@ -145,15 +145,12 @@ Researchers often use the sample effect size from a prior study as
   desired level of assurance. We encourage users to make the adjustments as
   minimal as possible.
 
-  The returned \code{actual_power} is the power the planned study attains
-  at the returned sample size, evaluated at the bias and uncertainty
-  adjusted noncentrality parameter. For the designs that round the prior
-  study's implied cell size both up and down (the conservative two-sided
-  rounding), each rounding gives its own reading of the prior study, and
-  \code{actual_power} is the smaller of the two powers the returned sample
-  size attains, so it is the power the plan is assured of under either
-  reading; for the single-branch designs it is exact. It always meets or
-  exceeds \code{desired_power}.
+  The returned \code{actual_power} is the statistical power of the plan
+  this function reports: the power of a study of the returned sample size
+  when the effect is the returned bias and uncertainty adjusted
+  noncentrality parameter. Because a sample size must be a whole number,
+  \code{actual_power} is never below the \code{desired_power} that was
+  requested and is usually a little above it.
 
   \code{ss_buc_one_way_anova} assumes that the planned study will have equal
   \emph{n}. Unequal \emph{n} in the previous study is handled in the

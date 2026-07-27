@@ -151,6 +151,48 @@
 # vectorized over 'ncp' (pf()/pt() are), so it serves both uniroot() (scalar
 # calls) and the grid fallback (vector call) in .solve_ncp_assurance().
 #
+# Truncated-likelihood mean for a chi-square statistic, the analogue of .tm_f
+# for a nested model comparison. The publication rule is the same (only a
+# significant difference test is published), so the construction is identical:
+# the truncated area between the critical value and the observed statistic,
+# divided by the untruncated area beyond the critical value.
+.tm_chisq <- function(stat, crit, df) {
+  function(ncp) {
+    power <- 1 - pchisq(crit, df = df, ncp = ncp)
+    area_above <- 1 - pchisq(stat, df = df, ncp = ncp)
+    (power - area_above) / power
+  }
+}
+
+# Rebuild a planner's result under a different design label, size-row name,
+# unit, and echoed inputs, without recomputing anything. Used by the planners
+# that are exactly a relabeling of another design (the one-sample t is the
+# paired t; the ANCOVA is the general between-subjects planner with the
+# covariates carried as nuisance parameters), so the numerical work lives in
+# one place and only the presentation differs.
+.relabel_bucss_result <- function(res, design, sample_size_unit, size_term,
+                                  inputs, effect = NULL) {
+  size <- res$value[res$term %in% .BUCSS_SIZE_TERMS][1]
+  total_n <- res$value[res$term == "total_N"]
+  if (length(total_n) == 0L) total_n <- NULL
+  actual_power <- res$value[res$term == "actual_power"]
+  if (length(actual_power) == 0L) actual_power <- NULL
+  .bucss_power_result(
+    sample_size = size,
+    size_term = size_term,
+    actual_power = actual_power,
+    ncp = res$value[res$term == "ncp_adjusted"],
+    design = design,
+    sample_size_unit = sample_size_unit,
+    effect = effect,
+    assurance_ceiling = attr(res, "assurance_ceiling"),
+    total_n = total_n,
+    df_effect = attr(res, "df_effect"),
+    df_error = attr(res, "df_error"),
+    inputs = inputs
+  )
+}
+
 # Upper safety bound on the root-finding bracket in .solve_ncp_assurance(). It
 # is far beyond any noncentrality parameter a real prior study implies; reaching
 # it signals a likely input error (or an essentially deterministic prior) rather

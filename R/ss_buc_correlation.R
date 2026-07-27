@@ -1,25 +1,16 @@
-#' Necessary sample size to reach desired power for a dependent (paired) t test
-#' (or standardized mean difference) using a publication bias and uncertainty
-#' correction procedure
+#' Necessary sample size to reach desired power for a Pearson correlation using
+#' a publication bias and uncertainty correction procedure
 #'
-#' @description \code{ss_buc_paired_t} returns the necessary sample size (the
-#'   number of pairs) to achieve a desired level of statistical power for a
-#'   planned study using a dependent \emph{t} test, based on information obtained
-#'   from a previous study. The effect from the previous study can be corrected
-#'   for publication bias and/or uncertainty to provide a sample size that will
+#' @description \code{ss_buc_correlation} returns the necessary total sample
+#'   size to achieve a desired level of statistical power for a test of a
+#'   Pearson correlation in a planned study, based on information obtained from
+#'   a previous study. The effect from the previous study can be corrected for
+#'   publication bias and/or uncertainty to provide a sample size that will
 #'   achieve more accurate statistical power for a planned study, when compared
 #'   to approaches that use a sample effect size at face value or rely on sample
 #'   size only. The bias and uncertainty adjusted previous study noncentrality
 #'   parameter is also returned, which can be transformed to various effect size
 #'   metrics.
-#'
-#'   \code{ss_buc_smd_paired} is an alias for \code{ss_buc_paired_t}: the two are
-#'   the same function. The paired \emph{t} test and the standardized mean
-#'   difference of the difference scores describe the same comparison, so the
-#'   same planner serves both framings. Prefer the test-specific name
-#'   (\code{ss_buc_paired_t}) when the prior \emph{t} was computed from raw
-#'   (unstandardized) data, since the planner works directly from the observed
-#'   \emph{t}.
 #'
 #' @details Researchers often use the sample effect size from a prior study as
 #'   an estimate of the likely size of an expected future effect in sample size
@@ -27,21 +18,28 @@
 #'   at face value to plan sample size, due to both publication bias and
 #'   uncertainty.
 #'
-#'   The approach implemented in \code{ss_buc_paired_t} uses the observed
-#'   \emph{t} value and sample size from a previous study to correct the
+#'   The approach implemented in \code{ss_buc_correlation} uses the observed
+#'   correlation and sample size from a previous study to correct the
 #'   noncentrality parameter associated with the effect of interest for
 #'   publication bias and/or uncertainty. This new estimated noncentrality
-#'   parameter is then used to calculate the necessary sample size to achieve
-#'   the desired level of power in the planned study.
+#'   parameter is then used to calculate the necessary total sample size to
+#'   achieve the desired level of power in the planned study.
+#'
+#'   The test of a Pearson correlation is the test of the slope in a simple
+#'   regression: the observed correlation \emph{r} with sample size \emph{N}
+#'   gives \eqn{t = r\sqrt{(N - 2)/(1 - r^2)}} on \emph{N} - 2 degrees of
+#'   freedom, and the planner works from that \emph{t}. Supplying
+#'   \code{t_observed} directly instead of \code{r_observed} is equivalent.
 #'
 #'   The approach uses a likelihood function of a truncated noncentral
 #'   \emph{F} distribution, where the truncation occurs due to small effect
 #'   sizes being unobserved due to publication bias. The numerator of the
 #'   likelihood function is the density of a noncentral \emph{F} distribution.
 #'   The denominator is the power of the test, which serves to truncate the
-#'   distribution. In the two-group case, this formula reduces to the density of
-#'   a truncated noncentral \emph{t} distribution. (See Taylor & Muller, 1996,
-#'   Equation 2.1, and Anderson & Maxwell, 2017, for more details.)
+#'   distribution. In the single predictor case, this formula reduces to the
+#'   density of a truncated noncentral \emph{t} distribution. (See Taylor &
+#'   Muller, 1996, Equation 2.1, and Anderson & Maxwell, 2017, for more
+#'   details.)
 #'
 #'   Assurance is the proportion of times that power will be at or above the
 #'   desired level, if the experiment were to be reproduced many times. For
@@ -94,107 +92,119 @@
 #'   \code{actual_power} is never below the \code{desired_power} that was
 #'   requested and is usually a little above it.
 #'
-#'   The observed \emph{t} may be entered with either sign. The publication
-#'   rule the correction assumes is two-sided and the truncated likelihood
-#'   is symmetric in the sign of \emph{t}, so only the magnitude enters the
-#'   computation: \code{t_observed = -3} plans exactly the sample size that
-#'   \code{t_observed = 3} plans. The sign of a paired \emph{t} records the
-#'   direction the within-pair difference was taken, an arbitrary coding
-#'   choice rather than evidence. When planning a replication, confirm that
-#'   the magnitude belongs to an effect in the direction the planned study
-#'   is designed to detect (Anderson & Kelley, 2024): the correction
-#'   adjusts the size of the prior effect, not its direction.
+#'   The observed correlation may be entered with either sign, since the
+#'   publication rule the correction assumes is two-sided and only the
+#'   magnitude enters the computation.
 #'
-#'   If you are working from a standardized mean difference (Cohen's \eqn{d_z})
-#'   of the difference scores rather than a \emph{t} statistic, convert it before
-#'   calling: for a paired design \eqn{t = d_z\sqrt{N}}, where \emph{N} is the
-#'   number of pairs.
+#'   \strong{One approximation to be aware of.} Like the other planners here,
+#'   \code{ss_buc_correlation} plans in the fixed-predictor (regression)
+#'   frame, in which the predictor values are treated as fixed by design. A
+#'   correlation study usually samples both variables, the random-predictor
+#'   frame, in which the exact power is slightly lower. The bias and
+#'   uncertainty correction itself is almost unaffected by the distinction
+#'   (the corrected correlation moves by less than .005 over a wide range),
+#'   but the planned sample size runs a few participants light: across the
+#'   range checked, the exact random-predictor plan needed 2 to 5 more
+#'   participants. Treat the returned sample size as a close lower bound and
+#'   consider adding a small margin.
 #'
-#' @param t_observed Observed \emph{t} value from a previous study used to plan
-#'   sample size for a planned study. Either sign is accepted: the
-#'   publication rule is two-sided, so only the magnitude enters the
-#'   correction (see Details).
-#' @param N Total sample size (the number of pairs) of the previous study.
+#' @param r_observed Observed Pearson correlation from a previous study used to
+#'   plan sample size for a planned study. Either sign is accepted; only the
+#'   magnitude enters the correction. Supply either \code{r_observed} or
+#'   \code{t_observed}, not both.
+#' @param N Total sample size of the previous study.
+#' @param t_observed Observed \emph{t} statistic for the correlation from the
+#'   previous study, an alternative to \code{r_observed}.
 #' @template planning-params
 #'
-#' @templateVar size_phrase number of pairs
+#' @templateVar size_phrase total sample size
 #' @template return
 #'
 #' @export
 #'
 #' @examples
-#' result <- ss_buc_paired_t(t_observed = 3, N = 40, alpha_prior = .05,
+#' result <- ss_buc_correlation(r_observed = .35, N = 100, alpha_prior = .05,
 #'   alpha_planned = .05, assurance = .80, desired_power = .80)
 #' result
 #'
-#' # ss_buc_smd_paired is the same function under an effect size name
-#' ss_buc_smd_paired(t_observed = 3, N = 40)
+#' # The equivalent call from the observed t statistic:
+#' ss_buc_correlation(t_observed = .35 * sqrt(98 / (1 - .35^2)), N = 100)
 #'
 #' # Requesting more assurance than the prior result can support stops with an
-#' # informative error naming the largest workable assurance (here near .90):
-#' try(ss_buc_paired_t(t_observed = 3, N = 40, assurance = .95))
+#' # informative error naming the largest workable assurance (here near .89):
+#' try(ss_buc_correlation(r_observed = .35, N = 100, assurance = .95))
+#'
+#' @seealso \code{\link{ss_buc_reg_coef}} for a coefficient in a model with
+#'   more than one predictor.
 #'
 #' @author Ken Kelley (\email{kkelley@@nd.edu}) and
 #'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'
 #' @template references
-ss_buc_paired_t <- function(t_observed, N, alpha_prior = .05, alpha_planned = .05,
-                            assurance = .80, desired_power = .80) {
+ss_buc_correlation <- function(r_observed, N, t_observed, alpha_prior = .05,
+                               alpha_planned = .05, assurance = .80,
+                               desired_power = .80) {
   v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, desired_power)
   alpha_prior <- v$alpha_prior
   alpha_prior_input <- v$alpha_prior_input
   assurance <- v$assurance
   desired_power <- v$desired_power
 
-  if (missing(N)) stop("You need to specify a sample size (i.e., the number of pairs) used in the original study.", call. = FALSE)
-  .check_scalar_finite(t_observed, "t_observed")
+  if (missing(N)) stop("You need to specify 'N', which is the total sample size of the original study.", call. = FALSE)
+  .check_count(N, "N", min = 4)
+  if (missing(r_observed) && missing(t_observed)) {
+    stop("You must specify the prior study's result: either 'r_observed' (the observed correlation) or 't_observed' (its t statistic).", call. = FALSE)
+  }
+  if (!missing(r_observed) && !missing(t_observed)) {
+    stop("Specify either 'r_observed' or 't_observed', not both.", call. = FALSE)
+  }
+  if (!missing(r_observed)) {
+    .check_scalar_finite(r_observed, "r_observed")
+    if (abs(r_observed) >= 1) stop("'r_observed' must be a correlation strictly between -1 and 1.", call. = FALSE)
+    r_input <- r_observed
+    # The correlation's t is the simple-regression slope t on N - 2 df.
+    t_stat <- abs(r_observed) * sqrt((N - 2) / (1 - r_observed^2))
+  } else {
+    .check_scalar_finite(t_observed, "t_observed")
+    r_input <- NULL
+    t_stat <- abs(t_observed)
+  }
 
-  # The publication rule is two-sided and TM is symmetric in the sign of t,
-  # so only the magnitude enters the correction; the sign records the
-  # direction the paired difference was taken, a coding choice, not
-  # evidence. The user's signed value is echoed unchanged in the stored
-  # inputs.
-  t_stat <- abs(t_observed)
-  .check_count(N, "N", min = 2)
+  df_numerator <- 1
+  df_denominator <- N - 2
 
-  DF <- N - 1
+  value_critical <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator)
 
-  value_critical <- qt(1 - alpha_prior / 2, df = DF)
-  if (t_stat <= value_critical) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.", call. = FALSE)
+  if (t_stat^2 <= value_critical) stop("Your observed correlation is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so the prior result exceeds the critical value.", call. = FALSE)
 
   ncp_solution <- .solve_ncp_assurance(
-    .tm_t(t_stat, value_critical, DF), assurance)
+    .tm_f(t_stat^2, value_critical, df_numerator, df_denominator), assurance)
   ncp <- ncp_solution$ncp
 
   if (ncp == 0) .stop_zero_ncp(ncp_solution$ceiling)
 
   power_at <- function(n_rep) {
-    denom_df <- n_rep - 1
-    critical_t <- qt(1 - alpha_planned / 2, df = denom_df)
-    scaled <- sqrt(n_rep / N) * ncp
-    (1 - pt(critical_t, df = denom_df, ncp = scaled)) +
-      pt(-1 * critical_t, df = denom_df, ncp = scaled)
+    denom_df <- n_rep - 2
+    critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
+    1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / N) * ncp)
   }
-  output_n <- .smallest_n_for_power(power_at, desired_power)
+  output_n <- .smallest_n_for_power(power_at, desired_power, start = 4)
 
-  df_error <- output_n - 1
   actual_power <- power_at(output_n)
   .bucss_power_result(
     sample_size = output_n,
     size_term = "necessary_N",
     actual_power = actual_power,
-    df_effect = 1,
-    df_error = df_error,
+    df_effect = df_numerator,
+    df_error = output_n - 2,
     ncp = ncp,
-    design = "Dependent (paired) t test",
-    sample_size_unit = "number of pairs",
+    design = "Pearson correlation",
+    sample_size_unit = "total",
     assurance_ceiling = ncp_solution$ceiling,
-    inputs = list(t_observed = t_observed, N = N, alpha_prior = alpha_prior_input,
+    inputs = list(r_observed = r_input,
+                  t_observed = if (is.null(r_input)) t_observed else NULL,
+                  N = N, alpha_prior = alpha_prior_input,
                   alpha_planned = alpha_planned, assurance = assurance,
                   desired_power = desired_power)
   )
 }
-
-#' @rdname ss_buc_paired_t
-#' @export
-ss_buc_smd_paired <- ss_buc_paired_t

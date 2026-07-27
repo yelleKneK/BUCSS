@@ -107,6 +107,46 @@ grids <- list(
                      desired_power = .8, KEEP.OUT.ATTRS = FALSE)
     lapply(seq_len(nrow(g)), function(i) as.list(g[i, ]))
   },
+  ss_buc_correlation = function() {
+    g <- expand.grid(r_observed = c(.2, .35, .5, .7), N = c(60, 100, 151),
+                     alpha_prior = c(.05, 1), assurance = c(.5, .8, .9),
+                     desired_power = .8, KEEP.OUT.ATTRS = FALSE)
+    lapply(seq_len(nrow(g)), function(i) as.list(g[i, ]))
+  },
+  ss_buc_one_sample_t = function() {
+    g <- expand.grid(t_observed = c(2.5, 3, 4, 6), N = c(20, 40, 81),
+                     alpha_prior = c(.05, 1), assurance = c(.5, .8, .9),
+                     desired_power = c(.8, .9), KEEP.OUT.ATTRS = FALSE)
+    lapply(seq_len(nrow(g)), function(i) as.list(g[i, ]))
+  },
+  ss_buc_ancova = function() {
+    g <- expand.grid(F_observed = c(4, 6, 10), N = c(120, 121), cells = c(3, 4),
+                     n_covariates = c(0, 1, 3), alpha_prior = c(.05, 1),
+                     assurance = c(.5, .8, .9), desired_power = .8,
+                     KEEP.OUT.ATTRS = FALSE)
+    lapply(seq_len(nrow(g)), function(i) as.list(g[i, ]))
+  },
+  ss_buc_manova = function() {
+    g <- expand.grid(F_observed = c(3, 4.5, 8), N = c(80, 81, 120),
+                     p_variables = c(1, 3, 5), alpha_prior = c(.05, 1),
+                     assurance = c(.5, .8, .9), desired_power = .8,
+                     KEEP.OUT.ATTRS = FALSE)
+    lapply(seq_len(nrow(g)), function(i) as.list(g[i, ]))
+  },
+  ss_buc_chisq_diff = function() {
+    g <- expand.grid(chisq_observed = c(5, 9.5, 20), N = c(150, 250, 400),
+                     df_difference = c(1, 2, 5), alpha_prior = c(.05, 1),
+                     assurance = c(.5, .8, .9), desired_power = .8,
+                     KEEP.OUT.ATTRS = FALSE)
+    lapply(seq_len(nrow(g)), function(i) as.list(g[i, ]))
+  },
+  ss_buc_welch_t = function() {
+    g <- expand.grid(t_observed = c(2.5, 3, 5), n_1 = c(30, 40), n_2 = c(40, 55),
+                     sd_ratio = c(1, 1.5, 2.5), alpha_prior = c(.05, 1),
+                     assurance = c(.5, .8, .9), desired_power = .8,
+                     KEEP.OUT.ATTRS = FALSE)
+    lapply(seq_len(nrow(g)), function(i) as.list(g[i, ]))
+  },
   ss_buc_reg_joint = function() {
     g <- expand.grid(F_observed = c(4, 6, 10), N = c(120, 150), p = c(4, 5),
                      p_joint = c(2, 3), alpha_prior = c(.05, 1),

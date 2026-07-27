@@ -6,17 +6,20 @@ template:
 reference:
 - title: t Tests
   desc: >
-    Independent and dependent (paired) t test designs, that is, the
-    standardized mean difference.
+    One-sample, independent, dependent (paired), and unequal-variance (Welch)
+    t test designs, that is, the standardized mean difference.
   contents:
   - ss_buc_independent_t
   - ss_buc_paired_t
-- title: Between-Subjects ANOVA
-  desc: One-way, two-way, and general between-subjects designs, planned per group or per cell.
+  - ss_buc_one_sample_t
+  - ss_buc_welch_t
+- title: Between-Subjects ANOVA and ANCOVA
+  desc: One-way, two-way, and general between-subjects designs, with or without covariates, planned per group or per cell.
   contents:
   - ss_buc_one_way_anova
   - ss_buc_factorial_anova
   - ss_buc_factorial_anova_general
+  - ss_buc_ancova
 - title: Within-Subjects ANOVA
   desc: Repeated measures designs, planned on the total number of subjects.
   contents:
@@ -27,12 +30,19 @@ reference:
   contents:
   - ss_buc_mixed_anova
   - ss_buc_mixed_anova_general
-- title: Multiple Regression
-  desc: A single coefficient, the omnibus model R2, or a joint subset of predictors.
+- title: Correlation and Multiple Regression
+  desc: A Pearson correlation, a single coefficient, the omnibus model R2, or a joint subset of predictors.
   contents:
+  - ss_buc_correlation
   - ss_buc_reg_coef
   - ss_buc_R2
   - ss_buc_reg_joint
+
+- title: Multivariate and Latent Variable Designs
+  desc: A two-group multivariate comparison, and the chi-square difference test between nested models.
+  contents:
+  - ss_buc_manova
+  - ss_buc_chisq_diff
 - title: The Result Object
   desc: Working with the tidy bucss_power object the planners return.
   contents:
