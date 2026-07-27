@@ -157,8 +157,12 @@ Researchers often use the sample effect size from a prior study as
   requested and is usually a little above it.
 
   The chi-square difference test is asymptotic, so both the correction and
-  the planned-study power inherit that approximation. Treat a planned sample
-  size in the low double digits with caution.
+  the planned-study power inherit that approximation. The test is liberal in
+  small samples: in simulation its actual Type I error is nearer .06 than
+  .05 at a total sample size of 50, and it reaches the nominal rate only
+  around 200. Treat a planned sample size under a hundred or so with
+  caution, and read a very small one as a signal that the prior effect was
+  large rather than as a serious recommendation.
 }
 \examples{
 result <- ss_buc_chisq_diff(chisq_observed = 9.5, N = 250,

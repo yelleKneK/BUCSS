@@ -172,3 +172,14 @@ test_that("the new planners reject an assurance above their ceiling", {
                               sd_ratio = 1.5, assurance = .95),
                "noncentrality parameter is zero", fixed = TRUE)
 })
+
+test_that("the chi-square planner will not plan fewer cases than constraints", {
+  # A very strong prior used to drive the search to N = 3 for a test releasing
+  # 8 constraints, which cannot fit the models. The search floor is now the
+  # number of constraints plus two.
+  res <- ss_buc_chisq_diff(chisq_observed = 400, N = 60, df_difference = 8)
+  expect_gte(res$value[res$term == "necessary_N"], 10)
+  # the floor does not disturb ordinary cases
+  ordinary <- ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_difference = 1)
+  expect_equal(ordinary$value[ordinary$term == "necessary_N"], 726)
+})

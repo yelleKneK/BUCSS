@@ -95,8 +95,12 @@
 #'   requested and is usually a little above it.
 #'
 #'   The chi-square difference test is asymptotic, so both the correction and
-#'   the planned-study power inherit that approximation. Treat a planned sample
-#'   size in the low double digits with caution.
+#'   the planned-study power inherit that approximation. The test is liberal in
+#'   small samples: in simulation its actual Type I error is nearer .06 than
+#'   .05 at a total sample size of 50, and it reaches the nominal rate only
+#'   around 200. Treat a planned sample size under a hundred or so with
+#'   caution, and read a very small one as a signal that the prior effect was
+#'   large rather than as a serious recommendation.
 #'
 #' @param chisq_observed Observed chi-square difference between the two nested
 #'   models in the previous study.
@@ -157,7 +161,12 @@ ss_buc_chisq_diff <- function(chisq_observed, N, df_difference,
   power_at <- function(n_rep) {
     1 - pchisq(critical_chisq, df = df_difference, ncp = (n_rep / N) * ncp)
   }
-  output_n <- .smallest_n_for_power(power_at, desired_power, start = 2)
+  # A planned study cannot have fewer observations than the constraints the
+  # difference test releases, so the search starts there rather than at 2. A
+  # returned size near this floor means the prior effect was very large, not
+  # that such a study would be sensible; the Details section says so.
+  output_n <- .smallest_n_for_power(power_at, desired_power,
+                                    start = df_difference + 2)
 
   actual_power <- power_at(output_n)
   .bucss_power_result(

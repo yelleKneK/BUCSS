@@ -122,7 +122,7 @@
 #' ss_buc_manova(T2_observed = 4.5 * 3 * 78 / 76, N = 80, p_variables = 3)
 #'
 #' # Requesting more assurance than the prior result can support stops with an
-#' # informative error naming the largest workable assurance (here near .87):
+#' # informative error naming the largest workable assurance (here near .88):
 #' try(ss_buc_manova(F_observed = 4.5, N = 80, p_variables = 3,
 #'   assurance = .95))
 #'

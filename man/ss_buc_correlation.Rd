@@ -181,8 +181,10 @@ result
 ss_buc_correlation(t_observed = .35 * sqrt(98 / (1 - .35^2)), N = 100)
 
 # Requesting more assurance than the prior result can support stops with an
-# informative error naming the largest workable assurance (here near .89):
-try(ss_buc_correlation(r_observed = .35, N = 100, assurance = .95))
+# informative error naming the largest workable assurance. The correlation
+# above supports .99, so a weaker prior is needed to reach the ceiling
+# (here near .86):
+try(ss_buc_correlation(r_observed = .27, N = 100, assurance = .95))
 
 }
 \references{
