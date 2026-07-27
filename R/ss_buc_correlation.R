@@ -102,11 +102,15 @@
 #'   correlation study usually samples both variables, the random-predictor
 #'   frame, in which the exact power is slightly lower. The bias and
 #'   uncertainty correction itself is almost unaffected by the distinction
-#'   (the corrected correlation moves by less than .005 over a wide range),
-#'   but the planned sample size runs a few participants light: across the
-#'   range checked, the exact random-predictor plan needed 2 to 5 more
-#'   participants. Treat the returned sample size as a close lower bound and
-#'   consider adding a small margin.
+#'   (solving the same equation in the random-predictor frame moves the
+#'   corrected correlation by less than .01, and by less than .005 for
+#'   correlations up to about .45), but the planned sample size runs a few
+#'   participants light: the exact random-predictor plan needs 2 to 5 more
+#'   participants, toward the upper end of that range when
+#'   \code{desired_power} is high. Treat the returned sample size as a close
+#'   lower bound and consider adding a small margin, particularly when the
+#'   plan itself is small, where those few participants are worth the most
+#'   power.
 #'
 #' @param r_observed Observed Pearson correlation from a previous study used to
 #'   plan sample size for a planned study. Either sign is accepted; only the
