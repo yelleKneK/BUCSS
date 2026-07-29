@@ -108,6 +108,12 @@ The family covers eighteen designs:
 `vignette("worked-examples", package = "BUCSS")` walks through one example of
 each.
 
+Calling `plot()` on a plan draws its assurance ceiling: the largest assurance
+the prior result can support, the adjusted noncentrality parameter falling to
+zero there, and the sample size running away as it does. Assurance does not
+degrade gracefully as it rises, it hits a wall, and that is easier to see than
+to read about.
+
 A plan can also be audited by simulation. `ss_buc_sensitivity()` takes the
 result of any planner, simulates prior studies of that design from a true
 effect you name, discards the ones a literature would not have published, runs

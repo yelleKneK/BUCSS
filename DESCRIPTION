@@ -29,6 +29,7 @@ Language: en-US
 Depends: R (>= 3.5.0)
 Imports:
     generics,
+    graphics,
     stats
 Suggests:
     testthat (>= 3.0.0),

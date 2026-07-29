@@ -43,11 +43,13 @@ reference:
   contents:
   - ss_buc_manova
   - ss_buc_chisq_diff
-- title: Auditing a Plan
+- title: Seeing and Auditing a Plan
   desc: >
-    Simulate the literature a plan came from and see how often a plan built
-    this way actually reaches the target power.
+    Draw the assurance ceiling a prior result can support, and simulate the
+    literature a plan came from to see how often a plan built this way
+    actually reaches the target power.
   contents:
+  - plot.bucss_power
   - ss_buc_sensitivity
   - print.bucss_sensitivity
 - title: The Result Object

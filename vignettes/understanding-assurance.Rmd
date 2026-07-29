@@ -118,6 +118,43 @@ before the correction breaks down. The printed result also gives the implied
 total sample size for per-group and per-cell designs, saving you the
 multiplication.
 
+### The Ceiling, Drawn
+
+The ceiling is easier to see than to read about, so `plot()` on any plan draws
+it. The method re-runs that plan's own planner across a range of assurance
+values and shows what happens on the way to the wall.
+
+```{r ceiling-plot, fig.width = 9, fig.height = 4.2, fig.alt = "Two panels sharing an assurance axis. On the left, the adjusted noncentrality parameter falls from about 2.6 to zero as assurance rises from .5 to the ceiling at .905. On the right, the necessary sample size per group climbs from 25 to tens of thousands on a logarithmic scale over the same range. Both panels shade the region beyond the ceiling and label it as one where no plan exists."}
+plan <- ss_buc_independent_t(t_observed = 3, n = 20, assurance = .80)
+plot(plan)
+```
+
+The point is the shape. Assurance does not degrade gracefully as it rises: it
+hits a wall. On the left, the corrected noncentrality parameter, the quantity
+the correction actually solves for, falls to zero. On the right, the sample
+size that parameter implies runs away, and the vertical scale is logarithmic
+because it spans three orders of magnitude over a range of assurance a
+researcher might plausibly consider. The filled point is the plan itself, at
+`assurance = .80`, and the shaded band is the region where the planner refuses.
+
+That the sample size is finite everywhere left of the ceiling and undefined
+everywhere right of it is not an artifact of the software. It is what the
+prior result can and cannot support.
+
+Read from the same figure, the two remedies in the error message are the two
+things you can do to a wall. Lowering assurance moves the point left, along a
+curve that is very steep near the ceiling, which is why a small step back can
+buy a large reduction in sample size. Raising `alpha_prior` moves the wall
+itself to the right.
+
+The plotted values come back invisibly, so the figure can be redrawn with any
+other graphics system:
+
+```{r}
+curve_values <- plot(plan, which = "size", n_points = 12)
+head(curve_values, 4)
+```
+
 ## alpha_prior: Modeling Publication Bias
 
 `alpha_prior` is the significance threshold that governs publication in the

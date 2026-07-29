@@ -155,6 +155,33 @@ the correction to statistics the package did not previously accept.
   and its help page says which assumption it needs and suggests re-running
   across a range of ratios.
 
+## The Assurance Ceiling, Drawn
+
+* Added `plot.bucss_power()`, so `plot()` on any plan draws its assurance
+  ceiling. The method re-runs that plan's own planner across a range of
+  assurance values and draws two panels sharing an assurance axis: the
+  adjusted noncentrality parameter falling to zero at the ceiling, and the
+  necessary sample size it implies running away on a logarithmic scale. The
+  ceiling is marked, the plan itself is marked, and the region beyond the
+  ceiling is shaded and labeled as one where no plan exists.
+
+* The point of the figure is the shape. Assurance does not degrade gracefully
+  as it rises, it hits a wall, and that is the hardest thing about the method
+  to convey in prose. For a prior independent *t* test with *t* = 3.00 and 20
+  per group, the plan runs from 25 per group at `assurance = .50` to over
+  65,000 just short of the ceiling at .905, and is undefined above it.
+
+* The grid of assurance values is spaced evenly in the logarithm of the
+  remaining headroom rather than in assurance, so roughly half the plotted
+  points fall in the last few hundredths below the ceiling. Spacing evenly in
+  assurance would draw the wall as a single jump between two grid points and
+  lose the shape.
+
+* The plotted values are returned invisibly as an ordinary `data.frame`, one
+  row per assurance, so the figure can be redrawn with any other graphics
+  system. The method is written in base graphics; `graphics` joins `generics`
+  and `stats` in `Imports`, and no plotting package is required.
+
 ## Auditing a Plan by Simulation
 
 * Added `ss_buc_sensitivity()`, a Monte Carlo companion that takes a plan from

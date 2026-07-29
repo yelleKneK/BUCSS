@@ -1,7 +1,7 @@
 # ss_buc_sensitivity(): the Monte Carlo companion to the planners.
 
 # One plan per design, used by the table checks below. Every design in
-# .BUCSS_SENSITIVITY_SPECS must appear here.
+# .BUCSS_DESIGN_SPECS must appear here.
 sensitivity_plans <- list(
   ss_buc_independent_t(t_observed = 3, n = c(50, 50), assurance = .80),
   ss_buc_independent_t(t_observed = 3, N = 100, assurance = .80),
@@ -40,9 +40,9 @@ sensitivity_plans <- list(
 
 test_that("every design has a simulation spec, and no spec is orphaned", {
   covered <- unique(vapply(sensitivity_plans, attr, character(1), "design"))
-  expect_setequal(covered, names(BUCSS:::.BUCSS_SENSITIVITY_SPECS))
+  expect_setequal(covered, names(BUCSS:::.BUCSS_DESIGN_SPECS))
   # each spec names a real exported planner
-  for (spec in BUCSS:::.BUCSS_SENSITIVITY_SPECS)
+  for (spec in BUCSS:::.BUCSS_DESIGN_SPECS)
     expect_true(is.function(get(spec$planner, envir = asNamespace("BUCSS"))))
 })
 
@@ -52,12 +52,12 @@ test_that("each spec's prior distribution reproduces the plan's own ceiling", {
   # family and degrees of freedom pins every entry of the design table: a wrong
   # family, or degrees of freedom off by one, moves it immediately.
   for (o in sensitivity_plans) {
-    spec <- BUCSS:::.BUCSS_SENSITIVITY_SPECS[[attr(o, "design")]]
-    inputs <- BUCSS:::.sensitivity_inputs(o)
+    spec <- BUCSS:::.BUCSS_DESIGN_SPECS[[attr(o, "design")]]
+    inputs <- BUCSS:::.bucss_design_inputs(o)
     effect <- attr(o, "effect")
     df <- if (length(formals(spec$df)) > 1L) spec$df(inputs, effect) else
       spec$df(inputs)
-    args <- BUCSS:::.sensitivity_args(inputs, spec, effect)
+    args <- BUCSS:::.bucss_design_args(inputs, spec, effect)
     stat <- args[[spec$statistic]]
     alpha_prior <- if (inputs$alpha_prior == 1) .999 else inputs$alpha_prior
     p_spec <- switch(
@@ -78,8 +78,8 @@ test_that("the rebuilt planner call reproduces every plan exactly", {
   computed <- c(BUCSS:::.BUCSS_SIZE_TERMS, "total_N", "actual_power",
                 "ncp_adjusted")
   for (o in sensitivity_plans) {
-    spec <- BUCSS:::.BUCSS_SENSITIVITY_SPECS[[attr(o, "design")]]
-    args <- BUCSS:::.sensitivity_args(BUCSS:::.sensitivity_inputs(o), spec,
+    spec <- BUCSS:::.BUCSS_DESIGN_SPECS[[attr(o, "design")]]
+    args <- BUCSS:::.bucss_design_args(BUCSS:::.bucss_design_inputs(o), spec,
                                       attr(o, "effect"))
     replay <- do.call(get(spec$planner, envir = asNamespace("BUCSS")), args)
     expect_equal(replay$value[replay$term %in% computed],

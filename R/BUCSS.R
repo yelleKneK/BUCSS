@@ -43,6 +43,7 @@
 #' @author Ken Kelley (\email{kkelley@@nd.edu}), Samantha F. Anderson
 #'   (\email{samantha.f.anderson@@asu.edu}), and Scott E. Maxwell
 #'
+#' @importFrom graphics abline box lines mtext par points rect text
 #' @importFrom stats dnbinom pbeta pchisq pf pt qchisq qf qnbinom qt quantile
 #' @importFrom stats rchisq rf rt uniroot
 #'
