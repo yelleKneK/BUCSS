@@ -167,6 +167,102 @@ ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2,
                  desired_power = .80)
 ```
 
+## Correlation
+
+A prior study reporting a Pearson correlation is planned from the correlation
+itself. A study with *N* = 100 reported *r* = .35. The returned sample size is
+the total.
+
+```{r}
+ss_buc_correlation(r_observed = .35, N = 100, alpha_prior = .05,
+                   alpha_planned = .05, assurance = .80, desired_power = .80)
+```
+
+A correlation is the slope in a simple regression, so this is the same
+correction `ss_buc_reg_coef()` applies with one predictor, and the two agree
+exactly. Planning is done in the fixed-predictor frame, so the returned size
+runs 2 to 5 participants below an exact random-predictor calculation; see the
+help page.
+
+## Analysis of Covariance
+
+Covariates cost error degrees of freedom in both the prior study and the
+planned one, so the planner takes their number directly. A prior study with
+*N* = 120, three groups, and two covariates reported *F* = 6.00 for the group
+effect. The returned sample size is per cell.
+
+```{r}
+ss_buc_ancova(F_observed = 6, N = 120, cells = 3, n_covariates = 2,
+              alpha_prior = .05, alpha_planned = .05, assurance = .80,
+              desired_power = .80)
+```
+
+With `n_covariates = 0` this reproduces `ss_buc_one_way_anova()` exactly. For a
+single-degree-of-freedom contrast among the adjusted means, supply that
+contrast's *F* and set `df_numerator = 1`.
+
+## Multivariate Comparison of Two Groups
+
+When two groups are compared on several outcome variables at once, the prior
+study's Hotelling *T*-squared (or the *F* it maps to) plans the replication.
+A study with *N* = 80 comparing two groups on 3 outcomes reported *F* = 4.50.
+The returned sample size is per group.
+
+```{r}
+ss_buc_manova(F_observed = 4.5, N = 80, p_variables = 3, alpha_prior = .05,
+              alpha_planned = .05, assurance = .80, desired_power = .80)
+```
+
+This covers the multivariate hypothesis whose rank is one, which is what a
+two-group comparison gives. A hypothesis of higher rank has a set of
+noncentrality parameters rather than a single one, and the correction does not
+apply to it.
+
+## Nested Model Comparison
+
+An effect tested by the chi-square difference between two nested models, such
+as a constrained path in a structural equation model, is planned from that
+difference. A prior study with *N* = 250 reported a difference of 9.50 on 1
+degree of freedom.
+
+```{r}
+ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_difference = 1,
+                  alpha_prior = .05, alpha_planned = .05, assurance = .80,
+                  desired_power = .80)
+```
+
+This is for the *difference* test, not for an omnibus model fit chi-square: a
+publishable fit statistic is a small one, which inverts the selection the
+correction assumes.
+
+## Unequal Variances
+
+When the two groups' variances differ, the Welch test is the appropriate
+comparison, and planning it needs the ratio of the standard deviations in
+addition to the group sizes. A prior study with 40 and 55 participants, whose
+second group was half again as variable as the first, reported *t* = 3.00.
+
+```{r}
+ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1.5,
+               alpha_prior = .05, alpha_planned = .05, assurance = .80,
+               desired_power = .80)
+```
+
+The assumed ratio matters more than any other input here, so it is worth
+seeing how the plan moves across the values you find plausible:
+
+```{r}
+ratios <- c(1, 1.5, 2, 2.5, 3)
+sapply(ratios, function(r) {
+  res <- ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = r)
+  res$value[res$term == "necessary_n_per_group"]
+})
+```
+
+Planning at equal variances and being wrong is expensive: if the true ratio
+were 2, that plan would deliver about .43 power rather than .80. Plan for the
+least favorable ratio you find credible.
+
 ## References
 
 Anderson, S. F. (2021). Using prior information to plan appropriately powered

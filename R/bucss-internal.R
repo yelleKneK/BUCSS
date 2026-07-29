@@ -321,7 +321,10 @@
       "With this prior result and 'alpha_prior', the largest 'assurance' that ",
       "still yields a usable plan is about ", fmt(ceiling_assurance), "; re-run ",
       "with 'assurance' at or below that value, or raise 'alpha_prior' to lift ",
-      "the ceiling. "
+      "the ceiling. Re-running at a lower 'assurance' is not free: the plan it ",
+      "returns carries that lower assurance, not the one you first asked for, ",
+      "so the long run proportion of replications reaching your target power ",
+      "falls accordingly. "
     )
   } else {
     lever <- paste0(

@@ -95,6 +95,19 @@ between-subjects ANOVA is now split into a one-way planner
 (`ss_buc_one_way_anova()`) and a two-way planner (`ss_buc_factorial_anova()`).
 Each function returns a tidy `bucss_power` object rather than a two-element list.
 
+The family covers eighteen designs:
+
+| Design | Function |
+| --- | --- |
+| One-sample, paired, independent, and Welch *t* tests | `ss_buc_one_sample_t()`, `ss_buc_paired_t()`, `ss_buc_independent_t()`, `ss_buc_welch_t()` |
+| Between-subjects ANOVA and ANCOVA | `ss_buc_one_way_anova()`, `ss_buc_factorial_anova()`, `ss_buc_factorial_anova_general()`, `ss_buc_ancova()` |
+| Within-subjects and split-plot ANOVA | `ss_buc_rm_anova()`, `ss_buc_rm_anova_general()`, `ss_buc_mixed_anova()`, `ss_buc_mixed_anova_general()` |
+| Correlation and multiple regression | `ss_buc_correlation()`, `ss_buc_reg_coef()`, `ss_buc_R2()`, `ss_buc_reg_joint()` |
+| Multivariate and latent variable | `ss_buc_manova()`, `ss_buc_chisq_diff()` |
+
+`vignette("worked-examples", package = "BUCSS")` walks through one example of
+each.
+
 The old dotted names are retained for backward compatibility. As of BUCSS 2.0.0
 each one (for example `ss.power.it()`) is **deprecated**: it still runs, but it
 forwards to its `ss_buc_*` replacement and issues a one-time-per-session warning

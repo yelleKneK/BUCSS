@@ -182,6 +182,14 @@ the correction to statistics the package did not previously accept.
   author writes in a manuscript's planning section (the analog of `DMAR`'s
   `results_sentence()`).
 
+* The zero-noncentrality error now says plainly that re-running at a lower
+  assurance is not free: the plan it returns carries that lower assurance, not
+  the one originally requested, so the long run proportion of replications
+  reaching the target power falls accordingly. Raising `alpha_prior` is a
+  different kind of remedy, changing an assumption about the prior study's
+  literature rather than lowering the guarantee. The assurance vignette
+  develops the distinction.
+
 * When the correction drives the corrected noncentrality parameter to zero, the
   error reports the largest assurance the prior result can support (the
   closed-form ceiling `1 - p/alpha_prior`, where `p` is the prior study's *p*

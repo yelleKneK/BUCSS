@@ -80,7 +80,11 @@ ss_buc_independent_t(t_observed = 3, n = 20, assurance = .95, desired_power = .8
 #> prior result to plan the sample size as desired. With this prior result
 #> and 'alpha_prior', the largest 'assurance' that still yields a usable
 #> plan is about .90; re-run with 'assurance' at or below that value, or
-#> raise 'alpha_prior' to lift the ceiling. 'alpha_prior' does not change
+#> raise 'alpha_prior' to lift the ceiling. Re-running at a lower
+#> 'assurance' is not free: the plan it returns carries that lower
+#> assurance, not the one you first asked for, so the long run proportion
+#> of replications reaching your target power falls accordingly.
+#> 'alpha_prior' does not change
 #> the prior study, which is what it is; it is your assumption about the
 #> publication threshold the study's literature faced, so raising it toward
 #> 1 assumes less publication bias to undo (for example, 'alpha_prior = .10'
@@ -89,6 +93,16 @@ ss_buc_independent_t(t_observed = 3, n = 20, assurance = .95, desired_power = .8
 #> 'alpha_prior = 1' assumes no publication bias at all). See Anderson,
 #> Kelley, and Maxwell (2017) and Anderson and Kelley (2024).
 ```
+
+That last sentence is worth dwelling on, because the first remedy looks
+cheaper than it is. Assurance is a promise about the long run: at .90, nine
+replications in ten reach your target power. If the prior result cannot
+support .90 and you re-run at .80, the plan you get is a perfectly good .80
+plan, but it is an .80 plan. You have not recovered the guarantee you wanted;
+you have accepted a smaller one in exchange for a feasible study. Raising
+`alpha_prior` is a different kind of move: it does not lower the guarantee,
+it changes an assumption about the literature the prior study came from, and
+it is defensible exactly to the extent that the assumption is.
 
 The reported ceiling is exact: the largest assurance a prior result can support
 is `1 - p/alpha_prior`, where *p* is the prior study's *p* value. Here that is
