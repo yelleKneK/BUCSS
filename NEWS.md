@@ -145,15 +145,25 @@ the correction to statistics the package did not previously accept.
 
 * `ss_buc_chisq_diff()` plans from a nested model chi-square difference
   (likelihood ratio) test, the test used for a constrained path in a
-  structural equation model. Its help page is explicit that the function is
-  *not* for an omnibus model fit chi-square, where a publishable result is a
-  small statistic and the selection region is inverted.
+  structural equation model. It is *not* for an omnibus model fit chi-square,
+  where a publishable result is a small statistic and the selection region is
+  inverted, and the function **refuses** that case rather than only warning
+  about it. That is why it takes both models' degrees of freedom, `df_full`
+  and `df_restricted`, rather than only their difference: an omnibus fit
+  chi-square is the comparison of a model against the saturated model, which
+  has zero degrees of freedom, so `df_full = 0` identifies the misuse exactly.
+  Given only the difference, nothing distinguishes a fit test from a genuine
+  comparison of two substantive models and the mistake would pass silently.
 
 * `ss_buc_welch_t()` plans a Welch (unequal variance) *t* test from the two
-  prior group sizes and an assumed ratio of standard deviations. A Welch
-  statistic is not exactly noncentral *t*, so this planner is an approximation
-  and its help page says which assumption it needs and suggests re-running
-  across a range of ratios.
+  prior group sizes and the groups' relative spread. Only the ratio of the
+  standard deviations enters the computation, but a paper usually reports the
+  group standard deviations or variances rather than their ratio, so the
+  spread may be given any of three ways: `sd_ratio`, or `sd_1` and `sd_2`, or
+  `var_1` and `var_2`. Exactly one form is accepted per call, and the form
+  given is the one echoed back in the result. A Welch statistic is not exactly
+  noncentral *t*, so this planner is an approximation, and its help page says
+  which assumption it needs and suggests re-running across a range of ratios.
 
 ## The Assurance Ceiling, Drawn
 
@@ -161,7 +171,8 @@ the correction to statistics the package did not previously accept.
   ceiling. The method re-runs that plan's own planner across a range of
   assurance values and draws two panels sharing an assurance axis: the
   adjusted noncentrality parameter falling to zero at the ceiling, and the
-  necessary sample size it implies running away on a logarithmic scale. The
+  necessary sample size it implies growing asymptotically on a logarithmic
+  scale. The
   ceiling is marked, the plan itself is marked, and the region beyond the
   ceiling is shaded and labeled as one where no plan exists.
 

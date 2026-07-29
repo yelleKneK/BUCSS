@@ -46,7 +46,7 @@ Re-runs the planner that produced \code{x} across a range of
   \code{assurance} values and draws what happens as the requested assurance
   approaches the largest value the prior result can support: the bias and
   uncertainty adjusted noncentrality parameter falling to zero, and the
-  sample size it implies running away.
+  sample size it implies growing asymptotically.
 }
 \details{
 Every prior result has a largest supportable assurance, the closed
@@ -89,7 +89,7 @@ Every prior result has a largest supportable assurance, the closed
 plan <- ss_buc_independent_t(t_observed = 3, n = 20, assurance = .80)
 
 # The ceiling, drawn: the corrected parameter falls to zero and the
-# sample size runs away.
+# sample size grows asymptotically.
 plot(plan)
 
 # The plotted values, for redrawing elsewhere.

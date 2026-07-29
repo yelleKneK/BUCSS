@@ -10,6 +10,10 @@ ss_buc_welch_t(
   n_1,
   n_2,
   sd_ratio = 1,
+  sd_1,
+  sd_2,
+  var_1,
+  var_2,
   alpha_prior = 0.05,
   alpha_planned = 0.05,
   assurance = 0.8,
@@ -24,7 +28,16 @@ plan sample size for a planned study. Either sign is accepted.}
 
 \item{sd_ratio}{Ratio of the second group's standard deviation to the first
 group's, in the previous study, assumed to hold in the planned study as
-well. A value of 1 means equal variances.}
+well. A value of 1 means equal variances. Give this, or the two group
+standard deviations, or the two group variances, but not more than one of
+the three.}
+
+\item{sd_1, sd_2}{Group standard deviations of the previous study, an
+alternative to \code{sd_ratio}. Only their ratio enters the computation,
+so the unit does not matter.}
+
+\item{var_1, var_2}{Group variances of the previous study, a second
+alternative to \code{sd_ratio}.}
 
 \item{alpha_prior}{Alpha level \eqn{\alpha} for the previous study or the
 assumed statistical significance necessary for publishing in the field; to
@@ -191,7 +204,13 @@ result <- ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55,
   assurance = .80, desired_power = .80)
 result
 
-# How sensitive is the plan to the assumed ratio?
+# The same study described by the group standard deviations, or by the
+# group variances, rather than by their ratio.
+ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_1 = 8.4, sd_2 = 12.6)
+ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, var_1 = 70.56,
+  var_2 = 158.76)
+
+# How sensitive is the plan to the assumed spread?
 ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1)
 ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 2)
 

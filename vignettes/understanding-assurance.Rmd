@@ -132,9 +132,9 @@ plot(plan)
 The point is the shape. Assurance does not degrade gracefully as it rises: it
 hits a wall. On the left, the corrected noncentrality parameter, the quantity
 the correction actually solves for, falls to zero. On the right, the sample
-size that parameter implies runs away, and the vertical scale is logarithmic
-because it spans three orders of magnitude over a range of assurance a
-researcher might plausibly consider. The filled point is the plan itself, at
+size that parameter implies grows asymptotically, and the vertical scale is
+logarithmic because it spans three orders of magnitude over a range of
+assurance a researcher might plausibly consider. The filled point is the plan itself, at
 `assurance = .80`, and the shaded band is the region where the planner refuses.
 
 That the sample size is finite everywhere left of the ceiling and undefined

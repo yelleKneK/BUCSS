@@ -33,7 +33,7 @@ sensitivity_plans <- list(
   ss_buc_R2(F_observed = 8, N = 60, p = 3),
   ss_buc_reg_joint(F_observed = 12, N = 60, p = 5, p_joint = 2),
   ss_buc_manova(F_observed = 8, N = 40, p_variables = 3),
-  ss_buc_chisq_diff(chisq_observed = 15, df_difference = 2, N = 200),
+  ss_buc_chisq_diff(chisq_observed = 15, df_full = 42, df_restricted = 44, N = 200),
   ss_buc_correlation(r_observed = .35, N = 100),
   ss_buc_correlation(t_observed = 3.7, N = 100)
 )
@@ -176,7 +176,7 @@ test_that("the assurance guarantee holds when refusals are counted", {
   cases <- list(
     ss_buc_paired_t(t_observed = 3, N = 30, assurance = .80),
     ss_buc_rm_anova(F_observed = 8, N = 30, levels_A = 3),
-    ss_buc_chisq_diff(chisq_observed = 15, df_difference = 2, N = 200),
+    ss_buc_chisq_diff(chisq_observed = 15, df_full = 42, df_restricted = 44, N = 200),
     ss_buc_correlation(r_observed = .35, N = 100)
   )
   for (plan in cases) {

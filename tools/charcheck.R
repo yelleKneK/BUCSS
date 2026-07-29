@@ -135,7 +135,8 @@ grids <- list(
   },
   ss_buc_chisq_diff = function() {
     g <- expand.grid(chisq_observed = c(5, 9.5, 20), N = c(150, 250, 400),
-                     df_difference = c(1, 2, 5), alpha_prior = c(.05, 1),
+                     df_full = 42, df_restricted = 42 + c(1, 2, 5),
+                     alpha_prior = c(.05, 1),
                      assurance = c(.5, .8, .9), desired_power = .8,
                      KEEP.OUT.ATTRS = FALSE)
     lapply(seq_len(nrow(g)), function(i) as.list(g[i, ]))

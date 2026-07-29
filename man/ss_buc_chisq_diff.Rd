@@ -8,7 +8,8 @@ difference test using a publication bias and uncertainty correction procedure}
 ss_buc_chisq_diff(
   chisq_observed,
   N,
-  df_difference,
+  df_full,
+  df_restricted,
   alpha_prior = 0.05,
   alpha_planned = 0.05,
   assurance = 0.8,
@@ -21,8 +22,14 @@ models in the previous study.}
 
 \item{N}{Total sample size of the previous study.}
 
-\item{df_difference}{Degrees of freedom of the difference test, that is, the
-number of constraints released between the two nested models.}
+\item{df_full}{Degrees of freedom of the full (less constrained) model. A
+saturated full model has zero, which identifies the comparison as an
+omnibus test of model fit rather than a difference test between two
+substantive models; the function refuses that case (see Details).}
+
+\item{df_restricted}{Degrees of freedom of the restricted (more
+constrained) model. It exceeds \code{df_full} by the number of
+constraints imposed, which is the difference test's degrees of freedom.}
 
 \item{alpha_prior}{Alpha level \eqn{\alpha} for the previous study or the
 assumed statistical significance necessary for publishing in the field; to
@@ -94,7 +101,17 @@ Researchers often use the sample effect size from a prior study as
   It is \emph{not} appropriate for an omnibus model fit chi-square, where a
   publishable result is a \emph{small} statistic (a model that fits). The
   selection region is inverted there, so the truncated likelihood this
-  function builds does not describe it. Do not pass a model fit chi-square.
+  function builds does not describe it.
+
+  \strong{The function refuses that case rather than only warning about it.}
+  This is why both models' degrees of freedom are required rather than only
+  their difference. An omnibus fit chi-square is the comparison of a model
+  against the \emph{saturated} model, and a saturated model has zero degrees
+  of freedom, so \code{df_full = 0} identifies the misuse exactly. Given
+  only the difference, nothing distinguishes a fit test from a genuine
+  comparison of two substantive models, and the mistake would pass silently.
+  Supplying both is also a more faithful description of what was tested, and
+  the two values are what a paper reports for each model.
 
   The correction uses a likelihood function of a truncated noncentral
   chi-square distribution, the same construction the rest of the package uses
@@ -165,15 +182,22 @@ Researchers often use the sample effect size from a prior study as
   large rather than as a serious recommendation.
 }
 \examples{
-result <- ss_buc_chisq_diff(chisq_observed = 9.5, N = 250,
-  df_difference = 1, alpha_prior = .05, alpha_planned = .05,
+# A path constrained to zero: the full model has 42 degrees of freedom and
+# the restricted model 43, so the difference test has 1.
+result <- ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42,
+  df_restricted = 43, alpha_prior = .05, alpha_planned = .05,
   assurance = .80, desired_power = .80)
 result
 
+# A saturated full model means the comparison is an omnibus test of model
+# fit, which this method does not describe, and the function says so:
+try(ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 0,
+  df_restricted = 43))
+
 # Requesting more assurance than the prior result can support stops with an
 # informative error naming the largest workable assurance (here near .95):
-try(ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_difference = 1,
-  assurance = .99))
+try(ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42,
+  df_restricted = 43, assurance = .99))
 
 }
 \references{

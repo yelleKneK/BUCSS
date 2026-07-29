@@ -4,8 +4,8 @@
 # cannot support a high assurance, and why the planners refuse rather than
 # returning a large number. Explained in prose it sounds like a limitation.
 # Drawn, it is obviously a wall: the corrected noncentrality parameter falls to
-# zero at 1 - p/alpha_prior, and the sample size it implies runs away to
-# infinity there. This method re-runs a plan's own planner across a range of
+# zero at 1 - p/alpha_prior, and the sample size it implies grows without
+# bound there. This method re-runs a plan's own planner across a range of
 # assurance values and draws both curves.
 #
 # The per-design knowledge needed to re-run the planner (which function, and
@@ -31,7 +31,7 @@
 #'   \code{assurance} values and draws what happens as the requested assurance
 #'   approaches the largest value the prior result can support: the bias and
 #'   uncertainty adjusted noncentrality parameter falling to zero, and the
-#'   sample size it implies running away.
+#'   sample size it implies growing asymptotically.
 #'
 #' @details Every prior result has a largest supportable assurance, the closed
 #'   form \eqn{1 - p/\alpha}{1 - p/alpha} where \emph{p} is the prior study's
@@ -92,7 +92,7 @@
 #' plan <- ss_buc_independent_t(t_observed = 3, n = 20, assurance = .80)
 #'
 #' # The ceiling, drawn: the corrected parameter falls to zero and the
-#' # sample size runs away.
+#' # sample size grows asymptotically.
 #' plot(plan)
 #'
 #' # The plotted values, for redrawing elsewhere.
@@ -200,7 +200,7 @@ plot.bucss_power <- function(x, which = c("both", "ncp", "size"),
   panel <- function(y, ylab, main, log = "") {
     pargs <- list(x = curve_values$assurance[ok], y = y[ok], type = "n",
                   log = log, xlab = "Assurance", ylab = ylab, main = main,
-                  xlim = c(x_lo, x_hi))
+                  font.main = 1L, xlim = c(x_lo, x_hi))
     pargs[names(dots)] <- dots
     do.call(plot, pargs)
     usr <- par("usr")
@@ -226,11 +226,11 @@ plot.bucss_power <- function(x, which = c("both", "ncp", "size"),
 
   if (which %in% c("both", "ncp"))
     panel(curve_values$ncp_adjusted, "Adjusted noncentrality parameter",
-          "The correction falls to zero")
+          "The Correction Falls to Zero")
   if (which %in% c("both", "size"))
     panel(curve_values$sample_size,
           paste0("Necessary sample size (", attr(x, "sample_size_unit"), ")"),
-          "The sample size runs away", log = "y")
+          "The Sample Size Grows Asymptotically", log = "y")
 
   invisible(curve_values)
 }

@@ -124,7 +124,14 @@
 #' @param n_1,n_2 Group sample sizes of the previous study.
 #' @param sd_ratio Ratio of the second group's standard deviation to the first
 #'   group's, in the previous study, assumed to hold in the planned study as
-#'   well. A value of 1 means equal variances.
+#'   well. A value of 1 means equal variances. Give this, or the two group
+#'   standard deviations, or the two group variances, but not more than one of
+#'   the three.
+#' @param sd_1,sd_2 Group standard deviations of the previous study, an
+#'   alternative to \code{sd_ratio}. Only their ratio enters the computation,
+#'   so the unit does not matter.
+#' @param var_1,var_2 Group variances of the previous study, a second
+#'   alternative to \code{sd_ratio}.
 #' @template planning-params
 #'
 #' @templateVar size_phrase per-group sample size
@@ -140,7 +147,13 @@
 #'   assurance = .80, desired_power = .80)
 #' result
 #'
-#' # How sensitive is the plan to the assumed ratio?
+#' # The same study described by the group standard deviations, or by the
+#' # group variances, rather than by their ratio.
+#' ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_1 = 8.4, sd_2 = 12.6)
+#' ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, var_1 = 70.56,
+#'   var_2 = 158.76)
+#'
+#' # How sensitive is the plan to the assumed spread?
 #' ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1)
 #' ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 2)
 #'
@@ -156,6 +169,7 @@
 #'
 #' @template references
 ss_buc_welch_t <- function(t_observed, n_1, n_2, sd_ratio = 1,
+                           sd_1, sd_2, var_1, var_2,
                            alpha_prior = .05, alpha_planned = .05,
                            assurance = .80, desired_power = .80) {
   v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, desired_power)
@@ -170,6 +184,28 @@ ss_buc_welch_t <- function(t_observed, n_1, n_2, sd_ratio = 1,
   .check_scalar_finite(t_observed, "t_observed")
   .check_count(n_1, "n_1", min = 2)
   .check_count(n_2, "n_2", min = 2)
+
+  # The spread may be described three ways. Only the ratio enters the
+  # computation, so the two pairs are folded into 'sd_ratio' here and the form
+  # the user chose is echoed back unchanged in the returned result.
+  gave_sd <- !missing(sd_1) || !missing(sd_2)
+  gave_var <- !missing(var_1) || !missing(var_2)
+  if (sum(c(!missing(sd_ratio), gave_sd, gave_var)) > 1L) {
+    stop("Describe the groups' spread one way only: 'sd_ratio', or 'sd_1' and 'sd_2', or 'var_1' and 'var_2'.", call. = FALSE)
+  }
+  if (gave_sd) {
+    if (missing(sd_1) || missing(sd_2)) stop("You must specify both 'sd_1' and 'sd_2', the group standard deviations of the previous study.", call. = FALSE)
+    .check_scalar_finite(sd_1, "sd_1")
+    .check_scalar_finite(sd_2, "sd_2")
+    if (sd_1 <= 0 || sd_2 <= 0) stop("'sd_1' and 'sd_2' must be positive numbers.", call. = FALSE)
+    sd_ratio <- sd_2 / sd_1
+  } else if (gave_var) {
+    if (missing(var_1) || missing(var_2)) stop("You must specify both 'var_1' and 'var_2', the group variances of the previous study.", call. = FALSE)
+    .check_scalar_finite(var_1, "var_1")
+    .check_scalar_finite(var_2, "var_2")
+    if (var_1 <= 0 || var_2 <= 0) stop("'var_1' and 'var_2' must be positive numbers.", call. = FALSE)
+    sd_ratio <- sqrt(var_2 / var_1)
+  }
   .check_scalar_finite(sd_ratio, "sd_ratio")
   if (sd_ratio <= 0) stop("'sd_ratio' must be a positive number.", call. = FALSE)
 
@@ -221,9 +257,14 @@ ss_buc_welch_t <- function(t_observed, n_1, n_2, sd_ratio = 1,
     sample_size_unit = "per group",
     assurance_ceiling = ncp_solution$ceiling,
     total_n = 2 * output_n,
-    inputs = list(t_observed = t_observed, n_1 = n_1, n_2 = n_2,
-                  sd_ratio = sd_ratio, alpha_prior = alpha_prior_input,
-                  alpha_planned = alpha_planned, assurance = assurance,
-                  desired_power = desired_power)
+    inputs = c(list(t_observed = t_observed, n_1 = n_1, n_2 = n_2),
+               # Echo the spread in the form it was given, and only that form,
+               # so the echoed rows remain a valid description of the call.
+               if (gave_sd) list(sd_1 = sd_1, sd_2 = sd_2)
+               else if (gave_var) list(var_1 = var_1, var_2 = var_2)
+               else list(sd_ratio = sd_ratio),
+               list(alpha_prior = alpha_prior_input,
+                    alpha_planned = alpha_planned, assurance = assurance,
+                    desired_power = desired_power))
   )
 }

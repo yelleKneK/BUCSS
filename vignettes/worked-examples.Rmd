@@ -234,30 +234,52 @@ apply to it.
 
 An effect tested by the chi-square difference between two nested models, such
 as a constrained path in a structural equation model, is planned from that
-difference. A prior study with *N* = 250 reported a difference of 9.50 on 1
-degree of freedom.
+difference. Supply both models' degrees of freedom rather than only their
+difference. A prior study with *N* = 250 fit a model with 42 degrees of
+freedom and a constrained version with 43, a difference of 9.50 on 1 degree of
+freedom.
 
 ```{r}
-ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_difference = 1,
+ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42, df_restricted = 43,
                   alpha_prior = .05, alpha_planned = .05, assurance = .80,
                   desired_power = .80)
 ```
 
 This is for the *difference* test, not for an omnibus model fit chi-square: a
 publishable fit statistic is a small one, which inverts the selection the
-correction assumes.
+correction assumes. Requiring both models' degrees of freedom is what lets the
+function enforce that. An omnibus fit chi-square compares a model against the
+*saturated* model, which has zero degrees of freedom, so `df_full = 0`
+identifies the misuse exactly and the function refuses it:
+
+```{r error = TRUE}
+ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 0, df_restricted = 43)
+```
 
 ## Unequal Variances
 
 When the two groups' variances differ, the Welch test is the appropriate
-comparison, and planning it needs the ratio of the standard deviations in
-addition to the group sizes. A prior study with 40 and 55 participants, whose
-second group was half again as variable as the first, reported *t* = 3.00.
+comparison, and planning it needs the groups' relative spread in addition to
+their sizes. A prior study with 40 and 55 participants, whose second group was
+half again as variable as the first, reported *t* = 3.00.
 
 ```{r}
 ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1.5,
                alpha_prior = .05, alpha_planned = .05, assurance = .80,
                desired_power = .80)
+```
+
+Only the ratio enters the computation, but a paper usually reports the group
+standard deviations or variances rather than their ratio, so those may be
+given directly instead. All three calls describe the same study:
+
+```{r}
+sizes <- c(
+  ratio = ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1.5)$value[1],
+  sds = ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_1 = 8.4, sd_2 = 12.6)$value[1],
+  vars = ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, var_1 = 70.56,
+                        var_2 = 158.76)$value[1])
+sizes
 ```
 
 The assumed ratio matters more than any other input here, so it is worth

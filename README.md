@@ -110,7 +110,7 @@ each.
 
 Calling `plot()` on a plan draws its assurance ceiling: the largest assurance
 the prior result can support, the adjusted noncentrality parameter falling to
-zero there, and the sample size running away as it does. Assurance does not
+zero there, and the sample size growing asymptotically as it does. Assurance does not
 degrade gracefully as it rises, it hits a wall, and that is easier to see than
 to read about.
 

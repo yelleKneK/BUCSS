@@ -76,7 +76,8 @@ test_that("plot works for every design in the registry", {
     ss_buc_R2(F_observed = 8, N = 60, p = 3),
     ss_buc_reg_joint(F_observed = 12, N = 60, p = 5, p_joint = 2),
     ss_buc_manova(F_observed = 8, N = 40, p_variables = 3),
-    ss_buc_chisq_diff(chisq_observed = 15, df_difference = 2, N = 200),
+    ss_buc_chisq_diff(chisq_observed = 15, df_full = 42, df_restricted = 44,
+                      N = 200),
     ss_buc_correlation(r_observed = .35, N = 100)
   )
   expect_setequal(unique(vapply(plans, attr, character(1), "design")),

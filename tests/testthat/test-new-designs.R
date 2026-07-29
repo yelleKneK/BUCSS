@@ -129,7 +129,8 @@ test_that("the multivariate planner agrees with itself through T squared", {
 })
 
 test_that("the chi-square difference planner matches a hand computation", {
-  res <- ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_difference = 1)
+  res <- ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42,
+                           df_restricted = 43)
   ncp <- res$value[res$term == "ncp_adjusted"]
   size <- res$value[res$term == "necessary_N"]
   # the noncentrality is linear in N, and the test has no denominator df
@@ -142,7 +143,8 @@ test_that("the chi-square difference planner matches a hand computation", {
   # the ceiling is the same closed form as everywhere else
   p_prior <- 1 - pchisq(9.5, df = 1)
   expect_equal(attr(res, "assurance_ceiling"), 1 - p_prior / .05)
-  expect_error(ss_buc_chisq_diff(chisq_observed = 1, N = 250, df_difference = 1),
+  expect_error(ss_buc_chisq_diff(chisq_observed = 1, N = 250, df_full = 42,
+                                 df_restricted = 43),
                "nonsignificant", fixed = TRUE)
 })
 
@@ -170,7 +172,8 @@ test_that("every new planner honors the shared result contract", {
     ss_buc_one_sample_t(t_observed = 3, N = 40),
     ss_buc_ancova(F_observed = 6, N = 120, cells = 3, n_covariates = 2),
     ss_buc_manova(F_observed = 4.5, N = 80, p_variables = 3),
-    ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_difference = 1),
+    ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42,
+                           df_restricted = 43),
     ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1.5)
   )
   for (res in results) {
@@ -203,20 +206,99 @@ test_that("the new planners reject an assurance above their ceiling", {
                              assurance = .95),
                "noncentrality parameter is zero", fixed = TRUE)
   expect_error(ss_buc_chisq_diff(chisq_observed = 9.5, N = 250,
-                                 df_difference = 1, assurance = .99),
+                                 df_full = 42, df_restricted = 43,
+                                 assurance = .99),
                "noncentrality parameter is zero", fixed = TRUE)
   expect_error(ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55,
                               sd_ratio = 1.5, assurance = .95),
                "noncentrality parameter is zero", fixed = TRUE)
 })
 
+test_that("the chi-square planner refuses an omnibus model fit test", {
+  # An omnibus fit chi-square compares a model against the saturated model,
+  # which has zero degrees of freedom. Requiring both models' degrees of
+  # freedom rather than only their difference is what makes that detectable,
+  # and the function refuses rather than planning from an inverted selection
+  # region.
+  expect_error(ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 0,
+                                 df_restricted = 43),
+               "omnibus test of model fit", fixed = TRUE)
+  # the arguments must be in the right order, since reversing them would
+  # silently plan from a negative number of constraints
+  expect_error(ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 43,
+                                 df_restricted = 42),
+               "must be greater than", fixed = TRUE)
+  expect_error(ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42,
+                                 df_restricted = 42),
+               "must be greater than", fixed = TRUE)
+  # both are required
+  expect_error(ss_buc_chisq_diff(chisq_observed = 9.5, N = 250,
+                                 df_restricted = 43),
+               "must specify 'df_full'", fixed = TRUE)
+  expect_error(ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42),
+               "must specify 'df_restricted'", fixed = TRUE)
+  # only the difference drives the answer, so any pair with the same gap agrees
+  a <- ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42,
+                         df_restricted = 43)
+  b <- ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 7,
+                         df_restricted = 8)
+  design_rows <- c("necessary_N", "actual_power", "ncp_adjusted")
+  expect_equal(a$value[a$term %in% design_rows],
+               b$value[b$term %in% design_rows])
+  expect_equal(attr(a, "df_effect"), 1)
+})
+
+test_that("the Welch planner takes the spread three equivalent ways", {
+  by_ratio <- ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1.5)
+  by_sd <- ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_1 = 8.4,
+                          sd_2 = 12.6)
+  by_var <- ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, var_1 = 70.56,
+                           var_2 = 158.76)
+  design_rows <- c("necessary_n_per_group", "total_N", "actual_power",
+                   "ncp_adjusted")
+  expect_equal(by_sd$value[by_sd$term %in% design_rows],
+               by_ratio$value[by_ratio$term %in% design_rows])
+  expect_equal(by_var$value[by_var$term %in% design_rows],
+               by_ratio$value[by_ratio$term %in% design_rows])
+  # only the ratio matters, so the unit of the standard deviations does not
+  scaled <- ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_1 = 84,
+                           sd_2 = 126)
+  expect_equal(scaled$value[scaled$term %in% design_rows],
+               by_ratio$value[by_ratio$term %in% design_rows])
+  # the form the user chose is echoed back, and only that form
+  expect_true(all(c("sd_1", "sd_2") %in% by_sd$term))
+  expect_false("sd_ratio" %in% by_sd$term)
+  expect_true(all(c("var_1", "var_2") %in% by_var$term))
+  expect_false("sd_ratio" %in% by_var$term)
+  expect_true("sd_ratio" %in% by_ratio$term)
+
+  expect_error(ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55,
+                              sd_ratio = 1.5, sd_1 = 1, sd_2 = 2),
+               "one way only", fixed = TRUE)
+  expect_error(ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_1 = 1,
+                              var_1 = 1, var_2 = 2),
+               "one way only", fixed = TRUE)
+  expect_error(ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_1 = 1),
+               "both 'sd_1' and 'sd_2'", fixed = TRUE)
+  expect_error(ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, var_2 = 1),
+               "both 'var_1' and 'var_2'", fixed = TRUE)
+  expect_error(ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_1 = -1,
+                              sd_2 = 2),
+               "must be positive numbers", fixed = TRUE)
+  expect_error(ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, var_1 = 0,
+                              var_2 = 2),
+               "must be positive numbers", fixed = TRUE)
+})
+
 test_that("the chi-square planner will not plan fewer cases than constraints", {
   # A very strong prior used to drive the search to N = 3 for a test releasing
   # 8 constraints, which cannot fit the models. The search floor is now the
   # number of constraints plus two.
-  res <- ss_buc_chisq_diff(chisq_observed = 400, N = 60, df_difference = 8)
+  res <- ss_buc_chisq_diff(chisq_observed = 400, N = 60, df_full = 42,
+                    df_restricted = 50)
   expect_gte(res$value[res$term == "necessary_N"], 10)
   # the floor does not disturb ordinary cases
-  ordinary <- ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_difference = 1)
+  ordinary <- ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42,
+                           df_restricted = 43)
   expect_equal(ordinary$value[ordinary$term == "necessary_N"], 726)
 })

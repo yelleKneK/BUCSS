@@ -32,7 +32,17 @@
 #'   It is \emph{not} appropriate for an omnibus model fit chi-square, where a
 #'   publishable result is a \emph{small} statistic (a model that fits). The
 #'   selection region is inverted there, so the truncated likelihood this
-#'   function builds does not describe it. Do not pass a model fit chi-square.
+#'   function builds does not describe it.
+#'
+#'   \strong{The function refuses that case rather than only warning about it.}
+#'   This is why both models' degrees of freedom are required rather than only
+#'   their difference. An omnibus fit chi-square is the comparison of a model
+#'   against the \emph{saturated} model, and a saturated model has zero degrees
+#'   of freedom, so \code{df_full = 0} identifies the misuse exactly. Given
+#'   only the difference, nothing distinguishes a fit test from a genuine
+#'   comparison of two substantive models, and the mistake would pass silently.
+#'   Supplying both is also a more faithful description of what was tested, and
+#'   the two values are what a paper reports for each model.
 #'
 #'   The correction uses a likelihood function of a truncated noncentral
 #'   chi-square distribution, the same construction the rest of the package uses
@@ -105,8 +115,13 @@
 #' @param chisq_observed Observed chi-square difference between the two nested
 #'   models in the previous study.
 #' @param N Total sample size of the previous study.
-#' @param df_difference Degrees of freedom of the difference test, that is, the
-#'   number of constraints released between the two nested models.
+#' @param df_full Degrees of freedom of the full (less constrained) model. A
+#'   saturated full model has zero, which identifies the comparison as an
+#'   omnibus test of model fit rather than a difference test between two
+#'   substantive models; the function refuses that case (see Details).
+#' @param df_restricted Degrees of freedom of the restricted (more
+#'   constrained) model. It exceeds \code{df_full} by the number of
+#'   constraints imposed, which is the difference test's degrees of freedom.
 #' @template planning-params
 #'
 #' @templateVar size_phrase total sample size
@@ -115,21 +130,28 @@
 #' @export
 #'
 #' @examples
-#' result <- ss_buc_chisq_diff(chisq_observed = 9.5, N = 250,
-#'   df_difference = 1, alpha_prior = .05, alpha_planned = .05,
+#' # A path constrained to zero: the full model has 42 degrees of freedom and
+#' # the restricted model 43, so the difference test has 1.
+#' result <- ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42,
+#'   df_restricted = 43, alpha_prior = .05, alpha_planned = .05,
 #'   assurance = .80, desired_power = .80)
 #' result
 #'
+#' # A saturated full model means the comparison is an omnibus test of model
+#' # fit, which this method does not describe, and the function says so:
+#' try(ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 0,
+#'   df_restricted = 43))
+#'
 #' # Requesting more assurance than the prior result can support stops with an
 #' # informative error naming the largest workable assurance (here near .95):
-#' try(ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_difference = 1,
-#'   assurance = .99))
+#' try(ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42,
+#'   df_restricted = 43, assurance = .99))
 #'
 #' @author Ken Kelley (\email{kkelley@@nd.edu}) and
 #'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'
 #' @template references
-ss_buc_chisq_diff <- function(chisq_observed, N, df_difference,
+ss_buc_chisq_diff <- function(chisq_observed, N, df_full, df_restricted,
                               alpha_prior = .05, alpha_planned = .05,
                               assurance = .80, desired_power = .80) {
   v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, desired_power)
@@ -139,10 +161,26 @@ ss_buc_chisq_diff <- function(chisq_observed, N, df_difference,
   desired_power <- v$desired_power
 
   if (missing(N)) stop("You must specify 'N', which is the total sample size of the previous study.", call. = FALSE)
-  if (missing(df_difference)) stop("You must specify 'df_difference', the number of constraints released between the two nested models.", call. = FALSE)
+  if (missing(df_full)) stop("You must specify 'df_full', the degrees of freedom of the full (less constrained) model.", call. = FALSE)
+  if (missing(df_restricted)) stop("You must specify 'df_restricted', the degrees of freedom of the restricted (more constrained) model.", call. = FALSE)
   .check_scalar_finite(chisq_observed, "chisq_observed")
   .check_count(N, "N", min = 2)
-  .check_count(df_difference, "df_difference", min = 1)
+  .check_count(df_full, "df_full", min = 0)
+  .check_count(df_restricted, "df_restricted", min = 1)
+
+  # The guard against the one misuse this design invites. A saturated model has
+  # zero degrees of freedom, so 'df_full = 0' means the comparison is the
+  # restricted model's own test of fit against the saturated model, not a
+  # difference test between two substantive models. The correction does not
+  # describe that test: a publishable fit chi-square is a SMALL one, so the
+  # selection region is inverted and the truncated likelihood this method
+  # builds is the wrong one. Requiring both models' degrees of freedom, rather
+  # than only their difference, is what makes this detectable at all.
+  if (df_full == 0) stop("'df_full' is 0, so the full model is saturated and this comparison is the restricted model's omnibus test of model fit, not a difference test between two substantive models. This function does not apply to an omnibus fit chi-square: the correction assumes a literature publishes significant results, whereas a publishable fit chi-square is a small (nonsignificant) one, which inverts the selection region the method is built on. If you meant to compare two substantive nested models, give the full model's own degrees of freedom.", call. = FALSE)
+
+  if (df_restricted <= df_full) stop("'df_restricted' must be greater than 'df_full': the restricted model imposes constraints, so it has more degrees of freedom than the full model. If the two are reversed, swap them.", call. = FALSE)
+
+  df_difference <- df_restricted - df_full
 
   value_critical <- qchisq(1 - alpha_prior, df = df_difference)
 
@@ -180,7 +218,7 @@ ss_buc_chisq_diff <- function(chisq_observed, N, df_difference,
     sample_size_unit = "total",
     assurance_ceiling = ncp_solution$ceiling,
     inputs = list(chisq_observed = chisq_observed, N = N,
-                  df_difference = df_difference,
+                  df_full = df_full, df_restricted = df_restricted,
                   alpha_prior = alpha_prior_input,
                   alpha_planned = alpha_planned, assurance = assurance,
                   desired_power = desired_power)

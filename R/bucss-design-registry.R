@@ -32,8 +32,13 @@
   "Welch (unequal variance) t test" = list(
     planner = "ss_buc_welch_t", statistic = "t_observed", family = "t",
     df = function(i) {
+      # The spread may be echoed as a ratio, as two standard deviations, or as
+      # two variances; only the ratio enters the degrees of freedom.
+      ratio <- if (!is.null(i$sd_ratio)) i$sd_ratio
+               else if (!is.null(i$sd_1)) i$sd_2 / i$sd_1
+               else sqrt(i$var_2 / i$var_1)
       v1 <- 1 / i$n_1
-      v2 <- i$sd_ratio^2 / i$n_2
+      v2 <- ratio^2 / i$n_2
       (v1 + v2)^2 / (v1^2 / (i$n_1 - 1) + v2^2 / (i$n_2 - 1))
     }),
   "One-way between-subjects ANOVA" = list(
@@ -95,7 +100,7 @@
     df = function(i) c(i$p_variables, i$N - i$p_variables - 1)),
   "Nested model chi-square difference test" = list(
     planner = "ss_buc_chisq_diff", statistic = "chisq_observed",
-    family = "chisq", df = function(i) i$df_difference),
+    family = "chisq", df = function(i) i$df_restricted - i$df_full),
   "Pearson correlation" = list(
     planner = "ss_buc_correlation", statistic = "t_observed",
     family = "correlation", df = function(i) i$N)
