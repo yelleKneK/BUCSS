@@ -126,8 +126,7 @@
 #' try(ss_buc_manova(F_observed = 4.5, N = 80, p_variables = 3,
 #'   assurance = .95))
 #'
-#' @author Ken Kelley (\email{kkelley@@nd.edu}) and
-#'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
+#' @author Ken Kelley (\email{kkelley@@nd.edu})
 #'
 #' @template references
 ss_buc_manova <- function(F_observed, N, p_variables, T2_observed,

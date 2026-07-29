@@ -224,6 +224,5 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   in Statistics: Theory and Methods, 25,} 1595--1610.
 }
 \author{
-Ken Kelley (\email{kkelley@nd.edu}) and
-  Samantha F. Anderson (\email{samantha.f.anderson@asu.edu})
+Ken Kelley (\email{kkelley@nd.edu})
 }

@@ -59,8 +59,7 @@
 #' @seealso \code{\link{ss_buc_paired_t}}, which performs the identical
 #'   computation for a paired design.
 #'
-#' @author Ken Kelley (\email{kkelley@@nd.edu}) and
-#'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
+#' @author Ken Kelley (\email{kkelley@@nd.edu})
 #'
 #' @template references
 ss_buc_one_sample_t <- function(t_observed, N, alpha_prior = .05,

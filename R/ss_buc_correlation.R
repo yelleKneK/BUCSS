@@ -159,8 +159,7 @@
 #' @seealso \code{\link{ss_buc_reg_coef}} for a coefficient in a model with
 #'   more than one predictor.
 #'
-#' @author Ken Kelley (\email{kkelley@@nd.edu}) and
-#'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
+#' @author Ken Kelley (\email{kkelley@@nd.edu})
 #'
 #' @template references
 ss_buc_correlation <- function(r_observed, N, t_observed, alpha_prior = .05,

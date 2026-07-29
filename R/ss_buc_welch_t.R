@@ -164,8 +164,7 @@
 #'
 #' @seealso \code{\link{ss_buc_independent_t}} for the equal-variance test.
 #'
-#' @author Ken Kelley (\email{kkelley@@nd.edu}) and
-#'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
+#' @author Ken Kelley (\email{kkelley@@nd.edu})
 #'
 #' @template references
 ss_buc_welch_t <- function(t_observed, n_1, n_2, sd_ratio = 1,

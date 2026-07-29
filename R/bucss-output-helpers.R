@@ -55,8 +55,7 @@ knit_print.bucss_power <- function(x, ...) {
 #'   assurance = .90)
 #' planning_sentence(result)
 #'
-#' @author Ken Kelley (\email{kkelley@@nd.edu}) and
-#'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
+#' @author Ken Kelley (\email{kkelley@@nd.edu})
 planning_sentence <- function(x) {
   if (!inherits(x, "bucss_power")) {
     stop("'x' must be a bucss_power result from an ss_buc_* function.",

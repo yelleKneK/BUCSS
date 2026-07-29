@@ -247,6 +247,5 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
 \code{\link{ss_buc_independent_t}} for the equal-variance test.
 }
 \author{
-Ken Kelley (\email{kkelley@nd.edu}) and
-  Samantha F. Anderson (\email{samantha.f.anderson@asu.edu})
+Ken Kelley (\email{kkelley@nd.edu})
 }

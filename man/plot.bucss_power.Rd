@@ -127,6 +127,5 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   ceiling means.
 }
 \author{
-Ken Kelley (\email{kkelley@nd.edu}) and
-  Samantha F. Anderson (\email{samantha.f.anderson@asu.edu})
+Ken Kelley (\email{kkelley@nd.edu})
 }
