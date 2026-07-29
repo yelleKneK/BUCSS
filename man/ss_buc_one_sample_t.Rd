@@ -133,5 +133,6 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   computation for a paired design.
 }
 \author{
-Ken Kelley (\email{kkelley@nd.edu})
+Ken Kelley (\email{kkelley@nd.edu}) and
+  Samantha F. Anderson (\email{samantha.f.anderson@asu.edu})
 }

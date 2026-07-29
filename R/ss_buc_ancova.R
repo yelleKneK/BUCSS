@@ -141,7 +141,8 @@
 #' @seealso \code{\link{ss_buc_factorial_anova_general}}, which this function
 #'   calls, and which takes the error degrees of freedom directly.
 #'
-#' @author Ken Kelley (\email{kkelley@@nd.edu})
+#' @author Ken Kelley (\email{kkelley@@nd.edu}) and
+#'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'
 #' @template references
 ss_buc_ancova <- function(F_observed, N, cells, n_covariates,
