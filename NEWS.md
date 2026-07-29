@@ -326,7 +326,7 @@ the correction to statistics the package did not previously accept.
 
 * The error shown when `N` is omitted in `ss_buc_reg_coef()`, `ss_buc_R2()`, and
   `ss_buc_reg_joint()` incorrectly described `N` as the number of pairs. It now
-  correctly describes `N` as the total sample size of the original study.
+  correctly describes `N` as the total sample size of the previous study.
 
 * The nonsignificance error in `ss_buc_R2()` and `ss_buc_reg_joint()` referred
   to `t.observed`. These functions test an `F` statistic, so the message now
@@ -371,7 +371,7 @@ the correction to statistics the package did not previously accept.
 * The noncentrality search, the truncated-likelihood construction, and the
   planned sample size search each live in a single internal helper
   (`.solve_ncp_assurance`, `.tm_f`/`.tm_t`, and `.smallest_n_for_power`), shared
-  by all twelve planners, so the numerical core is maintained in one place.
+  by every planner, so the numerical core is maintained in one place.
 
 * The planned sample size search brackets by doubling and then bisects instead
   of stepping by one, so its cost is logarithmic in the answer. Requests whose
@@ -385,7 +385,7 @@ the correction to statistics the package did not previously accept.
 * Factored the shared planning-input validation into a single internal helper,
   and moved the duplicated `@references`, planning-argument, and `@return`
   documentation into `man-roxygen` templates, so each is maintained in one place
-  across the twelve planners. The `stats` functions are imported individually
+  across every planner. The `stats` functions are imported individually
   rather than wholesale, an `inst/WORDLIST` curates the domain terms for the
   spell check enabled by `Language: en-US`, and a GitHub Actions workflow runs
   R CMD check across platforms.

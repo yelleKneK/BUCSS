@@ -135,7 +135,7 @@ ss_buc_reg_coef <- function(t_observed, N, p, alpha_prior = .05,
   assurance <- v$assurance
   desired_power <- v$desired_power
 
-  if (missing(N)) stop("You need to specify 'N', which is the total sample size of the original study.", call. = FALSE)
+  if (missing(N)) stop("You need to specify 'N', which is the total sample size of the previous study.", call. = FALSE)
   if (missing(p)) stop("You need to specify 'p', the number of predictors in the model.", call. = FALSE)
   .check_scalar_finite(t_observed, "t_observed")
   .check_count(N, "N", min = 2)

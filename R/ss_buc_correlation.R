@@ -171,7 +171,7 @@ ss_buc_correlation <- function(r_observed, N, t_observed, alpha_prior = .05,
   assurance <- v$assurance
   desired_power <- v$desired_power
 
-  if (missing(N)) stop("You need to specify 'N', which is the total sample size of the original study.", call. = FALSE)
+  if (missing(N)) stop("You need to specify 'N', which is the total sample size of the previous study.", call. = FALSE)
   .check_count(N, "N", min = 4)
   if (missing(r_observed) && missing(t_observed)) {
     stop("You must specify the prior study's result: either 'r_observed' (the observed correlation) or 't_observed' (its t statistic).", call. = FALSE)

@@ -146,7 +146,7 @@ ss_buc_paired_t <- function(t_observed, N, alpha_prior = .05, alpha_planned = .0
   assurance <- v$assurance
   desired_power <- v$desired_power
 
-  if (missing(N)) stop("You need to specify a sample size (i.e., the number of pairs) used in the original study.", call. = FALSE)
+  if (missing(N)) stop("You need to specify a sample size (i.e., the number of pairs) used in the previous study.", call. = FALSE)
   .check_scalar_finite(t_observed, "t_observed")
 
   # The publication rule is two-sided and TM is symmetric in the sign of t,
