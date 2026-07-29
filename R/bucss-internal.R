@@ -141,29 +141,6 @@
   match.arg(raw, choices)
 }
 
-# Build the truncated-likelihood mean TM as a function of the noncentrality
-# parameter for the two distributional shapes the planners use. TM(ncp) is the
-# truncated cumulative density evaluated at the observed statistic: the area of
-# the (publication-)truncated noncentral distribution between the critical value
-# and the observed statistic, divided by the power (the untruncated area beyond
-# the critical value). It is monotone decreasing in 'ncp', from its ceiling
-# TM(0) = 1 - p_prior / alpha_prior down to 0. The returned closure is
-# vectorized over 'ncp' (pf()/pt() are), so it serves both uniroot() (scalar
-# calls) and the grid fallback (vector call) in .solve_ncp_assurance().
-#
-# Truncated-likelihood mean for a chi-square statistic, the analogue of .tm_f
-# for a nested model comparison. The publication rule is the same (only a
-# significant difference test is published), so the construction is identical:
-# the truncated area between the critical value and the observed statistic,
-# divided by the untruncated area beyond the critical value.
-.tm_chisq <- function(stat, crit, df) {
-  function(ncp) {
-    power <- 1 - pchisq(crit, df = df, ncp = ncp)
-    area_above <- 1 - pchisq(stat, df = df, ncp = ncp)
-    (power - area_above) / power
-  }
-}
-
 # Rebuild a planner's result under a different design label, size-row name,
 # unit, and echoed inputs, without recomputing anything. Used by the planners
 # that are exactly a relabeling of another design (the one-sample t is the
@@ -200,11 +177,23 @@
 # expanding without bound.
 .bucss_ncp_upper_cap <- 1e7
 
+# Build the truncated-likelihood mean TM as a function of the noncentrality
+# parameter for the distributional shapes the planners use. TM(ncp) is the
+# truncated cumulative density evaluated at the observed statistic: the area of
+# the (publication-)truncated noncentral distribution between the critical value
+# and the observed statistic, divided by the power (the untruncated area beyond
+# the critical value). It is monotone decreasing in 'ncp', from its ceiling
+# TM(0) = 1 - p_prior / alpha_prior down to 0. Every returned closure must be
+# vectorized over 'ncp', because .solve_ncp_assurance() calls it both scalar
+# (uniroot) and vectorized (the grid fallback).
+#
 # .tm_f covers the one-sided noncentral F designs (the ANOVA and regression
 # planners; the single regression coefficient passes the squared t as 'stat'
 # against an F critical value). .tm_t covers the two-sided noncentral t designs
 # (the independent and paired t tests), summing both tails exactly as the 1.x
-# code did.
+# code did. .tm_chisq is the analogue for a nested model comparison, and
+# .tm_correlation the analogue for a Pearson correlation, whose statistic is
+# not noncentral F at all once both variables are sampled (see below).
 .tm_f <- function(stat, crit, df1, df2) {
   function(ncp) {
     power <- 1 - pf(crit, df1 = df1, df2 = df2, ncp = ncp)
@@ -223,6 +212,75 @@
     power <- (1 - pt(crit, df = df, ncp = ncp)) + pt(-crit, df = df, ncp = ncp)
     area_above <- (1 - pt(stat, df = df, ncp = ncp)) + pt(-stat, df = df, ncp = ncp)
     (power - area_above) / power
+  }
+}
+
+.tm_chisq <- function(stat, crit, df) {
+  function(ncp) {
+    power <- 1 - pchisq(crit, df = df, ncp = ncp)
+    area_above <- 1 - pchisq(stat, df = df, ncp = ncp)
+    (power - area_above) / power
+  }
+}
+
+# Exact distribution of the test statistic for a Pearson correlation when both
+# variables are sampled (the random-predictor frame a correlation study is
+# actually run in), in closed form.
+#
+# Conditional on the sampled X, the statistic F = t^2 for testing rho = 0 is
+# noncentral F(1, n - 2) with noncentrality lambda = c * SS_x/sigma_x^2, where
+# c = rho^2/(1 - rho^2); and SS_x/sigma_x^2 is chi-square on n - 1 df. So the
+# marginal distribution is a chi-square mixture of noncentral F's, NOT the
+# noncentral F itself. Treating it as noncentral F (which is exact only when
+# the predictor is fixed by design) overstates the power, because it drops the
+# extra dispersion the sampled predictor contributes.
+#
+# The mixture has a closed form. The noncentral F CDF is a Poisson(lambda/2)
+# mixture of central betas; mixing a Poisson rate over a gamma gives a negative
+# binomial, and lambda/2 = c * W/2 with W/2 ~ Gamma((n-1)/2, scale = c). The
+# Poisson weights therefore become negative binomial weights with size
+# (n - 1)/2 and probability 1/(1 + c) = 1 - rho^2:
+#
+#   P(F <= q) = sum_k dnbinom(k, size = (n-1)/2, prob = 1 - rho^2) *
+#               pbeta(q/(q + n - 2), 1/2 + k, (n-2)/2)
+#
+# This is exact rather than approximate, needs nothing beyond stats, and
+# converges geometrically at rate rho^2. Numerical quadrature was the obvious
+# alternative and is a trap: integrate() over (0, Inf) silently returns 0 once
+# n is a few hundred, because the adaptive rule samples where a chi-square on
+# n - 1 df has no mass.
+#
+# The series is truncated where the remaining negative binomial mass is below
+# 1e-14; the omitted terms carry pbeta values smaller than the last retained
+# one, so the truncation error is far below that mass. The term cap is pure
+# defense: the count is governed by the noncentrality parameter, not by n, and
+# a planned study near the target power carries lambda near 8 whatever its
+# sample size.
+.p_correlation_f <- function(q, n, rho2) {
+  prob <- 1 - rho2
+  if (prob <= 0) return(0)
+  df2 <- n - 2
+  size <- (n - 1) / 2
+  k <- 0:min(qnbinom(1 - 1e-14, size = size, prob = prob), 1e6)
+  sum(dnbinom(k, size = size, prob = prob) *
+        pbeta(q / (q + df2), 0.5 + k, df2 / 2))
+}
+
+# TM for a Pearson correlation, parameterized (like every other planner) by the
+# noncentrality parameter the adjusted effect implies at the prior study's
+# sample size, lambda = c * N. Solving on that scale rather than on the rho^2
+# scale matters: uniroot()'s tolerance is absolute, and a rho^2 root of order
+# 1e-6, which is what a plan near the assurance ceiling implies, would be
+# resolved to only a percent or two. On the lambda scale the root is of order 1
+# to 100 and the shared solver needs no change.
+.tm_correlation <- function(stat, crit, N) {
+  function(ncp) {
+    vapply(ncp, function(lambda) {
+      rho2 <- lambda / (lambda + N)
+      power <- 1 - .p_correlation_f(crit, N, rho2)
+      area_above <- 1 - .p_correlation_f(stat, N, rho2)
+      (power - area_above) / power
+    }, numeric(1))
   }
 }
 

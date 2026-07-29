@@ -178,11 +178,23 @@ ss_buc_correlation(r_observed = .35, N = 100, alpha_prior = .05,
                    alpha_planned = .05, assurance = .80, desired_power = .80)
 ```
 
-A correlation is the slope in a simple regression, so this is the same
-correction `ss_buc_reg_coef()` applies with one predictor, and the two agree
-exactly. Planning is done in the fixed-predictor frame, so the returned size
-runs 2 to 5 participants below an exact random-predictor calculation; see the
-help page.
+The test of a correlation is arithmetically the test of a simple regression
+slope, so it is tempting to plan it as one. That is exact only when the
+predictor is fixed by design. A correlation study samples both variables, and
+then the statistic's noncentrality parameter is itself random, proportional to
+the sampled spread of the predictor. The resulting distribution is more
+dispersed, and planning as though it were not overstates the power. The
+planner uses the exact distribution for sampled variables, so it asks for a
+few more participants than the regression planner does:
+
+```{r}
+t_equivalent <- .35 * sqrt(98 / (1 - .35^2))
+c(correlation = ss_buc_correlation(t_observed = t_equivalent, N = 100)$value[1],
+  regression = ss_buc_reg_coef(t_observed = t_equivalent, N = 100, p = 1)$value[1])
+```
+
+If your predictor really is fixed by design, the analysis is a regression
+slope, and `ss_buc_reg_coef()` with `p = 1` is the planner for it.
 
 ## Analysis of Covariance
 

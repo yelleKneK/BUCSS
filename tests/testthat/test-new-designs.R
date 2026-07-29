@@ -18,27 +18,64 @@ test_that("the one-sample t planner is the paired t planner relabeled", {
   expect_equal(one$value[one$term == "necessary_N"], 255)
 })
 
-test_that("the correlation planner matches its own t form and the regression planner", {
+test_that("the correlation planner matches its own t form", {
   r_form <- ss_buc_correlation(r_observed = .35, N = 100)
   t_form <- ss_buc_correlation(t_observed = .35 * sqrt(98 / (1 - .35^2)), N = 100)
   expect_equal(r_form$value[r_form$term == "necessary_N"],
                t_form$value[t_form$term == "necessary_N"])
   expect_equal(r_form$value[r_form$term == "ncp_adjusted"],
                t_form$value[t_form$term == "ncp_adjusted"])
-  # a correlation is the slope in a simple regression, so the single-predictor
-  # regression planner must agree
-  reg <- ss_buc_reg_coef(t_observed = .35 * sqrt(98 / (1 - .35^2)), N = 100, p = 1)
-  expect_equal(r_form$value[r_form$term == "necessary_N"],
-               reg$value[reg$term == "necessary_N"])
-  expect_equal(r_form$value[r_form$term == "ncp_adjusted"],
-               reg$value[reg$term == "ncp_adjusted"])
-  expect_equal(r_form$value[r_form$term == "necessary_N"], 119)
+  expect_equal(r_form$value[r_form$term == "necessary_N"], 122)
   # a correlation of 1 or more is not a correlation
   expect_error(ss_buc_correlation(r_observed = 1, N = 100), "between -1 and 1",
                fixed = TRUE)
   expect_error(ss_buc_correlation(N = 100), "either 'r_observed'", fixed = TRUE)
   expect_error(ss_buc_correlation(r_observed = .3, t_observed = 3, N = 100),
                "not both", fixed = TRUE)
+})
+
+test_that("the correlation planner uses the random-predictor distribution", {
+  # A correlation samples both variables, so its statistic follows a
+  # chi-square mixture of noncentral F distributions rather than a noncentral
+  # F. The mixture is more dispersed, so it calls for a slightly larger plan
+  # than the fixed-predictor (regression slope) calculation does.
+  t_obs <- .35 * sqrt(98 / (1 - .35^2))
+  cor_plan <- ss_buc_correlation(t_observed = t_obs, N = 100)
+  reg_plan <- ss_buc_reg_coef(t_observed = t_obs, N = 100, p = 1)
+  expect_gt(cor_plan$value[cor_plan$term == "necessary_N"],
+            reg_plan$value[reg_plan$term == "necessary_N"])
+  expect_equal(reg_plan$value[reg_plan$term == "necessary_N"], 119)
+
+  # At a zero effect the mixture is the central F, so the two frames report
+  # the same assurance ceiling. Every example's stated ceiling depends on it.
+  expect_equal(attr(cor_plan, "assurance_ceiling"),
+               attr(reg_plan, "assurance_ceiling"))
+
+  # The exact mixture distribution, against an independent computation: the
+  # chi-square mixture written out as a quadrature over equal-probability
+  # strata of the sampled predictor's spread.
+  by_quadrature <- function(q, n, rho2, M = 200000L) {
+    cc <- rho2 / (1 - rho2)
+    w <- qchisq((seq_len(M) - 0.5) / M, df = n - 1)
+    mean(pf(q, 1, n - 2, ncp = cc * w))
+  }
+  # The comparison is absolute rather than relative because the quadrature is
+  # the less accurate of the two: its own error is of order 1e-7 at this
+  # number of strata, while the closed form is exact to machine precision.
+  for (n in c(6, 25, 300)) for (rho in c(.1, .4, .7)) {
+    expect_lt(abs(BUCSS:::.p_correlation_f(2.5, n, rho^2) -
+                    by_quadrature(2.5, n, rho^2)), 5e-7)
+  }
+  # and it reduces to the central F when the effect is zero
+  expect_equal(BUCSS:::.p_correlation_f(2.5, 40, 0), pf(2.5, 1, 38))
+
+  # actual_power is the exact power of the reported plan
+  n_plan <- cor_plan$value[cor_plan$term == "necessary_N"]
+  ncp <- cor_plan$value[cor_plan$term == "ncp_adjusted"]
+  expect_equal(cor_plan$value[cor_plan$term == "actual_power"],
+               1 - BUCSS:::.p_correlation_f(qf(.95, 1, n_plan - 2), n_plan,
+                                            ncp / (ncp + 100)))
+  expect_gte(cor_plan$value[cor_plan$term == "actual_power"], .80)
 })
 
 test_that("the ANCOVA planner reduces to the ANOVA planner with no covariates", {

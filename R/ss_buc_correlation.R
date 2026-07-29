@@ -25,21 +25,48 @@
 #'   parameter is then used to calculate the necessary total sample size to
 #'   achieve the desired level of power in the planned study.
 #'
-#'   The test of a Pearson correlation is the test of the slope in a simple
-#'   regression: the observed correlation \emph{r} with sample size \emph{N}
-#'   gives \eqn{t = r\sqrt{(N - 2)/(1 - r^2)}} on \emph{N} - 2 degrees of
-#'   freedom, and the planner works from that \emph{t}. Supplying
-#'   \code{t_observed} directly instead of \code{r_observed} is equivalent.
+#'   The observed correlation \emph{r} with sample size \emph{N} gives
+#'   \eqn{t = r\sqrt{(N - 2)/(1 - r^2)}} on \emph{N} - 2 degrees of freedom,
+#'   and the planner works from that \emph{t}. Supplying \code{t_observed}
+#'   directly instead of \code{r_observed} is equivalent.
 #'
-#'   The approach uses a likelihood function of a truncated noncentral
-#'   \emph{F} distribution, where the truncation occurs due to small effect
-#'   sizes being unobserved due to publication bias. The numerator of the
-#'   likelihood function is the density of a noncentral \emph{F} distribution.
-#'   The denominator is the power of the test, which serves to truncate the
-#'   distribution. In the single predictor case, this formula reduces to the
-#'   density of a truncated noncentral \emph{t} distribution. (See Taylor &
-#'   Muller, 1996, Equation 2.1, and Anderson & Maxwell, 2017, for more
-#'   details.)
+#'   The approach uses a likelihood function of a truncated distribution, where
+#'   the truncation occurs due to small effect sizes being unobserved due to
+#'   publication bias. The numerator of the likelihood function is the density
+#'   of the test statistic; the denominator is the power of the test, which
+#'   serves to truncate the distribution. (See Taylor & Muller, 1996, Equation
+#'   2.1, and Anderson & Maxwell, 2017, for more details.) Which density
+#'   belongs in that numerator is the one substantive difference between this
+#'   planner and \code{\link{ss_buc_reg_coef}}, and it is described next.
+#'
+#'   \strong{Both variables are sampled, and that changes the distribution.}
+#'   The test of a correlation is arithmetically the test of the slope in a
+#'   simple regression, so it is tempting to plan it as one. That is exact only
+#'   when the predictor is fixed by design, as it is in an experiment where the
+#'   researcher sets the values of \emph{X}. A correlation study samples
+#'   \emph{both} variables. Conditional on the sampled \emph{X}, the statistic
+#'   is noncentral \emph{F}, but its noncentrality parameter is itself random:
+#'   it is proportional to the sampled spread of \emph{X}, which follows a
+#'   chi-square distribution on \emph{N} - 1 degrees of freedom. The marginal
+#'   distribution is therefore a chi-square mixture of noncentral \emph{F}
+#'   distributions, which is more dispersed than any single noncentral
+#'   \emph{F}, and treating the statistic as noncentral \emph{F} overstates the
+#'   power of the planned study by up to about .04.
+#'
+#'   \code{ss_buc_correlation} uses the mixture, which has an exact closed form
+#'   (the Poisson weights of the noncentral \emph{F} become negative binomial
+#'   weights), for both the correction and the planned study's power. The
+#'   returned sample size is therefore exact for bivariate normal data rather
+#'   than a few participants light, and it is typically 2 to 5 participants
+#'   larger than the fixed-predictor calculation, more when the plan is small.
+#'   Near the assurance ceiling the difference reverses and the mixture calls
+#'   for a slightly smaller sample. If your predictor really is fixed by design,
+#'   the analysis is a regression slope rather than a correlation, and
+#'   \code{\link{ss_buc_reg_coef}} with \code{p = 1} is the planner for it.
+#'
+#'   The largest assurance the prior result can support is the same in either
+#'   frame, since at a zero effect the mixture is the central \emph{F}
+#'   distribution.
 #'
 #'   Assurance is the proportion of times that power will be at or above the
 #'   desired level, if the experiment were to be reproduced many times. For
@@ -96,21 +123,10 @@
 #'   publication rule the correction assumes is two-sided and only the
 #'   magnitude enters the computation.
 #'
-#'   \strong{One approximation to be aware of.} Like the other planners here,
-#'   \code{ss_buc_correlation} plans in the fixed-predictor (regression)
-#'   frame, in which the predictor values are treated as fixed by design. A
-#'   correlation study usually samples both variables, the random-predictor
-#'   frame, in which the exact power is slightly lower. The bias and
-#'   uncertainty correction itself is almost unaffected by the distinction
-#'   (solving the same equation in the random-predictor frame moves the
-#'   corrected correlation by less than .01, and by less than .005 for
-#'   correlations up to about .45), but the planned sample size runs a few
-#'   participants light: the exact random-predictor plan needs 2 to 5 more
-#'   participants, toward the upper end of that range when
-#'   \code{desired_power} is high. Treat the returned sample size as a close
-#'   lower bound and consider adding a small margin, particularly when the
-#'   plan itself is small, where those few participants are worth the most
-#'   power.
+#'   The returned \code{ncp_adjusted} is the noncentrality parameter the
+#'   adjusted correlation implies at the prior study's sample size, the same
+#'   scale the other planners report it on. The adjusted correlation itself is
+#'   \code{sqrt(ncp_adjusted / (ncp_adjusted + N))}.
 #'
 #' @param r_observed Observed Pearson correlation from a previous study used to
 #'   plan sample size for a planned study. Either sign is accepted; only the
@@ -183,16 +199,22 @@ ss_buc_correlation <- function(r_observed, N, t_observed, alpha_prior = .05,
 
   if (t_stat^2 <= value_critical) stop("Your observed correlation is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so the prior result exceeds the critical value.", call. = FALSE)
 
+  # Both the correction and the planned-study power use the exact
+  # random-predictor distribution (.p_correlation_f), because a correlation
+  # study samples both variables. The adjusted parameter is reported on the
+  # usual scale, the noncentrality parameter the adjusted correlation implies
+  # at the prior study's N, so it stays comparable with the other planners;
+  # the correlation itself is recoverable as sqrt(ncp / (ncp + N)).
   ncp_solution <- .solve_ncp_assurance(
-    .tm_f(t_stat^2, value_critical, df_numerator, df_denominator), assurance)
+    .tm_correlation(t_stat^2, value_critical, N), assurance)
   ncp <- ncp_solution$ncp
 
   if (ncp == 0) .stop_zero_ncp(ncp_solution$ceiling)
 
+  rho2_adjusted <- ncp / (ncp + N)
   power_at <- function(n_rep) {
-    denom_df <- n_rep - 2
-    critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
-    1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / N) * ncp)
+    critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = n_rep - 2)
+    1 - .p_correlation_f(critical_F, n_rep, rho2_adjusted)
   }
   output_n <- .smallest_n_for_power(power_at, desired_power, start = 4)
 

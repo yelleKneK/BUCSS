@@ -110,11 +110,21 @@ within the published method and were already reachable by hand; three extend
 the correction to statistics the package did not previously accept.
 
 * `ss_buc_correlation()` plans from a prior Pearson correlation (or its *t*).
-  A correlation is the slope in a simple regression, so the correction is the
-  one `ss_buc_reg_coef()` applies with a single predictor. Planning is in the
-  fixed-predictor frame, which runs a few participants light relative to the
-  exact random-predictor calculation; the help page says so and suggests a
-  small margin.
+  A correlation study samples both variables, so its test statistic is not
+  noncentral *F*: conditional on the sampled predictor it is, but the
+  noncentrality parameter is itself random, proportional to the sampled spread
+  of the predictor. The marginal distribution is a chi-square mixture of
+  noncentral *F* distributions, and it is more dispersed. The planner uses
+  that mixture, which has an exact closed form (the Poisson weights of the
+  noncentral *F* become negative binomial weights), for both the correction
+  and the planned study's power, so the returned sample size is exact for
+  bivariate normal data. Treating the statistic as noncentral *F*, which is
+  correct only when the predictor is fixed by design, overstates the planned
+  study's power by up to about .04 and returns a sample size typically 2 to 5
+  participants light. When the predictor really is fixed, the analysis is a
+  regression slope and `ss_buc_reg_coef()` with `p = 1` is the planner for it.
+  The largest supportable assurance is the same either way, because at a zero
+  effect the mixture is the central *F* distribution.
 
 * `ss_buc_one_sample_t()` plans a one-sample *t* test. This is exactly the
   computation `ss_buc_paired_t()` performs, reported with a one-sample design

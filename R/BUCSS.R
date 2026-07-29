@@ -43,6 +43,6 @@
 #' @author Ken Kelley (\email{kkelley@@nd.edu}), Samantha F. Anderson
 #'   (\email{samantha.f.anderson@@asu.edu}), and Scott E. Maxwell
 #'
-#' @importFrom stats pchisq pf pt qchisq qf qt uniroot
+#' @importFrom stats dnbinom pbeta pchisq pf pt qchisq qf qnbinom qt uniroot
 #'
 "_PACKAGE"
