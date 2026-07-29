@@ -25,6 +25,37 @@ incorrect (capped or grid-noise) result. Both are fixed by the 2.0.0 engine,
 so users on current R are better served by this submission than by the
 version CRAN currently hosts.
 
+## New in this version
+
+Six designs join the twelve 1.2.1 covered, taking the family to eighteen:
+`ss_buc_correlation`, `ss_buc_one_sample_t`, `ss_buc_ancova`, `ss_buc_manova`
+(the rank-one multivariate case, Hotelling's *T* squared), `ss_buc_chisq_diff`
+(a nested model chi-square difference test), and `ss_buc_welch_t`. Two
+exported non-planners are also new: `ss_buc_sensitivity`, a Monte Carlo
+companion that simulates the published literature a plan came from and reports
+how often such a plan attains its target power, and a `plot` method for the
+result object that draws the largest assurance a prior result can support.
+Each new function carries its own tests, examples, and help page, and each
+approximation is stated in the help page rather than left implicit.
+
+One point deserves the reviewer's attention because it is a statistical
+correction rather than a new feature. `ss_buc_correlation` does not treat the
+correlation's test statistic as noncentral *F*. That is exact only when the
+predictor is fixed by design, whereas a correlation study samples both
+variables, and then the noncentrality parameter is itself random (proportional
+to the sampled spread of the predictor, which is chi-square distributed). The
+marginal distribution is a chi-square mixture of noncentral *F* distributions
+and is more dispersed. The planner uses that mixture, which has an exact
+closed form in `stats::dnbinom` and `stats::pbeta`, for both the correction
+and the planned study's power. Treating the statistic as noncentral *F*
+overstates the planned study's power by up to about .04. This is verified by
+simulation, and the package documents that a genuinely fixed predictor is a
+regression slope and belongs in `ss_buc_reg_coef`.
+
+The `Imports` field gains `graphics`, a base package, for the `plot` method.
+There is still no dependency outside base R apart from `generics`, which
+supplies the `tidy()` and `glance()` verbs.
+
 ## Test environments
 
 * local: macOS (arm64), R 4.5.2

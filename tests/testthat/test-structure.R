@@ -138,6 +138,35 @@ test_that("tidy() gives the compact estimate view and glance() the wide view", {
   expect_equal(glance(rj)$df_effect, 2)   # p_joint
 })
 
+test_that("knit_print() renders the table and the same footers as print()", {
+  skip_if_not_installed("knitr")
+  res <- ss_buc_independent_t(t_observed = 3, n = c(50, 55), assurance = .90)
+  out <- knitr::knit_print(res)
+  expect_s3_class(out, "knit_asis")
+  txt <- as.character(out)
+  # the kable body carries every row of the result
+  for (term in res$term) expect_match(txt, term, fixed = TRUE)
+  expect_match(txt, "1485", fixed = TRUE)
+  # and the footers match what the console print reports
+  expect_match(txt, "Design: Independent t test", fixed = TRUE)
+  expect_match(txt, "Sample size unit: per group", fixed = TRUE)
+  expect_match(txt, "Largest supportable assurance: ", fixed = TRUE)
+  ceiling_value <- floor(attr(res, "assurance_ceiling") * 100 + 1e-9) / 100
+  expect_match(txt, sub("^0", "", sprintf("%.2f", ceiling_value)), fixed = TRUE)
+
+  # the effect appears in the footer for the designs that carry one
+  with_effect <- ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2,
+                                        levels_B = 3, effect = "factor_B")
+  expect_match(as.character(knitr::knit_print(with_effect)),
+               "(factor_B)", fixed = TRUE)
+
+  # display only: the rendered parameter is rounded to the display digits
+  # while the stored one keeps full precision
+  ncp <- res$value[res$term == "ncp_adjusted"]
+  expect_match(txt, format(signif(ncp, 3), scientific = FALSE), fixed = TRUE)
+  expect_false(identical(ncp, signif(ncp, 3)))
+})
+
 test_that("planning_sentence() writes the manuscript sentence", {
   res <- ss_buc_independent_t(t_observed = 3, n = c(50, 55), assurance = .90)
   s <- planning_sentence(res)
