@@ -43,6 +43,13 @@ reference:
   contents:
   - ss_buc_manova
   - ss_buc_chisq_diff
+- title: Auditing a Plan
+  desc: >
+    Simulate the literature a plan came from and see how often a plan built
+    this way actually reaches the target power.
+  contents:
+  - ss_buc_sensitivity
+  - print.bucss_sensitivity
 - title: The Result Object
   desc: Working with the tidy bucss_power object the planners return.
   contents:

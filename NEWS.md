@@ -155,6 +155,27 @@ the correction to statistics the package did not previously accept.
   and its help page says which assumption it needs and suggests re-running
   across a range of ratios.
 
+## Auditing a Plan by Simulation
+
+* Added `ss_buc_sensitivity()`, a Monte Carlo companion that takes a plan from
+  any `ss_buc_*` function and exercises the claim the method actually makes.
+  It reads the design and the planning inputs off the plan, simulates prior
+  studies of that design from a true effect the user names, discards the ones
+  a literature would not have published, runs the same planner on each
+  survivor, and reports how often a plan built this way reaches the target
+  power. There is deliberately no default for `true_ncp`: defaulting to the
+  corrected estimate would ask the method to grade its own answer.
+
+* The output distinguishes two attainment rates, and the distinction settles a
+  question the method's documentation had left implicit. `attainment` counts
+  only the prior studies for which a plan was issued, which is what a user
+  experiences; `attainment_with_refusals` counts a refusal as attaining,
+  because declining to plan is the limiting case of an arbitrarily
+  conservative plan, and it is the rate the assurance guarantee is about. When
+  the refusal rate is high the first sits well below `assurance`, which is the
+  visible price of the method refusing rather than guessing rather than a
+  defect.
+
 ## New Features
 
 * The independent and paired *t* test planners are available under both

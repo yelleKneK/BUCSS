@@ -157,6 +157,41 @@ data.frame(alpha_prior = alphas, necessary_n_per_group = n_by_alpha)
 Assuming the strongest bias (`alpha_prior = .05`) calls for 130 per group;
 assuming none (`alpha_prior = 1`) calls for 37.
 
+## Seeing the Assurance Claim Exercised
+
+Everything above is a claim about a long run that a user planning one study
+never gets to watch. `ss_buc_sensitivity()` lets you watch it on your own
+numbers. It reads the design and the planning inputs off a plan, simulates
+prior studies of that design from a true effect you name, discards the ones a
+literature would not have published, runs the same planner on each survivor,
+and reports what happened.
+
+You have to name the true effect; there is deliberately no default, because
+defaulting to the corrected estimate would ask the method to grade its own
+answer. The value goes on the same scale as the plan's own `ncp_adjusted`, so
+that number is the natural anchor.
+
+```{r}
+plan <- ss_buc_paired_t(t_observed = 3, N = 30, assurance = .80)
+plan$value[plan$term == "ncp_adjusted"]
+ss_buc_sensitivity(plan, true_ncp = 2, replications = 2000, seed = 2017)
+```
+
+Two attainment rates are reported, and the gap between them is the point.
+`attainment_with_refusals` lands on the requested assurance, because that is
+the quantity the guarantee is about: a refusal counts as attaining, since
+declining to plan is the limiting case of an arbitrarily conservative plan.
+`attainment` counts only the prior studies for which a plan was actually
+issued, and it is lower, often much lower. That is what a user experiences,
+and it is the visible price of a method that refuses rather than guesses. Its
+expected value is `(assurance - refusal_rate)/(1 - refusal_rate)`.
+
+The most useful thing to do with this function is to run it more than once,
+at the corrected estimate and at values below it, and watch how fast the
+attainment falls when the truth is smaller than the correction assumed. What
+it cannot tell you is whether the distributional assumption behind a design is
+right, since the simulation shares that assumption.
+
 ## Practical Guidance
 
 * Make the corrections as minimal as you can defend. Each knob trades a modeling

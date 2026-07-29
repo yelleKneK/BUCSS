@@ -108,6 +108,12 @@ The family covers eighteen designs:
 `vignette("worked-examples", package = "BUCSS")` walks through one example of
 each.
 
+A plan can also be audited by simulation. `ss_buc_sensitivity()` takes the
+result of any planner, simulates prior studies of that design from a true
+effect you name, discards the ones a literature would not have published, runs
+the same planner on each survivor, and reports how often a plan built this way
+actually reaches the target power.
+
 The old dotted names are retained for backward compatibility. As of BUCSS 2.0.0
 each one (for example `ss.power.it()`) is **deprecated**: it still runs, but it
 forwards to its `ss_buc_*` replacement and issues a one-time-per-session warning
