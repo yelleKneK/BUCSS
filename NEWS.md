@@ -284,6 +284,12 @@ the correction to statistics the package did not previously accept.
   literature built from underpowered studies inflates effect sizes and how the
   bias and uncertainty correction repairs the resulting sample size plan.
 
+* Added a vignette on planning a correlation study, which explains why a
+  correlation is not a fixed-predictor regression slope, when
+  `ss_buc_correlation()` and `ss_buc_reg_coef()` each apply, and how to audit a
+  correlation plan with `ss_buc_sensitivity()` and read its two attainment
+  rates.
+
 ## Bug Fixes
 
 * A negative observed *t* is now accepted by all three *t*-based planners
