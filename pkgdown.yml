@@ -1,0 +1,14 @@
+pandoc: 3.8.3
+pkgdown: 2.2.1
+pkgdown_sha: ~
+articles:
+  BUCSS: BUCSS.html
+  correlation: correlation.html
+  planning-replications: planning-replications.html
+  reading-output: reading-output.html
+  understanding-assurance: understanding-assurance.html
+  worked-examples: worked-examples.html
+last_built: 2026-08-14T14:03Z
+urls:
+  reference: https://yelleKneK.github.io/BUCSS/reference
+  article: https://yelleKneK.github.io/BUCSS/articles

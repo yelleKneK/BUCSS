@@ -1,0 +1,173 @@
+# Reading and Using BUCSS Output
+
+Every `ss_buc_*` function returns the same kind of object: a tidy result
+of class `bucss_power`. This vignette shows the three ways to read it,
+which follow the same conventions as the **DMAR** package, so the habits
+carry over.
+
+We will use a two-way between-subjects ANOVA throughout.
+
+``` r
+
+result <- ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2,
+                                 levels_B = 3, effect = "factor_B")
+```
+
+## 1. Read It as a Printed Summary
+
+Printing the object shows the aligned `term`/`value` table, exactly as
+in **DMAR**: the design results first (the necessary sample size, named
+for its unit; the implied total sample size for per-group and per-cell
+designs; the achieved power at the returned size; and the bias and
+uncertainty adjusted noncentrality parameter), then the rows echoing the
+planning inputs you supplied. Footer lines close with the design, the
+unit the sample size is counted in, and the largest assurance this prior
+result can support.
+
+``` r
+
+result
+```
+
+| term                 | value |
+|:---------------------|:------|
+| necessary_n_per_cell | 659   |
+| total_N              | 3954  |
+| actual_power         | 0.801 |
+| ncp_adjusted         | 0.293 |
+| F_observed           | 5     |
+| N                    | 120   |
+| levels_A             | 2     |
+| levels_B             | 3     |
+| alpha_prior          | 0.05  |
+| alpha_planned        | 0.05  |
+| assurance            | 0.8   |
+| desired_power        | 0.8   |
+
+Design: Two-way between-subjects ANOVA (factor_B); Sample size unit: per
+cell; Largest supportable assurance: .83
+
+Displayed values are rounded for reading (whole numbers print clean;
+other values print at three significant figures); the stored values keep
+full precision. Change the display with `options(bucss.digits = )`.
+
+``` r
+
+options(bucss.digits = 5)
+result
+```
+
+| term                 | value   |
+|:---------------------|:--------|
+| necessary_n_per_cell | 659     |
+| total_N              | 3954    |
+| actual_power         | 0.80057 |
+| ncp_adjusted         | 0.29302 |
+| F_observed           | 5       |
+| N                    | 120     |
+| levels_A             | 2       |
+| levels_B             | 3       |
+| alpha_prior          | 0.05    |
+| alpha_planned        | 0.05    |
+| assurance            | 0.8     |
+| desired_power        | 0.8     |
+
+Design: Two-way between-subjects ANOVA (factor_B); Sample size unit: per
+cell; Largest supportable assurance: .83
+
+``` r
+
+options(bucss.digits = 3)  # restore the default
+```
+
+## 2. Pull a Single Number Out
+
+The object is an ordinary `data.frame` with a character `term` column
+and a numeric `value` column, so you can index it like any data frame.
+The design results come first (here `necessary_n_per_cell`, `total_N`,
+`actual_power`, and `ncp_adjusted`; the size row is
+`necessary_n_per_group` or `necessary_N` in other designs), followed by
+one row per planning input, so the assumptions travel with the result
+through subsetting and
+[`write.csv()`](https://rdrr.io/r/utils/write.table.html).
+
+``` r
+
+result$value[result$term == "necessary_n_per_cell"]
+#> [1] 659
+result$value[result$term == "total_N"]
+#> [1] 3954
+```
+
+That works, but the
+[`tidy()`](https://generics.r-lib.org/reference/tidy.html) view below is
+usually tidier for pulling one value out by name.
+
+## 3. The Broom Verbs: `tidy()` and `glance()`
+
+[`tidy()`](https://generics.r-lib.org/reference/tidy.html) returns the
+compact estimate view, the same shape as **DMAR**’s sample size
+planners: one row with `term` (`"sample_size"`), `estimate` (the
+necessary sample size in the design’s unit), and `power` (the achieved
+power at that size).
+
+``` r
+
+tidy(result)
+#>          term estimate     power
+#> 1 sample_size      659 0.8005714
+tidy(result)$estimate
+#> [1] 659
+```
+
+[`glance()`](https://generics.r-lib.org/reference/glance.html) returns
+the one-row wide view: every quantity and echoed planning input as a
+column, plus the design, the effect tested, the unit, the planned test’s
+degrees of freedom, and the assurance ceiling. It is the convenient
+shape for pulling one value out by name or collecting many results into
+one table for reporting.
+
+``` r
+
+glance(result)
+#>   necessary_n_per_cell total_N actual_power ncp_adjusted F_observed   N
+#> 1                  659    3954    0.8005714    0.2930235          5 120
+#>   levels_A levels_B alpha_prior alpha_planned assurance desired_power
+#> 1        2        3        0.05          0.05       0.8           0.8
+#>                           design   effect sample_size_unit df_effect df_error
+#> 1 Two-way between-subjects ANOVA factor_B         per cell         2     3948
+#>   assurance_ceiling
+#> 1         0.8342054
+```
+
+Both verbs come from the **generics** package and are re-exported by
+BUCSS, so they work as soon as the package is loaded, with no extra
+setup. The full precision values are always available in the object
+itself, since only the printed display rounds. And for a manuscript’s
+method section,
+[`planning_sentence()`](https://yelleKneK.github.io/BUCSS/reference/planning_sentence.md)
+writes the sentence:
+
+``` r
+
+planning_sentence(result)
+#> [1] "A planned study with 659 participants per cell (total N = 3954) attains 80% power with 80% assurance, after correcting the prior study's result for publication bias and uncertainty."
+```
+
+## What Lives Where
+
+- Everything numeric is a row of the `value` column: the design results
+  (the size row named for its unit, `total_N`, `actual_power`,
+  `ncp_adjusted`) and the echoed planning inputs. Rows survive any
+  further arithmetic, subsetting, or export you do on the object.
+- Only non-numeric metadata travels on attributes: the design label, the
+  effect tested, the unit, plus the assurance ceiling and the planned
+  test’s degrees of freedom. All of it is surfaced by the print method
+  and by [`glance()`](https://generics.r-lib.org/reference/glance.html).
+
+## References
+
+Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample-size
+planning for more accurate statistical power: A method adjusting sample
+effect sizes for publication bias and uncertainty. *Psychological
+Science, 28*, 1547–1562. <https://doi.org/10.1177/0956797617723724>
