@@ -56,6 +56,15 @@ The `Imports` field gains `graphics`, a base package, for the `plot` method.
 There is still no dependency outside base R apart from `generics`, which
 supplies the `tidy()` and `glance()` verbs.
 
+The simulation verification of the planners ships with the package
+(`inst/tools/verify_by_simulation.R`, about 12 KB): seventeen seeded checks
+that any user can rerun in a few minutes with
+`source(system.file("tools", "verify_by_simulation.R", package = "BUCSS"))`,
+covering assurance calibration across every sampling family the package uses
+and audits of the correlation and Welch planners against raw simulated data.
+It is a plain R script that is only run on request; nothing in the package's
+examples, tests, or vignettes executes it, so it adds no check time.
+
 ## Test environments
 
 * local: macOS (arm64), R 4.5.2
