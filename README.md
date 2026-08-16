@@ -58,7 +58,7 @@ original grid-search method; as of BUCSS 2.0.0 the bias and uncertainty adjusted
 noncentrality parameter is found by direct root finding, which gives 1485 (see
 `NEWS.md`).
 
-The functions return a tidy object of class `bucss_power`, shaped like the
+The functions return a tidy object of class `bucss_plan`, shaped like the
 result tables in the [`DMAR`](https://github.com/yelleKneK/DMAR) package: an
 ordinary `data.frame` of `term`/`value` rows holding the design results (the
 size row is named for its unit, here `necessary_n_per_group`) followed by rows
@@ -93,7 +93,7 @@ ordinary power analysis. The independent and paired *t* test planners also carry
 effect size aliases (`ss_buc_smd()` and `ss_buc_smd_paired()`), and the
 between-subjects ANOVA is now split into a one-way planner
 (`ss_buc_one_way_anova()`) and a two-way planner (`ss_buc_factorial_anova()`).
-Each function returns a tidy `bucss_power` object rather than a two-element list.
+Each function returns a tidy `bucss_plan` object rather than a two-element list.
 
 The family covers eighteen designs:
 

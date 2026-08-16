@@ -179,7 +179,7 @@ ss_buc_paired_t <- function(t_observed, N, alpha_prior = .05, alpha_planned = .0
 
   df_error <- output_n - 1
   actual_power <- power_at(output_n)
-  .bucss_power_result(
+  .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_N",
     actual_power = actual_power,

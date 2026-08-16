@@ -1,4 +1,4 @@
-# plot.bucss_power(): the assurance ceiling, drawn.
+# plot.bucss_plan(): the assurance ceiling, drawn.
 #
 # Every test draws to a null device, so nothing is written and no display is
 # needed; what is checked is the returned curve, which is what the figure is

@@ -1,6 +1,6 @@
 # The dot-named 1.x functions are deprecated (not defunct) as of 2.0.0: each
 # warns once per session, then forwards to its ss_buc_* replacement and returns
-# that function's bucss_power object. The bucss_power object keeps 1.x positional
+# that function's bucss_plan object. The bucss_plan object keeps 1.x positional
 # extraction working (result[[1]] = sample size, result[[2]] = adjusted NCP).
 
 # Map each deprecated function to the ss_buc_* call it should reproduce. Each
@@ -48,7 +48,7 @@ test_that("each deprecated function forwards to its ss_buc_* replacement", {
   for (nm in names(legacy_pairs)) {
     old_res <- suppressWarnings(eval(legacy_pairs[[nm]]$old))
     new_res <- eval(legacy_pairs[[nm]]$new)
-    expect_s3_class(old_res, "bucss_power")
+    expect_s3_class(old_res, "bucss_plan")
     expect_equal(old_res$value, new_res$value, info = nm)
     expect_identical(attr(old_res, "design"), attr(new_res, "design"), info = nm)
     expect_identical(attr(old_res, "effect"), attr(new_res, "effect"), info = nm)
@@ -88,7 +88,7 @@ test_that("the legacy 'step' argument is accepted and ignored", {
   expect_equal(with_step$value, without$value)
 })
 
-test_that("bucss_power keeps 1.x positional extraction working", {
+test_that("bucss_plan keeps 1.x positional extraction working", {
   r <- ss_buc_independent_t(t_observed = 3, n = 20, assurance = .80, desired_power = .80)
   expect_identical(r[[1]], r$value[r$term %in% BUCSS:::.BUCSS_SIZE_TERMS][1])
   expect_identical(r[[2]], r$value[r$term == "ncp_adjusted"])
@@ -112,5 +112,5 @@ test_that("ss.power.ba keeps the 1.x refusal to plan a two-factor effect alone",
   # the one-way dispatch itself still works
   expect_s3_class(
     suppressWarnings(ss.power.ba(F.observed = 5, N = 120, levels.A = 4)),
-    "bucss_power")
+    "bucss_plan")
 })

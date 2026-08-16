@@ -2,7 +2,7 @@
 
 BUCSS 2.0.0 is a major update of a package already on CRAN (1.2.1). It
 modernizes the user-facing API: the planners are renamed to the `ss_buc_*`
-prefix with snake_case arguments, and each returns a tidy `bucss_power` object.
+prefix with snake_case arguments, and each returns a tidy `bucss_plan` object.
 The dotted 1.x function names are retained but deprecated: they still run,
 forwarding to the new functions and issuing a one-time-per-session warning, so
 scripts written for 1.x keep working. The returned object preserves the 1.x

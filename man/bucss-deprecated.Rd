@@ -192,7 +192,7 @@ component, for \code{ss.power.spa.general} with
 regression planners.}
 }
 \value{
-A \code{\link{bucss_power}} object, as returned by the corresponding
+A \code{\link{bucss_plan}} object, as returned by the corresponding
   \code{ss_buc_*} function.
 }
 \description{
@@ -201,13 +201,13 @@ The dot-named functions from BUCSS 1.x are \strong{deprecated} as
   that scripts written for BUCSS 1.x continue to run unchanged. Each one
   translates its arguments to the 2.x convention and calls the corresponding
   \code{ss_buc_*} function, returning that function's
-  \code{\link{bucss_power}} object.
+  \code{\link{bucss_plan}} object.
 
   For backward compatibility the returned object still supports the 1.x
   positional extraction: \code{result[[1]]} is the necessary sample size and
   \code{result[[2]]} is the bias and uncertainty adjusted noncentrality
   parameter, the same two values the 1.x functions returned as an unnamed
-  list (this is provided by a \code{[[} method for \code{bucss_power}). The
+  list (this is provided by a \code{[[} method for \code{bucss_plan}). The
   richer named view
   (\code{result$value}, \code{tidy(result)}, \code{glance(result)}) is also
   available.

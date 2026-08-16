@@ -206,7 +206,7 @@ ss_buc_manova <- function(F_observed, N, p_variables, T2_observed,
     power_at(output_n, n_rd, solution_rd$ncp) else
       power_at(output_n, n_ru, solution_ru$ncp)
 
-  .bucss_power_result(
+  .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_n_per_group",
     actual_power = actual_power,

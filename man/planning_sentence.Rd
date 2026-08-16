@@ -7,14 +7,14 @@
 planning_sentence(x)
 }
 \arguments{
-\item{x}{An object of class \code{bucss_power}, as returned by any
+\item{x}{An object of class \code{bucss_plan}, as returned by any
 \code{ss_buc_*} function.}
 }
 \value{
 A single character string.
 }
 \description{
-Turns a \code{bucss_power} result into the sentence an author writes in a
+Turns a \code{bucss_plan} result into the sentence an author writes in a
 manuscript's planning or method section: the necessary sample size in its
 design's unit, the desired power, the assurance, and a clause noting the
 publication bias and uncertainty correction. This mirrors the

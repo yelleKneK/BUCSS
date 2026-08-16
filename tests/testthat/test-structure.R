@@ -1,11 +1,11 @@
-# Smoke tests for the tidy bucss_power object that every ss_buc_* function
+# Smoke tests for the tidy bucss_plan object that every ss_buc_* function
 # returns: its class, rows (design results followed by echoed planning
 # inputs, in DMAR's style), attribute payload, and print method.
 
-test_that("ss_buc_* returns a tidy bucss_power data.frame", {
+test_that("ss_buc_* returns a tidy bucss_plan data.frame", {
   result <- ss_buc_independent_t(t_observed = 3, n = 20, assurance = .80, desired_power = .80)
 
-  expect_s3_class(result, "bucss_power")
+  expect_s3_class(result, "bucss_plan")
   expect_s3_class(result, "data.frame")
   expect_type(result$value, "double")
   # design results first (the size row is named for its unit), then the rows
@@ -69,7 +69,7 @@ test_that("actual_power meets the desired power and is conservative", {
   expect_gte(res2$value[res2$term == "actual_power"], .80)
 })
 
-test_that("print.bucss_power shows the aligned table and factual footers", {
+test_that("print.bucss_plan shows the aligned table and factual footers", {
   result <- ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2,
                                    levels_B = 3, effect = "factor_B",
                                    assurance = .80, desired_power = .80)
@@ -174,7 +174,7 @@ test_that("planning_sentence() writes the manuscript sentence", {
   expect_match(s, "total N = 2970", fixed = TRUE)
   expect_match(s, "80% power", fixed = TRUE)
   expect_match(s, "90% assurance", fixed = TRUE)
-  expect_error(planning_sentence(1), "bucss_power", fixed = TRUE)
+  expect_error(planning_sentence(1), "bucss_plan", fixed = TRUE)
 })
 
 test_that("row and column subsetting is not hijacked by the legacy [[ method", {
@@ -190,7 +190,7 @@ test_that("row and column subsetting is not hijacked by the legacy [[ method", {
   expect_identical(nrow(res[res$term %in% c("necessary_N", "ncp_adjusted"), ]), 2L)
   # a subset is a plain data.frame, and the legacy contract still holds on the
   # unsubsetted object
-  expect_false(inherits(head(res, 2), "bucss_power"))
+  expect_false(inherits(head(res, 2), "bucss_plan"))
   expect_identical(res[[1]], res$value[res$term == "necessary_N"])
   expect_identical(res[[2]], res$value[res$term == "ncp_adjusted"])
 })
@@ -222,7 +222,7 @@ test_that("modifying or stacking a result returns a plain data.frame", {
   m1 <- res; m1$extra <- 1
   m2 <- res; m2[["value"]] <- res$value
   m3 <- res; m3[1, "value"] <- 99
-  for (m in list(m1, m2, m3)) expect_false(inherits(m, "bucss_power"))
+  for (m in list(m1, m2, m3)) expect_false(inherits(m, "bucss_plan"))
   # the read/write asymmetry is refused rather than silently corrupting: the
   # legacy positional [[ reads the sample size, so assigning to it (which
   # would write the term column) is an error
@@ -230,7 +230,7 @@ test_that("modifying or stacking a result returns a plain data.frame", {
   expect_error({m5 <- res; m5[[2]] <- 99}, "legacy positional", fixed = TRUE)
   # stacking two results is not one planner's answer either
   stacked <- rbind(res, res)
-  expect_false(inherits(stacked, "bucss_power"))
+  expect_false(inherits(stacked, "bucss_plan"))
   expect_identical(nrow(stacked), 2L * nrow(res))
 })
 

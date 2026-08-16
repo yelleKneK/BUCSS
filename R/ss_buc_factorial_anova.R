@@ -217,7 +217,7 @@ ss_buc_factorial_anova <- function(F_observed, N, levels_A, levels_B,
   # usually a little higher, because the size is a whole number.
   actual_power <- if (ncp_rd <= ncp_ru) power_at(output_n, n_rd, ncp_rd) else
     power_at(output_n, n_ru, ncp_ru)
-  .bucss_power_result(
+  .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_n_per_cell",
     actual_power = actual_power,

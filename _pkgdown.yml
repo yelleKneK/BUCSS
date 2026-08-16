@@ -49,13 +49,13 @@ reference:
     literature a plan came from to see how often a plan built this way
     actually reaches the target power.
   contents:
-  - plot.bucss_power
+  - plot.bucss_plan
   - ss_buc_sensitivity
   - print.bucss_sensitivity
 - title: The Result Object
-  desc: Working with the tidy bucss_power object the planners return.
+  desc: Working with the tidy bucss_plan object the planners return.
   contents:
-  - print.bucss_power
+  - print.bucss_plan
   - bucss_tidiers
   - planning_sentence
 - title: Deprecated 1.x Functions

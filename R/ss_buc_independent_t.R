@@ -266,7 +266,7 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
   # usually a little higher, because the size is a whole number.
   actual_power <- if (ncp_rd <= ncp_ru) power_at(output_n, n_rd, ncp_rd) else
     power_at(output_n, n_ru, ncp_ru)
-  .bucss_power_result(
+  .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_n_per_group",
     actual_power = actual_power,

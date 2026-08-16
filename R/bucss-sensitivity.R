@@ -165,7 +165,7 @@
 #' @template references
 ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
                                seed = NULL) {
-  if (!inherits(object, "bucss_power"))
+  if (!inherits(object, "bucss_plan"))
     stop("'object' must be a plan returned by one of the ss_buc_* functions.", call. = FALSE)
   if (missing(true_ncp))
     stop("You must specify 'true_ncp', the assumed true noncentrality parameter of the prior study's design. It is on the same scale as the 'ncp_adjusted' row of 'object'; there is deliberately no default, because defaulting to the corrected estimate would ask the method to grade its own answer.", call. = FALSE)

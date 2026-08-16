@@ -218,7 +218,7 @@ ss_buc_correlation <- function(r_observed, N, t_observed, alpha_prior = .05,
   output_n <- .smallest_n_for_power(power_at, desired_power, start = 4)
 
   actual_power <- power_at(output_n)
-  .bucss_power_result(
+  .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_N",
     actual_power = actual_power,

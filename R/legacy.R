@@ -1,7 +1,7 @@
 # Deprecated 1.x API, retained for backward compatibility. Each dot-named
 # function from BUCSS 1.x is kept here as a thin wrapper that translates its
 # arguments to the 2.x convention and calls the corresponding ss_buc_* planner,
-# returning that planner's bucss_power object. The wrappers are not actively
+# returning that planner's bucss_plan object. The wrappers are not actively
 # developed; the statistical work lives in the ss_buc_* functions. A one-time
 # (per session, per function) deprecation warning steers users to the new name;
 # the ss_buc_* functions themselves are silent. The 1.x grid-resolution 'step'
@@ -19,7 +19,7 @@
     assign(old, TRUE, envir = .bucss_deprecated_warned)
     msg <- paste0(
       "'", old, "' is deprecated as of BUCSS 2.0.0 and is no longer actively ",
-      "developed. It now calls ", replacement, " and returns a 'bucss_power' ",
+      "developed. It now calls ", replacement, " and returns a 'bucss_plan' ",
       "object (its first two elements remain the necessary sample size and the ",
       "adjusted noncentrality parameter, so 'result[[1]]' and 'result[[2]]' ",
       "still work). Please use the new function directly. This warning is shown ",
@@ -50,13 +50,13 @@
 #'   that scripts written for BUCSS 1.x continue to run unchanged. Each one
 #'   translates its arguments to the 2.x convention and calls the corresponding
 #'   \code{ss_buc_*} function, returning that function's
-#'   \code{\link{bucss_power}} object.
+#'   \code{\link{bucss_plan}} object.
 #'
 #'   For backward compatibility the returned object still supports the 1.x
 #'   positional extraction: \code{result[[1]]} is the necessary sample size and
 #'   \code{result[[2]]} is the bias and uncertainty adjusted noncentrality
 #'   parameter, the same two values the 1.x functions returned as an unnamed
-#'   list (this is provided by a \code{[[} method for \code{bucss_power}). The
+#'   list (this is provided by a \code{[[} method for \code{bucss_plan}). The
 #'   richer named view
 #'   (\code{result$value}, \code{tidy(result)}, \code{glance(result)}) is also
 #'   available.
@@ -128,7 +128,7 @@
 #' @param power The desired statistical power of the planned study.
 #' @param step Ignored. Accepted only so that 1.x calls that set it do not error.
 #'
-#' @return A \code{\link{bucss_power}} object, as returned by the corresponding
+#' @return A \code{\link{bucss_plan}} object, as returned by the corresponding
 #'   \code{ss_buc_*} function.
 #'
 #' @seealso The \code{ss_buc_*} replacements listed above.
@@ -293,7 +293,7 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
 #' Positional extraction from a bias and uncertainty corrected sample size result
 #'
 #' @description Backward-compatible positional extraction for
-#'   \code{\link{bucss_power}} objects. The deprecated 1.x functions (see
+#'   \code{\link{bucss_plan}} objects. The deprecated 1.x functions (see
 #'   \code{\link{bucss-deprecated}}) returned an unnamed two-element list,
 #'   \code{list(sample_size, ncp)}, so code written for BUCSS 1.x reads
 #'   \code{result[[1]]} and \code{result[[2]]}. The \code{ss_buc_*} functions
@@ -305,7 +305,7 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
 #'   through to the ordinary \code{data.frame} method, so \code{result[["value"]]}
 #'   and \code{result$value} are unaffected.
 #'
-#' @param x A \code{bucss_power} object.
+#' @param x A \code{bucss_plan} object.
 #' @param i A subscript. A single \code{1} or \code{2} selects the legacy scalar;
 #'   anything else is passed to the \code{data.frame} method.
 #' @param ... Passed to the \code{data.frame} method.
@@ -315,7 +315,7 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
 #'
 #' @keywords internal
 #' @export
-`[[.bucss_power` <- function(x, i, ...) {
+`[[.bucss_plan` <- function(x, i, ...) {
   # Two guards keep the legacy shim from firing on base R's own internals.
   # nargs() == 2L limits it to the single-subscript form, so the matrix-style
   # x[[i, j]] still selects a cell. is.double(i) limits it to a subscript the
@@ -344,16 +344,16 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
 #' planning result (its attributes and print contract no longer apply), so the
 #' honest return is an ordinary \code{data.frame}.
 #'
-#' @param x A \code{bucss_power} object.
+#' @param x A \code{bucss_plan} object.
 #' @param ... Passed to the \code{data.frame} method.
 #'
 #' @return A \code{data.frame} (or vector, under the usual \code{drop} rules).
 #'
-#' @name sub-.bucss_power
+#' @name sub-.bucss_plan
 #' @keywords internal
 #' @export
-`[.bucss_power` <- function(x, ...) {
-  class(x) <- setdiff(class(x), "bucss_power")
+`[.bucss_plan` <- function(x, ...) {
+  class(x) <- setdiff(class(x), "bucss_plan")
   x[...]
 }
 
@@ -365,26 +365,26 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
 # would write to a different place than it reads from, and a stack of results
 # would print, tidy, and narrate as though it were the first one alone.
 
-#' @rdname sub-.bucss_power
+#' @rdname sub-.bucss_plan
 #' @param i,j,value Passed to the \code{data.frame} method.
 #' @keywords internal
 #' @export
-`[<-.bucss_power` <- function(x, i, j, value) {
-  class(x) <- setdiff(class(x), "bucss_power")
+`[<-.bucss_plan` <- function(x, i, j, value) {
+  class(x) <- setdiff(class(x), "bucss_plan")
   NextMethod()
 }
 
-#' @rdname sub-.bucss_power
+#' @rdname sub-.bucss_plan
 #' @keywords internal
 #' @export
-`[[<-.bucss_power` <- function(x, i, j, value) {
+`[[<-.bucss_plan` <- function(x, i, j, value) {
   # Reading x[[1]] gives the legacy sample size, but assigning to it would
   # write the first *column*, so the two would mean different places and
   # x[[1]] <- x[[1]] would silently overwrite the term column. Refuse the
   # ambiguous subscript rather than corrupt the object.
   if (nargs() == 3L && !missing(i) && length(i) == 1L && is.double(i) &&
       i %in% c(1, 2)) {
-    stop("A 'bucss_power' result cannot be modified through the legacy ",
+    stop("A 'bucss_plan' result cannot be modified through the legacy ",
          "positional '[[': reading 'x[[", i, "]]' gives the ",
          if (i == 1) "necessary sample size" else "adjusted noncentrality parameter",
          ", but assigning to it would write the '",
@@ -392,25 +392,25 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
          "(for example x$value) or work on a copy from as.data.frame(x).",
          call. = FALSE)
   }
-  class(x) <- setdiff(class(x), "bucss_power")
+  class(x) <- setdiff(class(x), "bucss_plan")
   NextMethod()
 }
 
-#' @rdname sub-.bucss_power
+#' @rdname sub-.bucss_plan
 #' @keywords internal
 #' @export
-`$<-.bucss_power` <- function(x, name, value) {
-  class(x) <- setdiff(class(x), "bucss_power")
+`$<-.bucss_plan` <- function(x, name, value) {
+  class(x) <- setdiff(class(x), "bucss_plan")
   NextMethod()
 }
 
-#' @rdname sub-.bucss_power
+#' @rdname sub-.bucss_plan
 #' @param deparse.level Passed to the \code{data.frame} method.
 #' @keywords internal
 #' @export
-rbind.bucss_power <- function(..., deparse.level = 1) {
+rbind.bucss_plan <- function(..., deparse.level = 1) {
   args <- lapply(list(...), function(a) {
-    if (inherits(a, "bucss_power")) class(a) <- setdiff(class(a), "bucss_power")
+    if (inherits(a, "bucss_plan")) class(a) <- setdiff(class(a), "bucss_plan")
     a
   })
   do.call(rbind, c(args, list(deparse.level = deparse.level)))

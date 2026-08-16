@@ -19,7 +19,7 @@ test_that("alpha_prior = 1 models no publication bias and is echoed as entered",
   default <- ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05,
                                   assurance = .80, desired_power = .80)
 
-  expect_s3_class(no_bias, "bucss_power")
+  expect_s3_class(no_bias, "bucss_plan")
   # the user's value (1) is echoed, not the internal .999 used to avoid a
   # degenerate truncation
   expect_equal(no_bias$value[no_bias$term == "alpha_prior"], 1)

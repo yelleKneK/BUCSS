@@ -245,7 +245,7 @@ ss_buc_welch_t <- function(t_observed, n_1, n_2, sd_ratio = 1,
   output_n <- .smallest_n_for_power(power_at, desired_power, start = 2)
 
   actual_power <- power_at(output_n)
-  .bucss_power_result(
+  .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_n_per_group",
     actual_power = actual_power,

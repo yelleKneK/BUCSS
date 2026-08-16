@@ -1,7 +1,7 @@
 # The design registry: the one place that records, per design, how to rebuild
 # the planner call that produced a result and what distribution the prior
 # study's statistic follows. Two exported features read it, ss_buc_sensitivity()
-# and plot.bucss_power(), so it lives here rather than inside either.
+# and plot.bucss_plan(), so it lives here rather than inside either.
 #
 # The degrees of freedom recorded here are the prior study's OWN, which is what
 # a simulated prior study must be drawn from. They can differ from the degrees

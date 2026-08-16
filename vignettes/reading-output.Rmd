@@ -14,7 +14,7 @@ library(BUCSS)
 ```
 
 Every `ss_buc_*` function returns the same kind of object: a tidy result of
-class `bucss_power`. This vignette shows the three ways to read it, which follow
+class `bucss_plan`. This vignette shows the three ways to read it, which follow
 the same conventions as the **DMAR** package, so the habits carry over.
 
 We will use a two-way between-subjects ANOVA throughout.

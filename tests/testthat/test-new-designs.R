@@ -177,7 +177,7 @@ test_that("every new planner honors the shared result contract", {
     ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1.5)
   )
   for (res in results) {
-    expect_s3_class(res, "bucss_power")
+    expect_s3_class(res, "bucss_plan")
     expect_type(res$value, "double")
     expect_true(res$term[1] %in% BUCSS:::.BUCSS_SIZE_TERMS)
     expect_true(all(c("actual_power", "ncp_adjusted", "alpha_prior",

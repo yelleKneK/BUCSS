@@ -173,7 +173,7 @@ ss_buc_rm_anova <- function(F_observed, N, levels_A, levels_B = NULL,
 
   df_error <- df_numerator * (output_n - 1)
   actual_power <- power_at(output_n)
-  .bucss_power_result(
+  .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_N",
     actual_power = actual_power,

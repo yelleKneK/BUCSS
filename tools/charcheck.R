@@ -167,7 +167,7 @@ run_grid <- function() {
       res <- tryCatch(
         suppressWarnings(do.call(fn, args)),
         error = function(e) structure("error", msg = conditionMessage(e)))
-      if (inherits(res, "bucss_power")) {
+      if (inherits(res, "bucss_plan")) {
         out[[key]] <- c(n = res$value[res$term %in% .BUCSS_SIZE_TERMS][1],
                         ncp = res$value[res$term == "ncp_adjusted"])
       } else {

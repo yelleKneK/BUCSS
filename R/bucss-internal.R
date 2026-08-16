@@ -21,7 +21,7 @@
 # Only non-numeric metadata (the human design label, the unit, the effect
 # tested) plus the assurance ceiling and the planned test's df travel on
 # attributes.
-.bucss_power_result <- function(sample_size, size_term, ncp,
+.bucss_plan_result <- function(sample_size, size_term, ncp,
                                 actual_power = NULL, design, sample_size_unit,
                                 effect = NULL, assurance_ceiling = NULL,
                                 total_n = NULL, df_effect = NULL, df_error = NULL,
@@ -57,7 +57,7 @@
   attr(out, "assurance_ceiling") <- assurance_ceiling
   attr(out, "df_effect") <- df_effect
   attr(out, "df_error") <- df_error
-  class(out) <- c("bucss_power", "data.frame")
+  class(out) <- c("bucss_plan", "data.frame")
   out
 }
 
@@ -154,7 +154,7 @@
   if (length(total_n) == 0L) total_n <- NULL
   actual_power <- res$value[res$term == "actual_power"]
   if (length(actual_power) == 0L) actual_power <- NULL
-  .bucss_power_result(
+  .bucss_plan_result(
     sample_size = size,
     size_term = size_term,
     actual_power = actual_power,
@@ -436,7 +436,7 @@
 #' significant figures. Only the display is rounded; the stored values keep
 #' full precision.
 #'
-#' @param x An object of class \code{bucss_power}.
+#' @param x An object of class \code{bucss_plan}.
 #' @param digits Significant figures for non-integer values; defaults to
 #'   \code{getOption("bucss.digits", 3)}.
 #' @param ... Further arguments, ignored.
@@ -452,10 +452,10 @@
 #' print(result, digits = 6)
 #' result$value[result$term == "ncp_adjusted"]
 #'
-#' @aliases bucss_power
+#' @aliases bucss_plan
 #' @export
 #' @keywords internal
-print.bucss_power <- function(x, digits = getOption("bucss.digits", 3L), ...) {
+print.bucss_plan <- function(x, digits = getOption("bucss.digits", 3L), ...) {
   shown <- data.frame(term = x$term,
                       value = .format_bucss_value(x$value, digits),
                       stringsAsFactors = FALSE)

@@ -1,4 +1,4 @@
-# tidy() and glance() methods for bucss_power results, registered with the
+# tidy() and glance() methods for bucss_plan results, registered with the
 # generics package and shaped exactly like the DMAR package's dmar_ss_power
 # tidiers: tidy() is the compact estimate view (term/estimate/power), and
 # glance() is the one-row wide view carrying the estimate together with every
@@ -23,7 +23,7 @@
 #' precision values remain available directly, for example
 #' \code{result$value[result$term == "ncp_adjusted"]}.
 #'
-#' @param x An object of class \code{bucss_power} returned by an \code{ss_buc_*}
+#' @param x An object of class \code{bucss_plan} returned by an \code{ss_buc_*}
 #'   function.
 #' @param ... Ignored.
 #'
@@ -57,7 +57,7 @@ generics::glance
 
 #' @rdname bucss_tidiers
 #' @exportS3Method generics::tidy
-tidy.bucss_power <- function(x, ...) {
+tidy.bucss_plan <- function(x, ...) {
   power <- x$value[x$term == "actual_power"]
   if (length(power) == 0L) power <- NA_real_
   data.frame(
@@ -70,7 +70,7 @@ tidy.bucss_power <- function(x, ...) {
 
 #' @rdname bucss_tidiers
 #' @exportS3Method generics::glance
-glance.bucss_power <- function(x, ...) {
+glance.bucss_plan <- function(x, ...) {
   wide <- as.data.frame(as.list(stats::setNames(x$value, x$term)),
                         stringsAsFactors = FALSE)
   effect <- attr(x, "effect")

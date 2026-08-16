@@ -1,10 +1,10 @@
 # Output helpers that mirror DMAR's display conventions: a knit_print method
-# so a bucss_power result renders as a kable in R Markdown with the same
+# so a bucss_plan result renders as a kable in R Markdown with the same
 # footer lines the console print shows, and planning_sentence(), the sentence
 # an author pastes into a manuscript.
 
 #' @exportS3Method knitr::knit_print
-knit_print.bucss_power <- function(x, ...) {
+knit_print.bucss_plan <- function(x, ...) {
   digits <- getOption("bucss.digits", 3L)
   shown <- data.frame(term = x$term,
                       value = .format_bucss_value(x$value, digits),
@@ -37,13 +37,13 @@ knit_print.bucss_power <- function(x, ...) {
 
 #' The planning sentence for a manuscript
 #'
-#' Turns a \code{bucss_power} result into the sentence an author writes in a
+#' Turns a \code{bucss_plan} result into the sentence an author writes in a
 #' manuscript's planning or method section: the necessary sample size in its
 #' design's unit, the desired power, the assurance, and a clause noting the
 #' publication bias and uncertainty correction. This mirrors the
 #' \code{results_sentence()} helper in the sibling package \code{DMAR}.
 #'
-#' @param x An object of class \code{bucss_power}, as returned by any
+#' @param x An object of class \code{bucss_plan}, as returned by any
 #'   \code{ss_buc_*} function.
 #'
 #' @return A single character string.
@@ -57,8 +57,8 @@ knit_print.bucss_power <- function(x, ...) {
 #'
 #' @author Ken Kelley (\email{kkelley@@nd.edu})
 planning_sentence <- function(x) {
-  if (!inherits(x, "bucss_power")) {
-    stop("'x' must be a bucss_power result from an ss_buc_* function.",
+  if (!inherits(x, "bucss_plan")) {
+    stop("'x' must be a bucss_plan result from an ss_buc_* function.",
          call. = FALSE)
   }
   size <- x$value[x$term %in% .BUCSS_SIZE_TERMS][1]

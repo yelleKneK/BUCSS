@@ -109,7 +109,7 @@
 #' @template references
 #'
 #' @export
-plot.bucss_power <- function(x, which = c("both", "ncp", "size"),
+plot.bucss_plan <- function(x, which = c("both", "ncp", "size"),
                              assurance = NULL, lower = NULL, n_points = 60L,
                              col = "#B03A2E", ...) {
   which <- match.arg(which)

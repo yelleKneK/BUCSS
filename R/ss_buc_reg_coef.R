@@ -164,7 +164,7 @@ ss_buc_reg_coef <- function(t_observed, N, p, alpha_prior = .05,
 
   df_error <- output_n - p - 1
   actual_power <- power_at(output_n)
-  .bucss_power_result(
+  .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_N",
     actual_power = actual_power,

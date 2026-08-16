@@ -1,4 +1,4 @@
-#' @return An object of class \code{bucss_power}: a \code{data.frame} with a
+#' @return An object of class \code{bucss_plan}: a \code{data.frame} with a
 #'   character \code{term} column and a numeric \code{value} column, in the
 #'   same shape as the sibling package \code{DMAR}'s planners. The design
 #'   results come first: the necessary <%= size_phrase %> for the planned
@@ -12,5 +12,5 @@
 #'   result. The design, the unit the sample size is counted in, the largest
 #'   assurance this prior can support (the assurance ceiling), and the
 #'   planned test's degrees of freedom (\code{df_effect} and \code{df_error})
-#'   travel on attributes; they are shown by \code{print.bucss_power}, and
+#'   travel on attributes; they are shown by \code{print.bucss_plan}, and
 #'   \code{tidy()} and \code{glance()} give the compact and wide views.

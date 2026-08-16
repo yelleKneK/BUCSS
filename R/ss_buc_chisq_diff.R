@@ -206,7 +206,7 @@ ss_buc_chisq_diff <- function(chisq_observed, N, df_full, df_restricted,
                                     start = df_difference + 2)
 
   actual_power <- power_at(output_n)
-  .bucss_power_result(
+  .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_N",
     actual_power = actual_power,

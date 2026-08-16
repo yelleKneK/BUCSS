@@ -70,7 +70,7 @@ fixes").
   `effect` values are snake_case (`"factor.A"` becomes `"factor_A"`,
   `"between.only"` becomes `"between_only"`, and so on).
 
-* The functions now return a tidy object of class `bucss_power` rather than a
+* The functions now return a tidy object of class `bucss_plan` rather than a
   printed two-element list, shaped like the result tables of the sibling
   package `DMAR`. It is a `data.frame` with a character `term` column and a
   numeric `value` column. The design results come first: the necessary sample
@@ -97,7 +97,7 @@ fixes").
   `ss_buc_factorial_anova` otherwise; the dotted `effect` values are translated
   to snake_case; and the 1.x `step` argument is accepted and ignored.
 
-* The deprecated functions return a `bucss_power` object, but a `[[` method
+* The deprecated functions return a `bucss_plan` object, but a `[[` method
   preserves the 1.x positional extraction: `result[[1]]` is the necessary sample
   size and `result[[2]]` is the adjusted noncentrality parameter, the same two
   values the 1.x functions returned as an unnamed list. Column and name access
@@ -167,7 +167,7 @@ the correction to statistics the package did not previously accept.
 
 ## The Assurance Ceiling, Drawn
 
-* Added `plot.bucss_power()`, so `plot()` on any plan draws its assurance
+* Added `plot.bucss_plan()`, so `plot()` on any plan draws its assurance
   ceiling. The method re-runs that plan's own planner across a range of
   assurance values and draws two panels sharing an assurance axis: the
   adjusted noncentrality parameter falling to zero at the ceiling, and the
@@ -221,7 +221,7 @@ the correction to statistics the package did not previously accept.
   names (`ss_buc_smd`, `ss_buc_smd_paired`) for the standardized mean
   difference. The two names in each pair are the same function.
 
-* Added `print.bucss_power()`, which prints the aligned `term`/`value` table
+* Added `print.bucss_plan()`, which prints the aligned `term`/`value` table
   in the `DMAR` display style (whole numbers clean, other values at
   `options(bucss.digits)` significant figures, stored values never rounded)
   and closes with factual footer lines naming the design, the unit the sample
@@ -234,7 +234,7 @@ the correction to statistics the package did not previously accept.
   `"between"`/`"within"`. The snake_case values remain the documented forms and
   the result always records the canonical one.
 
-* Added `tidy()` and `glance()` methods for `bucss_power` results (from the
+* Added `tidy()` and `glance()` methods for `bucss_plan` results (from the
   `generics` package), with the same division of labor as `DMAR`'s planners:
   `tidy()` is the compact estimate view (`term = "sample_size"`, `estimate`,
   and `power`), and `glance()` is the one-row wide view with every quantity
@@ -271,7 +271,7 @@ the correction to statistics the package did not previously accept.
 
 * On a successful call, the result also reports the largest assurance the prior
   study can support and, for per-group and per-cell designs, the implied total
-  sample size (`total_N`). Both are shown by `print.bucss_power()` and travel on
+  sample size (`total_N`). Both are shown by `print.bucss_plan()` and travel on
   the object.
 
 * Added an `inst/CITATION` file. `citation("BUCSS")` returns the package

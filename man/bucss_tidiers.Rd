@@ -2,16 +2,16 @@
 % Please edit documentation in R/bucss-broom.R
 \name{bucss_tidiers}
 \alias{bucss_tidiers}
-\alias{tidy.bucss_power}
-\alias{glance.bucss_power}
+\alias{tidy.bucss_plan}
+\alias{glance.bucss_plan}
 \title{Tidy and summarize a bias and uncertainty corrected sample size result}
 \usage{
-\method{tidy}{bucss_power}(x, ...)
+\method{tidy}{bucss_plan}(x, ...)
 
-\method{glance}{bucss_power}(x, ...)
+\method{glance}{bucss_plan}(x, ...)
 }
 \arguments{
-\item{x}{An object of class \code{bucss_power} returned by an \code{ss_buc_*}
+\item{x}{An object of class \code{bucss_plan} returned by an \code{ss_buc_*}
 function.}
 
 \item{...}{Ignored.}
