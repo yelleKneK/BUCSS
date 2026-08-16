@@ -214,6 +214,13 @@ the correction to statistics the package did not previously accept.
   visible price of the method refusing rather than guessing rather than a
   defect.
 
+* The package-wide verification ships with the package. The simulation harness
+  that validated the planners, seventeen checks covering assurance calibration
+  across every sampling family plus raw-data audits of the correlation and
+  Welch planners and the finite-sample behavior behind the chi-square
+  caveat, is installed under `inst/tools/` and reruns in a few minutes with
+  `source(system.file("tools", "verify_by_simulation.R", package = "BUCSS"))`.
+
 ## New Features
 
 * The independent and paired *t* test planners are available under both

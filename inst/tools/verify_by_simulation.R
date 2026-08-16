@@ -34,14 +34,27 @@
 #      without raw data: confirm the test is liberal at total N = 50 and near
 #      nominal at N = 400, the behavior the help page's caveat describes.
 #
-# Usage:
-#   Rscript tools/verify_by_simulation.R          # quick (a few minutes)
-#   Rscript tools/verify_by_simulation.R full     # published-precision reps
+# This file ships with the package (inst/tools/), so anyone who installs
+# BUCSS can rerun the verification without the source repository.
+#
+# Usage, from an installed package (quick mode runs in a few minutes; the
+# full mode uses published-precision replications):
+#   source(system.file("tools", "verify_by_simulation.R", package = "BUCSS"))
+#   Sys.setenv(BUCSS_VERIFY = "full")   # before source(), for the full mode
+# or from the source repository root:
+#   Rscript inst/tools/verify_by_simulation.R          # quick
+#   Rscript inst/tools/verify_by_simulation.R full     # full
 
-suppressMessages(pkgload::load_all(".", quiet = TRUE))
+if (file.exists("DESCRIPTION") && dir.exists("R") &&
+    requireNamespace("pkgload", quietly = TRUE)) {
+  suppressMessages(pkgload::load_all(".", quiet = TRUE))
+} else {
+  library(BUCSS)
+}
 
-mode <- if (length(commandArgs(trailingOnly = TRUE)) >= 1L &&
-            commandArgs(trailingOnly = TRUE)[1] == "full") "full" else "quick"
+cmd_args <- commandArgs(trailingOnly = TRUE)
+mode <- if ((length(cmd_args) >= 1L && cmd_args[1] == "full") ||
+            identical(Sys.getenv("BUCSS_VERIFY"), "full")) "full" else "quick"
 reps_sens  <- if (mode == "full") 10000L else 1200L
 reps_data  <- if (mode == "full") 20000L else 3000L
 reps_welch <- if (mode == "full") 100000L else 20000L

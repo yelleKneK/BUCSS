@@ -124,6 +124,15 @@
 #'   assumption. For \code{\link{ss_buc_welch_t}}, in particular, it holds the
 #'   variance ratio fixed at the value you supplied.
 #'
+#'   \strong{The package-wide verification ships with the package.} This
+#'   function audits one plan; the harness that verifies the planners
+#'   themselves, including checks against raw simulated data that do not share
+#'   the method's distributional assumptions (bivariate normal samples for the
+#'   correlation planner, two-group normal samples for the Welch planner), is
+#'   installed with \code{BUCSS} and can be rerun in a few minutes with
+#'   \code{source(system.file("tools", "verify_by_simulation.R", package =
+#'   "BUCSS"))}.
+#'
 #' @param object A plan returned by any \code{ss_buc_*} function.
 #' @param true_ncp The assumed true noncentrality parameter of the prior
 #'   study's design, on the same scale as the \code{ncp_adjusted} row of

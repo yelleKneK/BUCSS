@@ -129,6 +129,26 @@ sample size) and `result[[2]]` (the adjusted noncentrality parameter) continues
 to work unchanged. New code should call the `ss_buc_*` functions directly. See
 the `NEWS.md` file for the full list of changes.
 
+## Verified by Simulation
+
+The planners are verified against simulation, and the verification ships with
+the package so you can rerun it yourself. The harness simulates published
+prior studies from known true effects and confirms, among other checks, that
+the corrected noncentrality parameter falls at or below the truth at exactly
+the requested assurance rate, across every sampling family the package uses;
+it also checks the correlation and Welch planners against raw simulated data
+rather than statistics. From any R session with `BUCSS` installed:
+
+``` r
+source(system.file("tools", "verify_by_simulation.R", package = "BUCSS"))
+```
+
+The quick mode runs 17 checks in a few minutes; set
+`Sys.setenv(BUCSS_VERIFY = "full")` first for published-precision
+replications. To audit a specific plan of your own rather than the package at
+large, use `ss_buc_sensitivity()`, which runs the same kind of simulation on
+the design and inputs of any plan you pass it.
+
 ## Citing `BUCSS`
 
 If you use BUCSS, please cite the package, which credits the software, its
