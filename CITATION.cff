@@ -1,0 +1,46 @@
+cff-version: 1.2.0
+message: "If you use BUCSS, please cite the article that introduces the method (the preferred citation) and, if you wish, the package."
+type: software
+title: "BUCSS: Bias and Uncertainty Corrected Sample Size"
+authors:
+  - family-names: Anderson
+    given-names: Samantha F.
+    orcid: "https://orcid.org/0000-0003-4451-5295"
+    affiliation: "Arizona State University"
+  - family-names: Kelley
+    given-names: Ken
+    orcid: "https://orcid.org/0000-0002-4756-8360"
+    affiliation: "University of Notre Dame"
+version: 1.2.1
+date-released: "2020-08-25"
+license: GPL-3.0-or-later
+repository-code: "https://github.com/yelleKneK/BUCSS"
+repository-artifact: "https://CRAN.R-project.org/package=BUCSS"
+abstract: >-
+  Implements a method of correcting for publication bias and uncertainty when
+  planning sample sizes in a future study from an original study, so that the
+  planned study reaches the power it was intended to have.
+keywords:
+  - R package
+  - sample size planning
+  - statistical power
+  - publication bias
+  - effect size uncertainty
+  - replication
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Anderson
+      given-names: Samantha F.
+    - family-names: Kelley
+      given-names: Ken
+    - family-names: Maxwell
+      given-names: Scott E.
+  title: "Sample-size planning for more accurate statistical power: A method adjusting sample effect sizes for publication bias and uncertainty"
+  journal: "Psychological Science"
+  year: 2017
+  volume: 28
+  issue: 11
+  start: 1547
+  end: 1562
+  doi: 10.1177/0956797617723724

@@ -1,0 +1,42 @@
+{
+  "title": "BUCSS: Bias and Uncertainty Corrected Sample Size",
+  "upload_type": "software",
+  "description": "<p>BUCSS implements a method of correcting for publication bias and uncertainty when planning sample sizes in a future study from an original study. A sample effect size taken from a published study is, on average, an overestimate of the population effect size, because studies that reached statistical significance are more likely to have been published, and it is also uncertain. Planning a new study on the reported effect size therefore yields less power than intended. BUCSS adjusts the observed effect size for both publication bias and uncertainty and plans the sample size on the adjusted value for independent and dependent t tests, between-subjects, within-subjects, and split-plot analysis of variance, and multiple regression (a single coefficient, a set of predictors, or the overall R squared). See Anderson, Kelley, and Maxwell (2017), Psychological Science, 28, 1547-1562.<\/p><p>The released package is on CRAN at https://CRAN.R-project.org/package=BUCSS.<\/p>",
+  "creators": [
+    {
+      "name": "Anderson, Samantha F.",
+      "affiliation": "Arizona State University",
+      "orcid": "0000-0003-4451-5295"
+    },
+    {
+      "name": "Kelley, Ken",
+      "affiliation": "University of Notre Dame",
+      "orcid": "0000-0002-4756-8360"
+    }
+  ],
+  "license": "gpl-3.0-or-later",
+  "access_right": "open",
+  "language": "eng",
+  "keywords": [
+    "R package",
+    "sample size planning",
+    "statistical power",
+    "publication bias",
+    "effect size uncertainty",
+    "replication"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://CRAN.R-project.org/package=BUCSS",
+      "relation": "isVariantFormOf",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "10.1177/0956797617723724",
+      "relation": "isSupplementTo",
+      "resource_type": "publication-article"
+    }
+  ],
+  "version": "1.2.1",
+  "publication_date": "2020-08-25"
+}
