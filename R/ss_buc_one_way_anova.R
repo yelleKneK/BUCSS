@@ -9,8 +9,9 @@
 #'   sample size that will achieve more accurate statistical power for a planned
 #'   study, when compared to approaches that use a sample effect size at face
 #'   value or rely on sample size only. The bias and uncertainty adjusted
-#'   previous study noncentrality parameter is also returned, which can be
-#'   transformed to various effect size metrics.
+#'   previous study noncentrality parameter is also returned, together with the
+#'   planning effect size, the effect size the plan is built on, as Cohen's
+#'   \emph{f}.
 #'
 #'   For a fully between-subjects design with two crossed factors, use
 #'   \code{\link{ss_buc_factorial_anova}}; for any other between-subjects design
@@ -37,7 +38,8 @@
 #'   The denominator is the power of the test, which serves to truncate the
 #'   distribution. Thus, the ratio of the numerator and the denominator is a
 #'   truncated noncentral \emph{F} distribution. (See Taylor & Muller, 1996,
-#'   Equation 2.1, and Anderson & Maxwell, 2017, for more details.)
+#'   Equation 2.1; Anderson, Kelley, & Maxwell, 2017, Equation 3; and Anderson
+#'   & Maxwell, 2017, for more details.)
 #'
 #'   Assurance is the proportion of times that power will be at or above the
 #'   desired level, if the experiment were to be reproduced many times. For
@@ -97,13 +99,16 @@
 #'   calculates \emph{n} by dividing \emph{N} by the number of groups and both
 #'   rounding up and rounding down the result, effectively assuming equal
 #'   \emph{n}. The suggested sample size for the planned study is calculated
-#'   using both of these values of \emph{n}, and the function returns the larger
-#'   of these two suggestions, to be conservative. The adjusted noncentrality
-#'   parameter that is output is the lower of the two possibilities, again, to
-#'   be conservative. Although equal-\emph{n} previous studies are preferable,
-#'   this
-#'   approach will work well as long as the group sizes are only slightly
-#'   discrepant.
+#'   using both of these values of \emph{n}, and the function returns the
+#'   larger of these two suggestions, to be conservative. The adjusted
+#'   noncentrality parameter that is output is the lower of the two
+#'   possibilities, again, to be conservative. The planning effect size belongs
+#'   to the same balanced design as the reported noncentrality parameter, so an
+#'   ordinary power analysis at it can return a sample size a little smaller
+#'   than the one reported here (never a larger one), because the reported size
+#'   is the larger of the two rounded designs' requirements. Although
+#'   equal-\emph{n} previous studies are preferable, this approach will work
+#'   well as long as the group sizes are only slightly discrepant.
 #'
 #' @param F_observed Observed \emph{F} value from a previous study used to plan
 #'   sample size for a planned study.
@@ -113,7 +118,8 @@
 #' @template planning-params
 #'
 #' @templateVar size_phrase per-group sample size
-#' @templateVar ncp_scale on the scale of the \emph{F} statistic, at the prior study's sample size
+#' @templateVar ncp_scale on the scale of the \emph{F} statistic, at the prior study's sample size (for a prior \emph{N} that does not divide evenly, at the balanced sample size the planner substitutes for it; see Details)
+#' @templateVar effect_phrase \code{f_planning}, Cohen's \emph{f}, \eqn{\sqrt{\lambda/N}}{sqrt(lambda/N)}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted} and \emph{N} the total of the balanced prior design it belongs to (see Details), so \eqn{\lambda = N f^2}{lambda = N f^2}, the convention of power analysis for between-subjects designs, and \eqn{f^2/(1 + f^2)}{f^2/(1 + f^2)} is the population partial eta squared for the effect (for a one-way design, eta squared)
 #' @template return
 #'
 #' @export
@@ -201,20 +207,28 @@ ss_buc_one_way_anova <- function(F_observed, N, levels_A,
 
   output_n <- max(repn_ru, repn_rd)
   df_error <- output_n * cells - cells
-  # The power of the pair this function reports: the returned sample size
-  # evaluated at the returned (adjusted) noncentrality parameter, using the
-  # prior n that parameter came from. It is at least 'desired_power', because
-  # the returned size is the larger of the two roundings' requirements, and
-  # usually a little higher, because the size is a whole number.
-  actual_power <- if (ncp_rd <= ncp_ru) power_at(output_n, n_rd, ncp_rd) else
-    power_at(output_n, n_ru, ncp_ru)
+  # The reported noncentrality parameter is the smaller of the two branches',
+  # and n_b the prior per-group size it belongs to. The power of the pair this
+  # function reports: the returned sample size evaluated at the returned
+  # (adjusted) noncentrality parameter, using the prior n that parameter came
+  # from. It is at least 'desired_power', because the returned size is the
+  # larger of the two roundings' requirements, and usually a little higher,
+  # because the size is a whole number. The planning effect size restates the
+  # same parameter as Cohen's f at n_b, so the ordinary power of the returned
+  # size at that effect is exactly actual_power.
+  use_rd <- ncp_rd <= ncp_ru
+  n_b <- if (use_rd) n_rd else n_ru
+  ncp_b <- if (use_rd) ncp_rd else ncp_ru
+  actual_power <- power_at(output_n, n_b, ncp_b)
   .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_n_per_group",
+    effect_size_term = "f_planning",
+    effect_size = .es_f(ncp_b, n_b * cells),
     actual_power = actual_power,
     df_effect = df_numerator,
     df_error = df_error,
-    ncp = min(ncp_rd, ncp_ru),
+    ncp = ncp_b,
     design = "One-way between-subjects ANOVA",
     sample_size_unit = "per group",
     assurance_ceiling = min(solution_ru$ceiling, solution_rd$ceiling),

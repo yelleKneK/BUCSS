@@ -11,7 +11,9 @@
 #'   that will achieve more accurate statistical power for a planned study, when
 #'   compared to approaches that use a sample effect size at face value or rely
 #'   on sample size only. The bias and uncertainty adjusted previous study
-#'   noncentrality parameter is also returned.
+#'   noncentrality parameter is also returned, together with the planning
+#'   effect size, the effect size the plan is built on, as the root mean square
+#'   error of approximation of the difference test.
 #'
 #' @details Researchers often use the sample effect size from a prior study as
 #'   an estimate of the likely size of an expected future effect in sample size
@@ -52,12 +54,13 @@
 #'
 #'   The correction uses a likelihood function of a truncated noncentral
 #'   chi square distribution, the same construction the rest of the package uses
-#'   for the noncentral \emph{F} (see Taylor & Muller, 1996, Equation 2.1, and
-#'   Anderson & Maxwell, 2017): the truncated area between the critical value
-#'   and the observed statistic, divided by the power of the test. Because the
-#'   noncentrality parameter of a likelihood ratio test is proportional to
-#'   sample size, the planned study's noncentrality parameter is the corrected
-#'   one scaled by the ratio of the planned to the prior sample size.
+#'   for the noncentral \emph{F} (see Taylor & Muller, 1996, Equation 2.1;
+#'   Anderson, Kelley, & Maxwell, 2017, Equation 3; and Anderson & Maxwell,
+#'   2017): the truncated area between the critical value and the observed
+#'   statistic, divided by the power of the test. Because the noncentrality
+#'   parameter of a likelihood ratio test is proportional to sample size, the
+#'   planned study's noncentrality parameter is the corrected one scaled by the
+#'   ratio of the planned to the prior sample size.
 #'
 #'   Assurance is the proportion of times that power will be at or above the
 #'   desired level, if the experiment were to be reproduced many times. For
@@ -120,7 +123,10 @@
 #'   or below \code{actual_power}. Treat a planned sample size that is small
 #'   relative to the number of parameters estimated with caution, and read a
 #'   very small one as a signal that the prior effect was large rather than as
-#'   a serious recommendation.
+#'   a serious recommendation. The search for the planned sample size starts
+#'   at the number of constraints plus 2 (\code{df_restricted - df_full + 2}),
+#'   so no plan is smaller than that, even when a smaller study would already
+#'   reach the desired power.
 #'
 #' @param chisq_observed Observed chi square difference between the two nested
 #'   models in the previous study.
@@ -137,6 +143,7 @@
 #'
 #' @templateVar size_phrase total sample size
 #' @templateVar ncp_scale on the scale of the chi square statistic, at the prior study's sample size
+#' @templateVar effect_phrase \code{rmsea_d_planning}, the root mean square error of approximation of the difference test (Savalei, Brace, & Fouladi, 2024), \eqn{\sqrt{\lambda/(dN)}}{sqrt(lambda/(d N))}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted}, \emph{d} is the number of constraints (\code{df_restricted - df_full}), and \emph{N} the prior sample size, the scaling this planner plans with; the usual sample formula divides by \eqn{N - 1}{N - 1} instead, which gives a value larger by the factor \eqn{\sqrt{N/(N - 1)}}{sqrt(N/(N - 1))}
 #' @template return
 #'
 #' @export
@@ -162,6 +169,10 @@
 #' @author Ken Kelley (\email{kkelley@@nd.edu})
 #'
 #' @template references
+#' @references Savalei, V., Brace, J. C., & Fouladi, R. T. (2024). We need to
+#'   change how we compute RMSEA for nested model comparisons in structural
+#'   equation modeling. \emph{Psychological Methods, 29,} 480--493.
+#'   \doi{10.1037/met0000537}
 ss_buc_chisq_diff <- function(chisq_observed, N, df_full, df_restricted,
                               alpha_prior = .05, alpha_planned = .05,
                               assurance = .80, desired_power = .80) {
@@ -221,6 +232,8 @@ ss_buc_chisq_diff <- function(chisq_observed, N, df_full, df_restricted,
   .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_N",
+    effect_size_term = "rmsea_d_planning",
+    effect_size = .es_rmsea_d(ncp, N, df_difference),
     actual_power = actual_power,
     df_effect = df_difference,
     df_error = NULL,

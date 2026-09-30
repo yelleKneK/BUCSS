@@ -35,13 +35,16 @@ legacy_pairs <- list(
     new = quote(ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2, num_groups = 3, effect = "between_only"))),
   reg1 = list(
     old = quote(ss.power.reg1(t.observed = 3, N = 150, p = 3)),
-    new = quote(ss_buc_reg_coef(t_observed = 3, N = 150, p = 3))),
+    new = quote(ss_buc_reg_coef(t_observed = 3, N = 150, p = 3,
+                                random_predictors = FALSE))),
   reg_all = list(
     old = quote(ss.power.reg.all(F.observed = 5, N = 150, p = 4)),
-    new = quote(ss_buc_R2(F_observed = 5, N = 150, p = 4))),
+    new = quote(ss_buc_R2(F_observed = 5, N = 150, p = 4,
+                          random_predictors = FALSE))),
   reg_joint = list(
     old = quote(ss.power.reg.joint(F.observed = 5, N = 150, p = 4, p.joint = 2)),
-    new = quote(ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2)))
+    new = quote(ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2,
+                                 random_predictors = FALSE)))
 )
 
 test_that("each deprecated function forwards to its ss_buc_* replacement", {
@@ -53,6 +56,21 @@ test_that("each deprecated function forwards to its ss_buc_* replacement", {
     expect_identical(attr(old_res, "design"), attr(new_res, "design"), info = nm)
     expect_identical(attr(old_res, "effect"), attr(new_res, "effect"), info = nm)
   }
+})
+
+test_that("the regression wrappers keep the fixed-predictor frame of 1.x", {
+  # BUCSS 1.x computed every regression plan with fixed predictors. The
+  # wrappers pass random_predictors = FALSE explicitly, so a later change of
+  # the planners' default cannot move them.
+  for (nm in c("reg1", "reg_all", "reg_joint")) {
+    old_res <- suppressWarnings(eval(legacy_pairs[[nm]]$old))
+    expect_identical(old_res$value[old_res$term == "random_predictors"], 0,
+                     info = nm)
+  }
+  for (f in c("ss.power.reg1", "ss.power.reg.all", "ss.power.reg.joint"))
+    expect_true(any(grepl("random_predictors = FALSE",
+                          deparse(body(get(f, envir = asNamespace("BUCSS")))),
+                          fixed = TRUE)), info = f)
 })
 
 test_that("deprecation warning fires once per session and names the replacement", {

@@ -45,12 +45,23 @@ assume no publication bias, a value of 1 can be entered.}
 
 \item{alpha_planned}{Alpha level \eqn{\alpha} assumed for the planned study.}
 
-\item{assurance}{Desired level of assurance, or the long run proportion of
-times that the planned study power will reach or surpass the desired level
-(assurance > .5 corrects for uncertainty; assurance < .5 is not
-recommended). Enter it as a proportion in (0, 1) or as a percentage greater
-than 1 (for example, 80 is read as .80); a value of exactly 1 is read as 1
-percent. A percentage is echoed in the result's planning-input rows as
+\item{assurance}{Desired level of assurance: the long run proportion of
+planned studies whose statistical power at the true effect reaches or
+surpasses \code{desired_power}, when each is planned from a prior study
+published under the rule \code{alpha_prior} describes. The adjusted
+noncentrality parameter is the lower limit of a one-sided confidence
+interval at this level, computed from the publication-truncated
+distribution of the prior statistic, so \code{assurance = .5} plans from
+a median unbiased estimate (correcting for publication bias only), a
+larger value adds the correction for uncertainty, and a value below .5 is
+not recommended. The term follows Kelley and Maxwell (2003), who used
+assurance in sample size planning for the probability that a confidence
+interval will be no wider than desired. With \code{alpha_prior = 1} and
+\code{assurance = .80} the plan corresponds to safeguard power, a special
+case (see \code{\link{BUCSS-package}} for how, and for where the two
+differ). Enter it as a proportion in (0, 1) or as a percentage greater
+than 1 (for example, 80 is read as .80); a value of exactly 1 is read as
+1 percent. A percentage is echoed in the result's planning-input rows as
 the coerced proportion (80 is echoed as .80); the same applies to
 \code{desired_power}.}
 
@@ -68,15 +79,20 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   and per-cell designs, \code{total_N}, the implied total sample size;
   \code{actual_power}, the power of the plan returned, that is, of the
   returned sample size at the returned noncentrality parameter (see
-  Details); and \code{ncp_adjusted}, the publication bias and uncertainty
-  adjusted prior study noncentrality parameter, on the scale of the \emph{t} statistic (the noncentrality parameter of the prior study's noncentral \emph{t}). Rows
+  Details); \code{ncp_adjusted}, the publication bias and uncertainty
+  adjusted prior study noncentrality parameter, on the scale of the \emph{t} statistic (the noncentrality parameter of the prior study's noncentral \emph{t}); and the
+  planning effect size, the effect size the plan is built on, which is
+  \code{ncp_adjusted} restated in the design's usual metric:
+  \code{smd_planning}, a standardized mean difference (a magnitude) whose standardizer is the root mean square of the two groups' standard deviations (Bonett, 2008), \eqn{\lambda\sqrt{(1/n_1 + r^2/n_2)/((1 + r^2)/2)}}{lambda * sqrt((1/n_1 + r^2/n_2)/((1 + r^2)/2))}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted}, \eqn{n_1}{n_1} and \eqn{n_2}{n_2} are the prior group sizes, and \emph{r} is the ratio of standard deviations; with \emph{n} per group in the planned study its noncentrality parameter is this value times \eqn{\sqrt{n/2}}{sqrt(n/2)}, as for the equal-variance test, and with a ratio of 1 it is Cohen's \eqn{\delta}{delta}. Because it restates \code{ncp_adjusted},
+  \code{actual_power} is the ordinary power of a study of the returned
+  sample size when the population effect is the planning effect size. Rows
   echoing the planning inputs follow, so the assumptions travel with the
   result. The design, the unit the sample size is counted in, the largest
   assurance this prior can support (the assurance ceiling), and the
   planned test's degrees of freedom (\code{df_effect}, and \code{df_error}
   where the test has a denominator) travel on attributes.
-  \code{print.bucss_plan} shows the design, the unit, and the ceiling
-  beneath the table; \code{tidy()} and \code{glance()} give the compact and
+  \code{print.bucss_plan} shows the design, for the regression planners
+  the predictor frame, the unit, and the ceiling beneath the table; \code{tidy()} and \code{glance()} give the compact and
   wide views, the latter with every attribute as a column.
 }
 \description{
@@ -89,7 +105,8 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   statistical power for a planned study, when compared to approaches that use
   a sample effect size at face value or rely on sample size only. The bias
   and uncertainty adjusted previous study noncentrality parameter is also
-  returned, which can be transformed to various effect size metrics.
+  returned, together with the planning effect size, the effect size the plan
+  is built on, as a standardized mean difference.
 }
 \details{
 Researchers often use the sample effect size from a prior study as
@@ -106,28 +123,30 @@ Researchers often use the sample effect size from a prior study as
   statistic as noncentral \emph{t} on the Welch-Satterthwaite degrees of
   freedom implied by the prior study's group sizes and the standard deviation
   ratio you supply, which is the usual approximation in power analysis for
-  this test, and computes the planned study's power the same way. Once each
-  group has about ten participants that treatment is accurate: across ratios
-  from 1 to 5, the power of the real Welch test is within .006 of what this
-  function reports for every plan it returns (10 per group or more), and
-  within .003 from about 12 per group at a target power of .80, and its
-  Type I error stays between .047 and .054 against a nominal .05 across
-  ratios from 1 to 3. With smaller groups the approximation
-  overstates the power of the real test, badly so for the smallest (a plan
-  of 2 per group that it puts at .82 has real power near .50), because the
-  real test estimates its degrees of freedom from very few observations.
-  \strong{The planner therefore never returns fewer than 10 per group}: when
-  the target power is reached with fewer, it returns 10, whose power exceeds
-  the target. The correction of the prior study's statistic uses the same
-  approximation and holds up well: simulating prior studies of 5 to 20 per
-  group as raw data, published by the real Welch test, the corrected
-  parameter fell at or below the truth in about .79 to .82 of them at an
-  \code{assurance} of .80 (a refusal counted as at or below). One
-  consequence of reading the prior study on the Welch-Satterthwaite degrees
-  of freedom the supplied ratio implies, rather than on those its data
-  produced: with very small groups and a large ratio, a prior result its
-  paper reported as significant can fall short of the critical value here
-  and be refused as nonsignificant.
+  this test, and computes the planned study's power the same way.
+  \strong{A minimum planned sample size of 10 per group is imposed, because
+  of estimation accuracy issues at smaller sample sizes.} With fewer per
+  group the approximation is not accurate enough: the real test estimates
+  its two variances, and so its degrees of freedom, from too few
+  observations for the noncentral \emph{t} to describe it, and the
+  approximation overstates its power, badly so for the smallest (a plan of
+  2 per group that it puts at .82 has real power near .50). From 10 per
+  group the approximation is accurate: across ratios from 1 to 5, the power
+  of the real Welch test is within .006 of what this function reports for
+  every plan it returns, and within .003 from about 12 per group at a
+  target power of .80, and its Type I error stays between .047 and .054
+  against a nominal .05 across ratios from 1 to 3. When the target power is
+  reached with fewer than 10 per group, the planner returns 10, whose power
+  exceeds the target. The correction of the prior study's statistic uses
+  the same approximation and holds up well: simulating prior studies of 5
+  to 20 per group as raw data, published by the real Welch test, the
+  corrected parameter fell at or below the truth in about .79 to .82 of
+  them at an \code{assurance} of .80 (a refusal counted as at or below).
+  One consequence of reading the prior study on the Welch-Satterthwaite
+  degrees of freedom the supplied ratio implies, rather than on those its
+  data produced: with very small groups and a large ratio, a prior result
+  its paper reported as significant can fall short of the critical value
+  here and be refused as nonsignificant.
 
   \strong{The assumption that matters is the ratio itself.} One
   \code{sd_ratio} describes both studies: the prior study, whose statistic
@@ -146,8 +165,8 @@ Researchers often use the sample effect size from a prior study as
   more variable is the smaller one.
 
   When the ratio is 1 and the prior groups were the same size, this planner
-  returns what \code{\link{ss_buc_independent_t}} returns, except that it
-  never returns fewer than 10 per group. With
+  returns what \code{\link{ss_buc_independent_t}} returns, except for the
+  minimum of 10 per group imposed here. With
   unequal prior group sizes the two differ, and should: the equal-variance
   planner reduces the prior study to an equivalent equal-\emph{n} design at
   the harmonic mean, while this one uses the actual Welch-Satterthwaite
@@ -161,7 +180,8 @@ Researchers often use the sample effect size from a prior study as
   The denominator is the power of the test, which serves to truncate the
   distribution. In the two-group case, this formula reduces to the density of
   a truncated noncentral \emph{t} distribution. (See Taylor & Muller, 1996,
-  Equation 2.1, and Anderson & Maxwell, 2017, for more details.)
+  Equation 2.1; Anderson, Kelley, & Maxwell, 2017, Equation 3; and Anderson
+  & Maxwell, 2017, for more details.)
 
   Assurance is the proportion of times that power will be at or above the
   desired level, if the experiment were to be reproduced many times. For
@@ -262,6 +282,11 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
   305--324. \doi{10.1080/00273171.2017.1289361}
 
+  Kelley, K., & Maxwell, S. E. (2003). Sample size for multiple regression:
+  Obtaining regression coefficients that are accurate, not simply
+  significant. \emph{Psychological Methods, 8,} 305--321.
+  \doi{10.1037/1082-989X.8.3.305}
+
   Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
   experiments and analyzing data: A model comparison perspective} (4th ed.).
   Routledge.
@@ -270,6 +295,10 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   sample size calculation due to estimating noncentrality. \emph{Communications
   in Statistics: Theory and Methods, 25,} 1595--1610.
   \doi{10.1080/03610929608831787}
+
+Bonett, D. G. (2008). Confidence intervals for standardized
+  linear contrasts of means. \emph{Psychological Methods, 13,} 99--109.
+  \doi{10.1037/1082-989X.13.2.99}
 }
 \seealso{
 \code{\link{ss_buc_independent_t}} for the equal-variance test.

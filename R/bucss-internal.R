@@ -9,24 +9,107 @@
 .BUCSS_SIZE_TERMS <- c("necessary_n_per_group", "necessary_n_per_cell",
                        "necessary_N")
 
+# The planning effect size vocabulary: every plan carries exactly one of these
+# rows, directly after ncp_adjusted. It is the effect size the plan is built
+# on, ncp_adjusted restated in the design's usual metric at the balanced prior
+# design that parameter belongs to (for the planners that round an unbalanced
+# prior study both ways, the branch whose parameter is reported), so the
+# ordinary power of a study of the returned size at this effect is exactly
+# actual_power. The names say what the value is: never "corrected" (at an
+# assurance above .5 it is a lower confidence limit, not an estimate) and not
+# "_adjusted" (R2_adjusted names the Ezekiel/Wherry adjusted R squared).
+# Each design's own term is recorded as 'planning_term' in
+# R/bucss-design-registry.R. This one table serves the constructor (which
+# checks the term), the shape check (which requires exactly one such row, and
+# the design's own), the replays (which treat the row as computed, never as
+# an input), and planning_sentence() (the value is the metric's name as the
+# sentence writes it); print(), knit_print(), tidy(), and glance() reach it
+# through the shape check, and glance() gives the row its own column.
+.BUCSS_EFFECT_LABELS <- c(
+  smd_planning = "a standardized mean difference",
+  dz_planning = "a standardized mean of the paired differences",
+  std_mean_planning = "a standardized mean",
+  f_planning = "Cohen's f",
+  f2_planning = "Cohen's f squared",
+  R2_planning = "a squared multiple correlation",
+  rho_planning = "a correlation",
+  D2_planning = "a squared Mahalanobis distance",
+  rmsea_d_planning = paste("the root mean square error of approximation of",
+                           "the difference test"))
+.BUCSS_EFFECT_TERMS <- names(.BUCSS_EFFECT_LABELS)
+# The planning effect sizes that cannot exceed 1, which the sentence writes
+# without a leading zero.
+.BUCSS_EFFECT_BOUNDED <- c("R2_planning", "rho_planning")
+
+# Every row a planner computes rather than echoes. The replays rebuild a
+# planner call from the other rows and compare these.
+.BUCSS_COMPUTED_TERMS <- c(.BUCSS_SIZE_TERMS, "total_N", "actual_power",
+                           "ncp_adjusted", .BUCSS_EFFECT_TERMS)
+
+# The conversions from a noncentrality parameter to each design's usual effect
+# size, each at the balanced prior design the parameter belongs to. Every
+# planner scales its parameter in proportion to the sample size (n_rep/n_prior
+# on the F and chi square scales, its square root on the t scale), so each
+# quantity is a population value that does not depend on the sample size. The
+# t-scale ones are magnitudes, since the planners correct |t|.
+#   .es_smd: Cohen's delta of two groups of n each, lambda = delta sqrt(n/2).
+#   .es_std_mean: the standardized mean (of the paired differences, for a
+#     paired design), lambda = delta sqrt(N).
+#   .es_smd_welch: the mean difference over the root mean square of the two
+#     standard deviations (Bonett, 2008), with the first group's standard
+#     deviation set to 1 and 'ratio' the second's; with n per group in the
+#     planned study its noncentrality parameter is this value times sqrt(n/2).
+#   .es_f: Cohen's f of an effect relative to its own error term, with
+#     lambda = k N f^2, where N counts participants and k is the error degrees
+#     of freedom per participant: 1 for a between-subjects effect (so lambda =
+#     N f^2, DMAR's convention), the effect's numerator df for a
+#     within-subjects ANOVA, levels_within - 1 for a split-plot within or
+#     interaction effect. f^2/(1 + f^2) is the population partial eta squared.
+#   .es_f2: Cohen's f squared of a coefficient or set of coefficients,
+#     lambda = N f^2, which is also the population value when the predictors
+#     are random (the mixture of .p_random_f() has c = f^2).
+#   .es_R2, .es_rho: the population squared multiple correlation and the
+#     correlation, lambda = N rho^2/(1 - rho^2).
+#   .es_D2: the squared Mahalanobis distance of two groups of n each,
+#     lambda = (n/2) D^2.
+#   .es_rmsea_d: the root mean square error of approximation of a nested model
+#     difference test with 'df' constraints, lambda = df N RMSEA^2 (N, not
+#     N - 1, the scaling ss_buc_chisq_diff() plans with).
+.es_smd <- function(ncp, n_per_group) ncp * sqrt(2 / n_per_group)
+.es_std_mean <- function(ncp, N) ncp / sqrt(N)
+.es_smd_welch <- function(ncp, n_1, n_2, ratio)
+  ncp * sqrt((1 / n_1 + ratio^2 / n_2) / ((1 + ratio^2) / 2))
+.es_f <- function(ncp, N, k = 1) sqrt(ncp / (k * N))
+.es_f2 <- function(ncp, N) ncp / N
+.es_R2 <- function(ncp, N) ncp / (ncp + N)
+.es_rho <- function(ncp, N) sqrt(ncp / (ncp + N))
+.es_D2 <- function(ncp, n_per_group) 2 * ncp / n_per_group
+.es_rmsea_d <- function(ncp, N, df) sqrt(ncp / (df * N))
+
 # Build the tidy result object returned by every ss_buc_* function.
 #
 # Everything numeric lives as rows of the `value` column, in DMAR's echoed-
 # inputs style: the design results first (the size row named by `size_term`,
 # the implied `total_N` for per-group and per-cell designs, the conservative
-# `actual_power`, and the bias and uncertainty adjusted prior-study
-# noncentrality parameter `ncp_adjusted`), followed by rows echoing the
+# `actual_power`, the bias and uncertainty adjusted prior-study
+# noncentrality parameter `ncp_adjusted`, and the planning effect size, the
+# row named by `effect_size_term`), followed by rows echoing the
 # user's planning inputs, so the assumptions travel with the result through
 # subsetting and CSV export. A length-2 prior `n` echoes as `n_1`/`n_2` rows.
 # Only non-numeric metadata (the human design label, the unit, the effect
 # tested) plus the assurance ceiling and the planned test's df travel on
 # attributes.
 .bucss_plan_result <- function(sample_size, size_term, ncp,
+                                effect_size_term, effect_size,
                                 actual_power = NULL, design, sample_size_unit,
                                 effect = NULL, assurance_ceiling = NULL,
                                 total_n = NULL, df_effect = NULL, df_error = NULL,
                                 inputs = list()) {
-  stopifnot(size_term %in% .BUCSS_SIZE_TERMS)
+  stopifnot(size_term %in% .BUCSS_SIZE_TERMS,
+            length(effect_size_term) == 1L,
+            effect_size_term %in% .BUCSS_EFFECT_TERMS,
+            is.numeric(effect_size), length(effect_size) == 1L,
+            is.finite(effect_size))
   terms <- size_term
   values <- sample_size
   if (!is.null(total_n)) {
@@ -37,8 +120,8 @@
     terms <- c(terms, "actual_power")
     values <- c(values, actual_power)
   }
-  terms <- c(terms, "ncp_adjusted")
-  values <- c(values, ncp)
+  terms <- c(terms, "ncp_adjusted", effect_size_term)
+  values <- c(values, ncp, effect_size)
   inputs <- inputs[!vapply(inputs, is.null, logical(1))]
   for (nm in names(inputs)) {
     v <- inputs[[nm]]
@@ -84,6 +167,55 @@
   invisible(x)
 }
 
+# Validate the sphericity parameter 'epsilon' of a within-subjects effect whose
+# contrasts span 'dim_within' dimensions, and return the value to use. The
+# dimension is the effect's numerator df for a purely within-subjects effect,
+# and the within-subjects factor's df for a between x within interaction
+# (whose numerator df is larger, but whose covariance is that of the
+# within-subjects contrasts, so a split-plot interaction with 4 groups and 3
+# occasions has df 6 and yet cannot go below 1/2). Box's (1954) lower bound
+# is 1/dim_within, and a one-dimensional effect (two levels) is always
+# spherical. A ratio of reported degrees of freedom can miss 1 or the bound by
+# a rounding error; within the tolerance it is read as the value it meant, so
+# 1 + 1e-12 gives exactly the plan that assumes sphericity.
+.check_epsilon <- function(epsilon, dim_within) {
+  .check_scalar_finite(epsilon, "epsilon")
+  tol <- sqrt(.Machine$double.eps)
+  if (epsilon > 1 + tol)
+    stop("'epsilon' must be at most 1 (1 assumes sphericity; a Huynh-Feldt ",
+         "estimate above 1 is truncated to 1).", call. = FALSE)
+  if (dim_within == 1 && epsilon < 1 - tol)
+    stop("This effect has a single within-subjects degree of freedom (two ",
+         "levels), and such an effect always satisfies sphericity, so ",
+         "'epsilon' must be 1.", call. = FALSE)
+  lower <- 1 / dim_within
+  if (epsilon < lower - tol)
+    stop("'epsilon' must be at least 1/", dim_within, " (about ",
+         format(signif(lower, 4)), "), the lower bound for an effect whose ",
+         "within-subjects contrasts have ", dim_within, " degrees of freedom. ",
+         "If a paper reports corrected degrees of freedom, 'epsilon' is the ",
+         "reported numerator degrees of freedom divided by the uncorrected ",
+         "numerator degrees of freedom.", call. = FALSE)
+  min(max(epsilon, lower), 1)
+}
+
+# The between-subjects effect of a split-plot design is tested on subject
+# means, which involves no sphericity, so 'epsilon' does not apply to it. A
+# supplied value is checked to be a number, a value other than 1 is ignored
+# with a warning, and the plan is exactly the one without it (it carries no
+# 'epsilon' row). 'supplied' is !missing(epsilon) in the planner.
+.ignore_epsilon <- function(epsilon, supplied, effect_label) {
+  if (supplied) {
+    .check_scalar_finite(epsilon, "epsilon")
+    if (epsilon != 1)
+      warning("'epsilon' applies only to effects with a within-subjects ",
+              "component; ", effect_label, " is tested on subject means, ",
+              "which involves no sphericity, so 'epsilon' was ignored.",
+              call. = FALSE)
+  }
+  1
+}
+
 # Seed discipline for every function that takes a 'seed' argument. A NULL
 # seed is a no-op: the draws come from the caller's current random number
 # stream, exactly as if the function had no 'seed' argument. A supplied seed
@@ -99,6 +231,10 @@
 .bucss_local_seed <- function(seed, envir = parent.frame()) {
   if (is.null(seed)) return(invisible(NULL))
   .check_count(seed, "seed")
+  # set.seed() takes an integer, so a larger whole number would reach it as
+  # NA, with base R's coercion warning and error rather than this one.
+  if (seed > .Machine$integer.max)
+    stop("'seed' must be at most ", .Machine$integer.max, ".", call. = FALSE)
   withr::local_seed(seed, .local_envir = envir)
   invisible(seed)
 }
@@ -165,17 +301,28 @@
 # that are exactly a relabeling of another design (the one-sample t is the
 # paired t; the ANCOVA is the general between-subjects planner with the
 # covariates carried as nuisance parameters), so the numerical work lives in
-# one place and only the presentation differs.
+# one place and only the presentation differs. The planning effect size row
+# carries over with its value unchanged; 'effect_size_term' renames it where
+# the relabeled design names the same quantity differently (the paired
+# planner's standardized mean of the differences is the one-sample
+# standardized mean). Left NULL, the term carries over too (the ANCOVA's
+# f_planning is the general planner's, relative to the covariate-adjusted
+# error variance).
 .relabel_bucss_result <- function(res, design, sample_size_unit, size_term,
-                                  inputs, effect = NULL) {
+                                  inputs, effect = NULL,
+                                  effect_size_term = NULL) {
   size <- res$value[res$term %in% .BUCSS_SIZE_TERMS][1]
   total_n <- res$value[res$term == "total_N"]
   if (length(total_n) == 0L) total_n <- NULL
   actual_power <- res$value[res$term == "actual_power"]
   if (length(actual_power) == 0L) actual_power <- NULL
+  is_effect_size <- res$term %in% .BUCSS_EFFECT_TERMS
+  if (is.null(effect_size_term)) effect_size_term <- res$term[is_effect_size]
   .bucss_plan_result(
     sample_size = size,
     size_term = size_term,
+    effect_size_term = effect_size_term,
+    effect_size = res$value[is_effect_size],
     actual_power = actual_power,
     ncp = res$value[res$term == "ncp_adjusted"],
     design = design,
@@ -211,10 +358,26 @@
 # against an F critical value). .tm_t covers the two-sided noncentral t designs
 # (the independent and paired t tests), summing both tails exactly as the 1.x
 # code did. .tm_chisq is the analogue for a nested model comparison, and
-# .tm_correlation the analogue for a Pearson correlation, whose statistic is
-# not noncentral F at all once both variables are sampled (see below).
-.tm_f <- function(stat, crit, df1, df2) {
+# .tm_random_f the analogue for sampled (random) predictors, whose statistic is
+# not noncentral F at all (see below): the Pearson correlation through
+# .tm_correlation, and the regression planners with random_predictors = TRUE
+# through .tm_regression.
+#
+# 'epsilon' (default 1) is the sphericity parameter of a within-subjects
+# effect. Under the Muller and Barton (1989) approximation, the convention of
+# DMAR's within-subjects power functions, the statistic is noncentral F on
+# epsilon * df1 and epsilon * df2 degrees of freedom with noncentrality
+# epsilon * ncp, where ncp stays on the sphericity scale (the value it would
+# have if the contrast covariance were spherical with the same average
+# variance), so 'ncp_adjusted' keeps its meaning for every epsilon. 'crit'
+# must already be the critical value at the corrected degrees of freedom. At
+# epsilon = 1 every product below is exact (1 * x is x in floating point), so
+# the closure is the sphericity-assumed one bit for bit.
+.tm_f <- function(stat, crit, df1, df2, epsilon = 1) {
+  df1 <- epsilon * df1
+  df2 <- epsilon * df2
   function(ncp) {
+    ncp <- epsilon * ncp
     power <- 1 - pf(crit, df1 = df1, df2 = df2, ncp = ncp)
     area_above <- 1 - pf(stat, df1 = df1, df2 = df2, ncp = ncp)
     (power - area_above) / power
@@ -262,77 +425,139 @@
   }
 }
 
-# Exact distribution of the test statistic for a Pearson correlation when both
-# variables are sampled (the random-predictor frame a correlation study is
-# actually run in), in closed form.
+# Exact distribution of the F statistic for testing q regression coefficients
+# (a single coefficient, a subset, or all p of them) when the predictors are
+# sampled from a multivariate normal distribution along with the outcome: the
+# random-predictor frame of an observational study, in closed form. A Pearson
+# correlation is the case q = p = 1.
 #
-# Conditional on the sampled X, the statistic F = t^2 for testing rho = 0 is
-# noncentral F(1, n - 2) with noncentrality lambda = c * SS_x/sigma_x^2, where
-# c = rho^2/(1 - rho^2); and SS_x/sigma_x^2 is chi square on n - 1 df. So the
-# marginal distribution is a chi square mixture of noncentral F's, not the
-# noncentral F itself. Treating it as noncentral F (which is exact only when
-# the predictor is fixed by design) overstates the power, because it drops the
-# extra dispersion the sampled predictor contributes.
+# Conditional on the sampled predictors, the statistic is noncentral
+# F(q, N - p - 1) with noncentrality lambda_X = c * W, where c is the
+# population partial f squared of the tested set (for a correlation,
+# c = rho^2/(1 - rho^2)) and W = beta_2' X_2' (I - H_1) X_2 beta_2 divided by
+# its population scale is chi square on m = N - 1 - (p - q) df: the tested
+# predictors' spread after removing the intercept and the p - q other
+# predictors. So the marginal distribution is a chi square mixture of
+# noncentral F's, not the noncentral F itself. Treating it as noncentral F
+# (which is exact only when the predictors are fixed by design) overstates the
+# power, because it drops the extra dispersion the sampled predictors
+# contribute.
 #
 # The mixture has a closed form. The noncentral F CDF is a Poisson(lambda/2)
 # mixture of central betas; mixing a Poisson rate over a gamma gives a negative
-# binomial, and lambda/2 = c * W/2 with W/2 ~ Gamma((n-1)/2, scale = c). The
-# Poisson weights therefore become negative binomial weights with size
-# (n - 1)/2 and probability 1/(1 + c) = 1 - rho^2:
+# binomial, and lambda/2 = c * W/2 with W/2 ~ Gamma(m/2, scale = c). The
+# Poisson weights therefore become negative binomial weights with size m/2 and
+# probability 1/(1 + c):
 #
-#   P(F <= q) = sum_k dnbinom(k, size = (n-1)/2, prob = 1 - rho^2) *
-#               pbeta(q/(q + n - 2), 1/2 + k, (n-2)/2)
+#   P(F <= x) = sum_k dnbinom(k, size = m/2, prob = 1/(1 + c)) *
+#               pbeta(q x/(q x + df2), q/2 + k, df2/2)
 #
-# This is exact rather than approximate, needs nothing beyond stats, and
-# converges geometrically at rate rho^2. Numerical quadrature was the obvious
-# alternative and is a trap: integrate() over (0, Inf) silently returns 0 once
-# n is a few hundred, because the adaptive rule samples where a chi square on
-# n - 1 df has no mass.
+# which is Fisher's exact distribution of the squared multiple correlation
+# (see Gatsonis & Sampson, 1989) at a sample size reduced by the p - q
+# untested predictors. This is exact rather than approximate, needs nothing
+# beyond stats, and converges geometrically at rate c/(1 + c). Numerical
+# quadrature was the obvious alternative and is a trap: integrate() over
+# (0, Inf) silently returns 0 once N is a few hundred, because the adaptive
+# rule samples where a chi square on m df has no mass.
+#
+# The caller passes 'prob' = 1/(1 + c) rather than c, computed as
+# 1 - lambda/(lambda + N) from the noncentrality parameter lambda = c * N
+# every planner reports; that is the expression the correlation planner has
+# always used, so its results are unchanged to the last bit.
 #
 # The series is truncated where the remaining negative binomial mass is below
 # 1e-14; the omitted terms carry pbeta values smaller than the last retained
 # one, so the truncation error is far below that mass. The number of terms is
 # governed by the noncentrality parameter, lambda/2 on average. A planned study
 # near its target power carries lambda near 8, but the prior study's side
-# carries lambda = c * N, which reaches the millions for a strong correlation
-# in a very large sample (r = .9 with N near half a million). There the mass
-# sits far from k = 0, so the sum runs over a window around the mode, from the
+# carries lambda = c * N, which reaches the millions for a strong effect in a
+# very large sample (r = .9 with N near half a million). There the mass sits
+# far from k = 0, so the sum runs over a window around the mode, from the
 # 1e-15 quantile to the 1 - 1e-14 quantile, whose width grows only with the
 # square root of lambda. An earlier fixed cap of 1e6 terms instead dropped
 # nearly all of the mass there and returned a wrong plan with no warning. Below
 # a million terms the window starts at 0, exactly as the full sum does.
-.p_correlation_f <- function(q, n, rho2) {
-  prob <- 1 - rho2
+#
+# 'what' and 'arg' name the prior statistic in the one error this can raise.
+.p_random_f <- function(x, df1, df2, m, prob, what = "result",
+                        arg = "the observed statistic") {
   if (prob <= 0) return(0)
-  df2 <- n - 2
-  size <- (n - 1) / 2
+  size <- m / 2
   k_hi <- qnbinom(1 - 1e-14, size = size, prob = prob)
   k_lo <- if (k_hi > 1e6) qnbinom(1e-15, size = size, prob = prob) else 0
   if (k_hi - k_lo > 5e7)
-    stop("The prior study's correlation and sample size imply a noncentrality ",
-         "parameter too large to evaluate. Please check 'r_observed' (or ",
-         "'t_observed') and 'N'.", call. = FALSE)
+    stop("The prior study's ", what, " and sample size imply a noncentrality ",
+         "parameter too large to evaluate. Please check ", arg, " and 'N'.",
+         call. = FALSE)
   k <- k_lo:k_hi
   sum(dnbinom(k, size = size, prob = prob) *
-        pbeta(q / (q + df2), 0.5 + k, df2 / 2))
+        pbeta(df1 * x / (df1 * x + df2), df1 / 2 + k, df2 / 2))
 }
 
-# TM for a Pearson correlation, parameterized (like every other planner) by the
+# The correlation case, kept under its own name (the shipped verification
+# script and the tests call it): q = 1, df2 = n - 2, m = n - 1.
+.p_correlation_f <- function(q, n, rho2) {
+  .p_random_f(q, 1, n - 2, n - 1, 1 - rho2, what = "correlation",
+              arg = "'r_observed' (or 't_observed')")
+}
+
+# TM under random predictors, parameterized (like every other planner) by the
 # noncentrality parameter the adjusted effect implies at the prior study's
-# sample size, lambda = c * N. Solving on that scale rather than on the rho^2
-# scale matters: uniroot()'s tolerance is absolute, and a rho^2 root of order
+# sample size, lambda = c * N. Solving on that scale rather than on the c or
+# rho^2 scale matters: uniroot()'s tolerance is absolute, and a root of order
 # 1e-6, which is what a plan near the assurance ceiling implies, would be
 # resolved to only a percent or two. On the lambda scale the root is of order 1
-# to 100 and the shared solver needs no change.
-.tm_correlation <- function(stat, crit, N) {
+# to 100 and the shared solver needs no change. At lambda = 0 the mixture is
+# the central F, so the ceiling TM(0) equals .tm_f()'s.
+.tm_random_f <- function(stat, crit, df1, df2, m, N, what = "result",
+                         arg = "the observed statistic") {
   function(ncp) {
     vapply(ncp, function(lambda) {
-      rho2 <- lambda / (lambda + N)
-      power <- 1 - .p_correlation_f(crit, N, rho2)
-      area_above <- 1 - .p_correlation_f(stat, N, rho2)
+      prob <- 1 - lambda / (lambda + N)
+      power <- 1 - .p_random_f(crit, df1, df2, m, prob, what, arg)
+      area_above <- 1 - .p_random_f(stat, df1, df2, m, prob, what, arg)
       (power - area_above) / power
     }, numeric(1))
   }
+}
+
+.tm_correlation <- function(stat, crit, N) {
+  .tm_random_f(stat, crit, 1, N - 2, N - 1, N, what = "correlation",
+               arg = "'r_observed' (or 't_observed')")
+}
+
+# The three regression planners share one frame switch. With random
+# predictors the prior study's TM and the planned study's power both use the
+# mixture above, with m = N - 1 - (p - q) at the prior N and at the planned
+# N alike; with fixed predictors they use the noncentral F, the planned
+# study's parameter scaled by n_rep/N. 'q' is the numerator df (1 for a
+# coefficient, p for R2, p_joint for a joint test).
+.tm_regression <- function(stat, crit, q, N, p, random_predictors, what, arg) {
+  if (random_predictors)
+    .tm_random_f(stat, crit, q, N - p - 1, N - 1 - (p - q), N, what, arg)
+  else
+    .tm_f(stat, crit, q, N - p - 1)
+}
+
+.power_regression <- function(ncp, N, p, q, alpha_planned, random_predictors,
+                              what, arg) {
+  prob <- 1 - ncp / (ncp + N)
+  function(n_rep) {
+    denom_df <- n_rep - p - 1
+    critical_F <- qf(1 - alpha_planned, df1 = q, df2 = denom_df)
+    if (random_predictors)
+      1 - .p_random_f(critical_F, q, denom_df, n_rep - 1 - (p - q), prob,
+                      what, arg)
+    else
+      1 - pf(critical_F, df1 = q, df2 = denom_df, ncp = (n_rep / N) * ncp)
+  }
+}
+
+# A single TRUE or FALSE, for a logical switch such as 'random_predictors'.
+.check_flag <- function(x, name) {
+  if (!is.logical(x) || length(x) != 1L || is.na(x))
+    stop("'", name, "' must be TRUE or FALSE.", call. = FALSE)
+  invisible(x)
 }
 
 # Solve TM(ncp) = assurance for the bias and uncertainty adjusted noncentrality
@@ -428,11 +653,16 @@
 # study to a balanced one: a statistic can be significant at the prior study's
 # own degrees of freedom and not at the balanced design's, and the message then
 # says so rather than calling the prior study nonsignificant, which it is not.
-# It reports the 'alpha_prior' that planning at the requested 'assurance'
-# would need, p_balanced/(1 - assurance) (the balanced design's ceiling is
-# 1 - p_balanced/alpha_prior), and it mentions the recommended floor of .5
-# only when the own-df ceiling is below it. The condition carries the class
-# 'bucss_nonsignificant' so code that loops over plans can catch it alone.
+# Planning at the requested 'assurance' needs the balanced design's ceiling,
+# 1 - p_balanced/alpha_prior, to exceed the assurance, so 'alpha_prior' must be
+# strictly above p_balanced/(1 - assurance); at that threshold itself the
+# planner refuses. The message names a value strictly above it (see
+# .format_alpha_above()) and says that plans near it are very large; when the
+# threshold is .999 or more it says instead that no practical 'alpha_prior'
+# will do ('alpha_prior = 1' is read as .999). It mentions the recommended
+# floor of .5 only when the own-df ceiling is below it. The condition carries
+# the class 'bucss_nonsignificant' so code that loops over plans can catch it
+# alone.
 .stop_nonsignificant <- function(what, arg, p_own = NULL, alpha_prior = NULL,
                                  p_balanced = NULL, assurance = NULL) {
   fmt2 <- function(p) sub("^0", "", sprintf("%.2f", p))
@@ -441,7 +671,7 @@
   # at its own degrees of freedom and less so at the balanced design.
   if (!is.null(p_own) && !is.null(alpha_prior) && !is.null(p_balanced) &&
       p_own < alpha_prior && p_balanced > p_own) {
-    ceiling_own <- floor((1 - p_own / alpha_prior) * 100 + 1e-9) / 100
+    ceiling_own <- .floor_assurance(1 - p_own / alpha_prior)
     needed <- if (!is.null(assurance)) p_balanced / (1 - assurance)
     msg <- paste0(
       "Your observed ", what, " is significant at the prior study's own degrees ",
@@ -449,13 +679,20 @@
       "study with unequal group sizes to a balanced design with fewer error ",
       "degrees of freedom, and there its p value is ", fmtp(p_balanced),
       ", above 'alpha_prior'. ",
-      if (!is.null(needed) && needed < 1)
-        paste0("Planning from it at an 'assurance' of ", fmt2(assurance),
-               " would need an 'alpha_prior' of at least about ", fmtp(needed),
-               ", which assumes a more lenient publication threshold. ")
+      if (!is.null(needed) && needed < .999)
+        paste0("Planning from it at an 'assurance' of ", .format_alpha(assurance),
+               " would need an 'alpha_prior' of ", .format_alpha_above(needed),
+               " or more, which assumes a more lenient publication threshold. ",
+               "Near that value the plan is very large, because the result ",
+               "then barely supports the requested assurance; a larger ",
+               "'alpha_prior' gives a practical plan, and so does a lower ",
+               "'assurance', which lowers the 'alpha_prior' needed. ")
       else if (!is.null(needed))
-        paste0("No 'alpha_prior' below 1 allows planning from it at an ",
-               "'assurance' of ", fmt2(assurance), ". "),
+        paste0("Planning from it at an 'assurance' of ", .format_alpha(assurance),
+               " would need an 'alpha_prior' above .999, and 'alpha_prior = 1' ",
+               "(no publication bias) is treated as .999, so no practical ",
+               "'alpha_prior' allows it; a lower 'assurance' lowers the ",
+               "'alpha_prior' needed. "),
       if (ceiling_own < .5)
         paste0("Even at its own degrees of freedom the result supports an ",
                "assurance of at most about ", fmt2(ceiling_own), ", below the ",
@@ -468,6 +705,28 @@
   }
   stop(errorCondition(msg, class = "bucss_nonsignificant", call = NULL))
 }
+
+# The 'alpha_prior' .stop_nonsignificant() names, as text: the threshold 'x',
+# p_balanced/(1 - assurance), plus a margin of one part in a million, rounded
+# up to three significant digits. The value named is therefore strictly above
+# the threshold, where the planner plans; rounding to the nearest three
+# digits named a value at or below it about half the time, and the planner
+# refused there. Never above .999, the largest value used as given; the
+# caller passes only thresholds below .999, so .999 is itself above them.
+# Display only: the value is text in a message, never stored.
+.format_alpha_above <- function(x) {
+  y <- x * (1 + 1e-6)
+  k <- 2 - floor(log10(y))
+  .format_alpha(min(ceiling(y * 10^k) / 10^k, .999))
+}
+
+# The assurance ceiling as the messages and footers state it: floored to two
+# decimals, less a small tolerance, so the value stated is strictly below the
+# ceiling and is itself a feasible assurance. A planner refuses when the
+# ceiling is at or below the requested assurance, so a ceiling of .87, or one
+# a hair either side of .87 that floating-point arithmetic would carry to 87
+# hundredths, is stated as .86. Display only.
+.floor_assurance <- function(x) floor(x * 100 - 1e-9) / 100
 
 # Stop with a single, informative error when the bias and uncertainty
 # correction drives the prior-study noncentrality parameter to zero. At the
@@ -485,10 +744,10 @@
 # ss_buc_sensitivity() and plot() can catch this refusal and nothing else;
 # call = NULL keeps the (uninformative) calling expression out of the message.
 .stop_zero_ncp <- function(max_assurance) {
-  # Floor to two decimals (with a tiny tolerance against floating-point
-  # underflow) so the reported ceiling is itself a feasible value; rounding up
-  # could name an assurance that still fails.
-  ceiling_assurance <- floor(max_assurance * 100 + 1e-9) / 100
+  # Floor to two decimals, strictly below the ceiling, so the reported value
+  # is itself feasible (see .floor_assurance()); rounding up could name an
+  # assurance that still fails.
+  ceiling_assurance <- .floor_assurance(max_assurance)
   fmt <- function(p) sub("^0", "", sprintf("%.2f", p))
 
   if (ceiling_assurance >= 0.5) {
@@ -530,33 +789,69 @@
 }
 
 # Check that an object still has the shape of one planner's answer before a
-# method reads "the" sample size, power, or assurance from it: exactly one size
-# row and one row each of the quantities the methods report. Base R's rbind()
-# and subsetting already drop the class from a stacked or modified result, but
-# vctrs-based tools (dplyr::bind_rows(), dplyr::filter(), and the like) keep
-# it, and a stack of two plans would otherwise be tidied and narrated as though
-# every row belonged to the first. Stopping names the problem instead.
-.is_plan_shape <- function(x, needed = c("actual_power", "ncp_adjusted",
-                                         "assurance", "desired_power")) {
+# method reads "the" sample size, power, or assurance from it, or replays the
+# planner from its echoed inputs: exactly one size row; the implied total for
+# a per-group or per-cell size, and none for a total; exactly one planning
+# effect size row (one of .BUCSS_EFFECT_TERMS, and for a design in the
+# registry the one its planner writes, its 'planning_term'); one row each of
+# the results and of the four planning inputs every planner echoes; and, for a
+# design in the registry, one row each of the inputs that design echoes (the
+# 'echo' and 'echo_effect' fields in R/bucss-design-registry.R, read through
+# .bucss_echo_requirements(), so a planning input added to a design is
+# required by listing it there). Base R's
+# rbind() and subsetting already drop the class from a stacked or modified
+# result, but vctrs-based tools (dplyr::bind_rows(), dplyr::filter(), and the
+# like) keep it, so a stack of two plans would otherwise be tidied and narrated
+# as though every row belonged to the first, and a plan without its
+# 'alpha_prior' row narrated as though no publication bias had been assumed.
+# Stopping names the problem instead.
+.BUCSS_PLAN_ROWS <- c("actual_power", "ncp_adjusted", "alpha_prior",
+                      "alpha_planned", "assurance", "desired_power")
+
+.is_plan_shape <- function(x) {
   # Exactly the two columns a plan has; an added column (dplyr::bind_cols(),
   # say) would otherwise be hidden by the print method.
   if (!is.data.frame(x) || !identical(names(x), c("term", "value"))) return(FALSE)
   terms <- x[["term"]]
   if (is.null(terms) || !is.character(terms)) return(FALSE)
-  counts <- vapply(c("size", needed), function(nm) {
-    if (nm == "size") sum(terms %in% .BUCSS_SIZE_TERMS) else sum(terms == nm)
-  }, numeric(1))
-  all(counts == 1)
+  once <- function(nm) sum(terms == nm) == 1L
+  size <- terms[terms %in% .BUCSS_SIZE_TERMS]
+  if (length(size) != 1L || !all(vapply(.BUCSS_PLAN_ROWS, once, logical(1))))
+    return(FALSE)
+  if (sum(terms == "total_N") != as.integer(size != "necessary_N")) return(FALSE)
+  effect_size <- terms[terms %in% .BUCSS_EFFECT_TERMS]
+  if (length(effect_size) != 1L) return(FALSE)
+  design <- attr(x, "design")
+  spec <- if (is.character(design) && length(design) == 1L)
+    .BUCSS_DESIGN_SPECS[[design]]
+  if (is.null(spec)) return(TRUE)
+  if (!identical(effect_size, spec$planning_term)) return(FALSE)
+  requirements <- .bucss_echo_requirements(spec, attr(x, "effect"))
+  all(vapply(requirements, function(req) {
+    forms <- strsplit(strsplit(req, " | ", fixed = TRUE)[[1L]], " + ", fixed = TRUE)
+    any(vapply(forms, function(rows) all(vapply(rows, once, logical(1))), logical(1)))
+  }, logical(1)))
 }
 
 .check_plan_shape <- function(x) {
   if (!.is_plan_shape(x))
     stop("This object no longer has the shape of a single plan (one sample ",
-         "size row and one row each of 'actual_power', 'ncp_adjusted', ",
-         "'assurance', and 'desired_power'); it may be several plans stacked ",
-         "together or a plan with rows removed. Apply this function to each ",
-         "plan separately.", call. = FALSE)
+         "size row, and one row each of the results and of the planning ",
+         "inputs its planner echoed, such as 'alpha_prior' and 'assurance'); ",
+         "it may be several plans stacked together or a plan with rows ",
+         "removed. Apply this function to each plan separately, as its ",
+         "planner returned it.", call. = FALSE)
   invisible(x)
+}
+
+# The footer line naming the predictor frame, for the plans that echo one (the
+# regression planners' random_predictors row, 1 or 0). NULL for every other
+# plan, so their footers are unchanged.
+.predictor_footer <- function(x) {
+  rp <- x$value[x$term == "random_predictors"]
+  if (length(rp) != 1L) return(NULL)
+  paste0("Predictors: ", if (rp == 1) "random (sampled along with the outcome)"
+         else "fixed by design")
 }
 
 # Format a value column for display the way DMAR's dmar_tbl print does: whole
@@ -577,7 +872,8 @@
 #'
 #' Prints the aligned \code{term}/\code{value} table (the planned-study
 #' results followed by the rows echoing the planning inputs), then factual
-#' footer lines naming the design, the unit the sample size is counted in,
+#' footer lines naming the design, for the regression planners the predictor
+#' frame (\code{random_predictors}), the unit the sample size is counted in,
 #' and the largest assurance the prior result can support. Whole numbers
 #' print clean; other values print at \code{getOption("bucss.digits", 3)}
 #' significant figures. Only the display is rounded; the stored values keep
@@ -627,9 +923,11 @@ print.bucss_plan <- function(x, digits = getOption("bucss.digits", 3L), ...) {
     cat("Design: ", design,
         if (!is.null(effect)) paste0(" (", effect, ")"), "\n", sep = "")
   }
+  predictors <- .predictor_footer(x)
+  if (!is.null(predictors)) cat(predictors, "\n", sep = "")
   if (!is.null(unit)) cat("Sample size unit: ", unit, "\n", sep = "")
   if (!is.null(assurance_ceiling)) {
-    cval <- floor(assurance_ceiling * 100 + 1e-9) / 100
+    cval <- .floor_assurance(assurance_ceiling)
     cat("Largest supportable assurance: ",
         sub("^0", "", sprintf("%.2f", cval)), "\n", sep = "")
   }

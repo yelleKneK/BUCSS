@@ -12,6 +12,11 @@
 #'   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
 #'   305--324. \doi{10.1080/00273171.2017.1289361}
 #'
+#'   Kelley, K., & Maxwell, S. E. (2003). Sample size for multiple regression:
+#'   Obtaining regression coefficients that are accurate, not simply
+#'   significant. \emph{Psychological Methods, 8,} 305--321.
+#'   \doi{10.1037/1082-989X.8.3.305}
+#'
 #'   Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
 #'   experiments and analyzing data: A model comparison perspective} (4th ed.).
 #'   Routledge.

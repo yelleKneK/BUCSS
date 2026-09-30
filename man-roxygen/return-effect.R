@@ -7,8 +7,13 @@
 #'   and per-cell designs, \code{total_N}, the implied total sample size;
 #'   \code{actual_power}, the power of the plan returned, that is, of the
 #'   returned sample size at the returned noncentrality parameter (see
-#'   Details); and \code{ncp_adjusted}, the publication bias and uncertainty
-#'   adjusted prior study noncentrality parameter, <%= ncp_scale %>. Rows
+#'   Details); \code{ncp_adjusted}, the publication bias and uncertainty
+#'   adjusted prior study noncentrality parameter, <%= ncp_scale %>; and the
+#'   planning effect size, the effect size the plan is built on, which is
+#'   \code{ncp_adjusted} restated in the design's usual metric:
+#'   <%= effect_phrase %>. Because it restates \code{ncp_adjusted},
+#'   \code{actual_power} is the ordinary power of a study of the returned
+#'   sample size when the population effect is the planning effect size. Rows
 #'   echoing the planning inputs follow, so the assumptions travel with the
 #'   result. The design, the effect tested, the unit the sample size is
 #'   counted in, the largest assurance this prior can support (the assurance

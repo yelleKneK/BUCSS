@@ -13,7 +13,8 @@ ss_buc_reg_coef(
   alpha_prior = 0.05,
   alpha_planned = 0.05,
   assurance = 0.8,
-  desired_power = 0.8
+  desired_power = 0.8,
+  random_predictors = FALSE
 )
 }
 \arguments{
@@ -33,18 +34,37 @@ assume no publication bias, a value of 1 can be entered.}
 
 \item{alpha_planned}{Alpha level \eqn{\alpha} assumed for the planned study.}
 
-\item{assurance}{Desired level of assurance, or the long run proportion of
-times that the planned study power will reach or surpass the desired level
-(assurance > .5 corrects for uncertainty; assurance < .5 is not
-recommended). Enter it as a proportion in (0, 1) or as a percentage greater
-than 1 (for example, 80 is read as .80); a value of exactly 1 is read as 1
-percent. A percentage is echoed in the result's planning-input rows as
+\item{assurance}{Desired level of assurance: the long run proportion of
+planned studies whose statistical power at the true effect reaches or
+surpasses \code{desired_power}, when each is planned from a prior study
+published under the rule \code{alpha_prior} describes. The adjusted
+noncentrality parameter is the lower limit of a one-sided confidence
+interval at this level, computed from the publication-truncated
+distribution of the prior statistic, so \code{assurance = .5} plans from
+a median unbiased estimate (correcting for publication bias only), a
+larger value adds the correction for uncertainty, and a value below .5 is
+not recommended. The term follows Kelley and Maxwell (2003), who used
+assurance in sample size planning for the probability that a confidence
+interval will be no wider than desired. With \code{alpha_prior = 1} and
+\code{assurance = .80} the plan corresponds to safeguard power, a special
+case (see \code{\link{BUCSS-package}} for how, and for where the two
+differ). Enter it as a proportion in (0, 1) or as a percentage greater
+than 1 (for example, 80 is read as .80); a value of exactly 1 is read as
+1 percent. A percentage is echoed in the result's planning-input rows as
 the coerced proportion (80 is echoed as .80); the same applies to
 \code{desired_power}.}
 
 \item{desired_power}{Desired level of statistical power for the planned
 study. Enter it as a proportion in (0, 1) or as a percentage greater than
 1; a value of exactly 1 is read as 1 percent.}
+
+\item{random_predictors}{\code{TRUE} if the predictors are sampled along
+with the outcome, as in most observational research, and \code{FALSE} if
+their values are fixed by design, as in an experiment that assigns them.
+The default is \code{FALSE}, the frame of BUCSS 1.x; see Details.
+The choice is echoed in the result as a \code{random_predictors} row
+valued 1 (\code{TRUE}) or 0 (\code{FALSE}) and named in the printed
+footer.}
 }
 \value{
 An object of class \code{bucss_plan}: a \code{data.frame} with a
@@ -56,15 +76,20 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   and per-cell designs, \code{total_N}, the implied total sample size;
   \code{actual_power}, the power of the plan returned, that is, of the
   returned sample size at the returned noncentrality parameter (see
-  Details); and \code{ncp_adjusted}, the publication bias and uncertainty
-  adjusted prior study noncentrality parameter, on the scale of the \emph{F} statistic (the square of the prior \emph{t}), at the prior study's sample size, so the planned study's is \code{ncp_adjusted} times the planned over the prior sample size. Rows
+  Details); \code{ncp_adjusted}, the publication bias and uncertainty
+  adjusted prior study noncentrality parameter, on the scale of the \emph{F} statistic (the square of the prior \emph{t}) at the prior study's sample size; and the
+  planning effect size, the effect size the plan is built on, which is
+  \code{ncp_adjusted} restated in the design's usual metric:
+  \code{f2_planning}, Cohen's \eqn{f^2}{f^2} for the coefficient, \eqn{\lambda/N}{lambda/N}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted} and \emph{N} the prior sample size; the planned study's power is computed from it at the planned sample size, in the frame \code{random_predictors} names (with sampled predictors it is the population \eqn{f^2}{f^2} of that frame, and the power statement that follows is in that frame). Because it restates \code{ncp_adjusted},
+  \code{actual_power} is the ordinary power of a study of the returned
+  sample size when the population effect is the planning effect size. Rows
   echoing the planning inputs follow, so the assumptions travel with the
   result. The design, the unit the sample size is counted in, the largest
   assurance this prior can support (the assurance ceiling), and the
   planned test's degrees of freedom (\code{df_effect}, and \code{df_error}
   where the test has a denominator) travel on attributes.
-  \code{print.bucss_plan} shows the design, the unit, and the ceiling
-  beneath the table; \code{tidy()} and \code{glance()} give the compact and
+  \code{print.bucss_plan} shows the design, for the regression planners
+  the predictor frame, the unit, and the ceiling beneath the table; \code{tidy()} and \code{glance()} give the compact and
   wide views, the latter with every attribute as a column.
 }
 \description{
@@ -76,8 +101,9 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   sample size that will achieve more accurate statistical power for a planned
   study, when compared to approaches that use a sample effect size at face
   value or rely on sample size only. The bias and uncertainty adjusted
-  previous study noncentrality parameter is also returned, which can be
-  transformed to various effect size metrics.
+  previous study noncentrality parameter is also returned, together with the
+  planning effect size, the effect size the plan is built on, as Cohen's
+  \eqn{f^2}{f^2}.
 }
 \details{
 Researchers often use the sample effect size from a prior study as
@@ -93,31 +119,75 @@ Researchers often use the sample effect size from a prior study as
   parameter is then used to calculate the necessary total sample size to
   achieve the desired level of power in the planned study.
 
-  \strong{The predictors are treated as fixed.} As in most power analysis
-  for regression, the prior study's statistic and the planned study's power
-  are computed from the noncentral \emph{F} distribution, which is exact
-  when the values of the predictors are fixed by design. When the predictors
-  are sampled along with the outcome, as in most observational research, the
-  statistic follows a more dispersed mixture of noncentral \emph{F}
-  distributions. \code{actual_power} then overstates the planned study's
-  power by roughly (\emph{p} + 1)/(2\emph{n}) for a plan of \emph{n}
-  participants and \emph{p} predictors: about 1/\emph{n} with one predictor
-  (.01 at \emph{n} = 100) and about 4/\emph{n} with eight. The correction
-  itself stays close to its \code{assurance} (in simulation at an
-  \code{assurance} of .80 and a prior \emph{N} of 30, about .78 with one
-  predictor and .81 to .82 with three to eight). For a single sampled
-  predictor, \code{\link{ss_buc_correlation}} uses the exact distribution;
-  for a coefficient among several sampled predictors, no random-predictor
-  planner is available yet.
+  \strong{Fixed or random predictors.} Whether the predictors' values are
+  fixed by design, as in an experiment in which the researcher sets them,
+  or sampled along with the outcome, as in most observational research,
+  changes neither the estimates nor the distribution of the test statistic
+  when the coefficient is zero, but it does change the statistic's
+  distribution, and so the power, when the coefficient is not zero
+  (Sampson, 1974; Gatsonis & Sampson, 1989; Kelley & Maxwell, 2003). With
+  \code{random_predictors = FALSE}, the default, the prior study's statistic
+  and the planned study's power come from the noncentral \emph{F}
+  distribution, which is exact when the predictor values are fixed; this is
+  the frame of BUCSS 1.x and of Anderson (2021). With
+  \code{random_predictors = TRUE} the noncentrality parameter is itself
+  random: it is proportional to the sampled spread of the tested predictor
+  once the other predictors are accounted for, a chi square variable on
+  \emph{N} - \emph{p} degrees of freedom, so the statistic follows a chi
+  square mixture of noncentral \emph{F} distributions, which is more
+  dispersed. The mixture has an exact closed form (the Poisson weights of
+  the noncentral \emph{F} become negative binomial weights), used for both
+  the correction and the planned study's power. It is exact when the tested
+  predictor is normally distributed around its linear regression on the
+  other predictors, which may themselves be fixed by design (dummy codes
+  for assigned groups, say). In observational research in the behavioral
+  sciences the predictors are typically random (Kelley & Maxwell, 2003), and
+  \code{random_predictors = TRUE} is then the frame to plan in.
+
+  Treating sampled predictors as fixed overstates the planned study's
+  power, by about 1/\emph{n} for a plan of \emph{n} participants with one
+  predictor, 1.9/\emph{n} with three, and 4/\emph{n} with eight (.010,
+  .019, and .040 at \emph{n} = 100, and 4.8/\emph{n} with eight at
+  \emph{n} = 20), and the correction's coverage then departs from the
+  requested \code{assurance}. At an \code{assurance} of .80 and prior
+  studies with power .3 to .8 at the true effect, it stays just below .80
+  with one predictor (about .79 to .80 for prior studies of 20 to 100) and
+  rises above it with more, the more so the more predictors there are, the
+  smaller the prior study, and the better powered it was (about .80 to .82
+  for a coefficient among three predictors and prior studies of 20 to 100,
+  .81 to .82 among eight with a prior \emph{N} of 100, and .83 to .90
+  among eight with a prior \emph{N} of 20 or 25).
+
+  Which frame plans the larger study depends on the other predictors and
+  on how far the plan outgrows the prior study, because the fixed frame
+  scales the prior study's noncentrality parameter by \emph{N} while the
+  tested predictor's sampled spread has \emph{N} - \emph{p} degrees of
+  freedom. With one predictor the random-predictor plan is usually a few
+  participants larger (and at most a few percent smaller). With more
+  predictors the two plans are within a few participants, the
+  random-predictor plan usually the larger, when the plan is no more than
+  about twice the prior \emph{N}; beyond that the random-predictor plan is
+  usually smaller, by up to about a quarter from prior studies of 20 or 30
+  (83 rather than 98 participants for \emph{t} = 2.5 from a prior study of
+  30 with eight predictors and \code{alpha_prior = 1}) and by at most about
+  5 percent from prior studies of 100 or more (623 rather than 624 in the
+  examples below). The largest assurance a prior result can support is
+  the same in both frames, because at a zero effect both are the central
+  \emph{F} distribution. With one predictor and \code{random_predictors = TRUE} this
+  function returns exactly what \code{\link{ss_buc_correlation}} returns
+  for the same prior \emph{t} and \emph{N}, for any prior \emph{N} of at
+  least 4 (the correlation planner's minimum).
 
   The approach uses a likelihood function of a truncated noncentral
   \emph{F} distribution, where the truncation occurs due to small effect
   sizes being unobserved due to publication bias. The numerator of the
-  likelihood function is the density of a noncentral \emph{F} distribution.
+  likelihood function is the density of a noncentral \emph{F} distribution
+  (with \code{random_predictors = TRUE}, of the mixture described above).
   The denominator is the power of the test, which serves to truncate the
-  distribution. In the single predictor case, this formula reduces to the
-  density of a truncated noncentral \emph{t} distribution. (See Taylor &
-  Muller, 1996, Equation 2.1, and Anderson & Maxwell, 2017, for more
+  distribution. In the single predictor case with fixed predictors, this
+  formula reduces to the density of a truncated noncentral \emph{t}
+  distribution. (See Taylor & Muller, 1996, Equation 2.1; Anderson, Kelley,
+  & Maxwell, 2017, Equation 3; and Anderson & Maxwell, 2017, for more
   details.)
 
   Assurance is the proportion of times that power will be at or above the
@@ -171,6 +241,13 @@ Researchers often use the sample effect size from a prior study as
   \code{actual_power} is never below the \code{desired_power} that was
   requested and is usually a little above it.
 
+  The search for the planned sample size starts at \emph{p} + 3, the
+  smallest total that leaves the planned study two error degrees of
+  freedom (as in BUCSS 1.x), so no plan is smaller than that, even when the
+  prior effect is so large that a smaller study would already reach the
+  desired power. A plan at this floor signals a very large prior effect,
+  not a recommended design.
+
   The coefficient's observed \emph{t} may be entered with either sign.
   The publication rule the correction assumes is two-sided and the
   statistic enters on the \emph{F} scale as \eqn{t^2}, so only the
@@ -185,6 +262,10 @@ Researchers often use the sample effect size from a prior study as
 result <- ss_buc_reg_coef(t_observed = 3, N = 150, p = 3, alpha_prior = .05,
   alpha_planned = .05, assurance = .80, desired_power = .80)
 result
+
+# Predictors sampled along with the outcome, as in most observational
+# research:
+ss_buc_reg_coef(t_observed = 3, N = 150, p = 3, random_predictors = TRUE)
 
 # Requesting more assurance than the prior result can support stops with an
 # informative error naming the largest workable assurance (here near .93):
@@ -206,6 +287,11 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
   305--324. \doi{10.1080/00273171.2017.1289361}
 
+  Kelley, K., & Maxwell, S. E. (2003). Sample size for multiple regression:
+  Obtaining regression coefficients that are accurate, not simply
+  significant. \emph{Psychological Methods, 8,} 305--321.
+  \doi{10.1037/1082-989X.8.3.305}
+
   Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
   experiments and analyzing data: A model comparison perspective} (4th ed.).
   Routledge.
@@ -218,6 +304,14 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
 Anderson, S. F. (2021). Using prior information to plan
   appropriately powered regression studies: A tutorial using BUCSS.
   \emph{Psychological Methods, 26,} 513--526. \doi{10.1037/met0000366}
+
+  Gatsonis, C., & Sampson, A. R. (1989). Multiple correlation: Exact power
+  and sample size calculations. \emph{Psychological Bulletin, 106,}
+  516--524. \doi{10.1037/0033-2909.106.3.516}
+
+  Sampson, A. R. (1974). A tale of two regressions. \emph{Journal of the
+  American Statistical Association, 69,} 682--689.
+  \doi{10.1080/01621459.1974.10480189}
 }
 \author{
 Ken Kelley (\email{kkelley@nd.edu}) and

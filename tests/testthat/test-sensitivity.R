@@ -29,9 +29,27 @@ sensitivity_plans <- list(
                              df_numerator = 1, effect = "between_only"),
   ss_buc_mixed_anova_general(F_observed = 20, N = 60, num_groups = 2,
                              df_numerator = 2, effect = "within_only"),
+  # The within-subjects designs under a sphericity correction: the registry
+  # scales the df by the echoed epsilon, so the ceiling pin below checks the
+  # corrected df, and the replay carries epsilon.
+  ss_buc_rm_anova(F_observed = 8, N = 30, levels_A = 3, epsilon = .7),
+  ss_buc_rm_anova_general(F_observed = 8, N = 30, df_numerator = 2, epsilon = .7),
+  ss_buc_mixed_anova(F_observed = 20, N = 60, levels_between = 2,
+                     levels_within = 3, effect = "within", epsilon = .7),
+  ss_buc_mixed_anova(F_observed = 20, N = 60, levels_between = 2,
+                     levels_within = 3, effect = "interaction", epsilon = .7),
+  ss_buc_mixed_anova_general(F_observed = 20, N = 60, num_groups = 2,
+                             df_numerator = 2, effect = "within_only", epsilon = .7),
+  ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 6, num_groups = 3,
+                             effect = "between_within", df_num_within = 3,
+                             epsilon = .6),
   ss_buc_reg_coef(t_observed = 3.5, N = 60, p = 3),
   ss_buc_R2(F_observed = 8, N = 60, p = 3),
   ss_buc_reg_joint(F_observed = 12, N = 60, p = 5, p_joint = 2),
+  ss_buc_reg_coef(t_observed = 3.5, N = 60, p = 3, random_predictors = TRUE),
+  ss_buc_R2(F_observed = 8, N = 60, p = 3, random_predictors = TRUE),
+  ss_buc_reg_joint(F_observed = 12, N = 60, p = 5, p_joint = 2,
+                   random_predictors = TRUE),
   ss_buc_manova(F_observed = 8, N = 40, p_variables = 3),
   ss_buc_chisq_diff(chisq_observed = 15, df_full = 42, df_restricted = 44, N = 200),
   ss_buc_correlation(r_observed = .35, N = 100),
@@ -52,8 +70,11 @@ test_that("each spec's prior distribution reproduces the plan's own ceiling", {
   # family and degrees of freedom pins every entry of the design table: a wrong
   # family, or degrees of freedom off by one, moves it immediately.
   for (o in sensitivity_plans) {
-    spec <- BUCSS:::.BUCSS_DESIGN_SPECS[[attr(o, "design")]]
     inputs <- BUCSS:::.bucss_design_inputs(o)
+    # The regression entries name a fixed and a random family; the plan's
+    # random_predictors row picks one.
+    spec <- BUCSS:::.bucss_resolve_spec(
+      BUCSS:::.BUCSS_DESIGN_SPECS[[attr(o, "design")]], inputs)
     effect <- attr(o, "effect")
     df <- if (length(formals(spec$df)) > 1L) spec$df(inputs, effect) else
       spec$df(inputs)
@@ -65,6 +86,9 @@ test_that("each spec's prior distribution reproduces the plan's own ceiling", {
       t = 2 * (1 - pt(abs(stat), df)),
       f = 1 - pf(stat, df[1], df[2]),
       f_from_t = 1 - pf(stat^2, 1, df[2]),
+      # At a zero effect the random-predictor mixture is the central F.
+      f_random = 1 - pf(stat, df[1], df[2]),
+      f_from_t_random = 1 - pf(stat^2, 1, df[2]),
       correlation = 1 - pf(stat^2, 1, df - 2),
       chisq = 1 - pchisq(stat, df))
     expect_equal(p_spec, alpha_prior * (1 - attr(o, "assurance_ceiling")),
@@ -75,8 +99,8 @@ test_that("each spec's prior distribution reproduces the plan's own ceiling", {
 })
 
 test_that("the rebuilt planner call reproduces every plan exactly", {
-  computed <- c(BUCSS:::.BUCSS_SIZE_TERMS, "total_N", "actual_power",
-                "ncp_adjusted")
+  # every computed row, the planning effect size included
+  computed <- BUCSS:::.BUCSS_COMPUTED_TERMS
   for (o in sensitivity_plans) {
     spec <- BUCSS:::.BUCSS_DESIGN_SPECS[[attr(o, "design")]]
     args <- BUCSS:::.bucss_design_args(BUCSS:::.bucss_design_inputs(o), spec,
@@ -168,6 +192,16 @@ test_that("a seeded call leaves no seed behind when the caller had none", {
     rm(".Random.seed", envir = globalenv())
   ss_buc_sensitivity(plan, true_ncp = 2, replications = 100, seed = 2017)
   expect_false(exists(".Random.seed", envir = globalenv(), inherits = FALSE))
+})
+
+test_that("a seed too large for set.seed() gets the package's own error", {
+  # 2^31 passed the whole-number check and then failed inside set.seed() with
+  # base R's error and a coercion warning (QC 2026-09-30, finding 11).
+  plan <- ss_buc_paired_t(t_observed = 3, N = 30)
+  expect_error(ss_buc_sensitivity(plan, true_ncp = 2, replications = 10, seed = 2^31),
+               "'seed' must be at most 2147483647.", fixed = TRUE)
+  expect_s3_class(ss_buc_sensitivity(plan, true_ncp = 2, replications = 10,
+                                     seed = .Machine$integer.max), "bucss_sensitivity")
 })
 
 test_that("the default seed = NULL draws from the caller's own stream", {

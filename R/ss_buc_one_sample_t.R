@@ -9,8 +9,8 @@
 #'   achieve more accurate statistical power for a planned study, when compared
 #'   to approaches that use a sample effect size at face value or rely on sample
 #'   size only. The bias and uncertainty adjusted previous study noncentrality
-#'   parameter is also returned, which can be transformed to various effect size
-#'   metrics.
+#'   parameter is also returned, together with the planning effect size, the
+#'   effect size the plan is built on, as a standardized mean.
 #'
 #' @details The one-sample \emph{t} test and the dependent (paired) \emph{t}
 #'   test are the same test applied to a single column of scores: the statistic
@@ -46,6 +46,7 @@
 #'
 #' @templateVar size_phrase total sample size
 #' @templateVar ncp_scale on the scale of the \emph{t} statistic (the noncentrality parameter of the prior study's noncentral \emph{t})
+#' @templateVar effect_phrase \code{std_mean_planning}, the standardized mean (the distance of the mean from its null value in standard deviations, a magnitude), \eqn{\lambda/\sqrt{N}}{lambda/sqrt(N)}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted} and \emph{N} the prior sample size; it is the \code{dz_planning} of \code{\link{ss_buc_paired_t}} under the one-sample name
 #' @template return
 #'
 #' @export
@@ -82,6 +83,9 @@ ss_buc_one_sample_t <- function(t_observed, N, alpha_prior = .05,
     design = "One-sample t test",
     sample_size_unit = "total",
     size_term = "necessary_N",
+    # The paired planner's standardized mean of the differences is, for one
+    # column of scores, the standardized mean.
+    effect_size_term = "std_mean_planning",
     inputs = list(t_observed = t_observed, N = N,
                   alpha_prior = res$value[res$term == "alpha_prior"],
                   alpha_planned = res$value[res$term == "alpha_planned"],

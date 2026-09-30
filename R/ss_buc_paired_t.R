@@ -10,8 +10,9 @@
 #'   achieve more accurate statistical power for a planned study, when compared
 #'   to approaches that use a sample effect size at face value or rely on sample
 #'   size only. The bias and uncertainty adjusted previous study noncentrality
-#'   parameter is also returned, which can be transformed to various effect size
-#'   metrics.
+#'   parameter is also returned, together with the planning effect size, the
+#'   effect size the plan is built on, as a standardized mean of the paired
+#'   differences.
 #'
 #'   \code{ss_buc_smd_paired} is an alias for \code{ss_buc_paired_t}: the two are
 #'   the same function. The paired \emph{t} test and the standardized mean
@@ -41,7 +42,8 @@
 #'   The denominator is the power of the test, which serves to truncate the
 #'   distribution. In the two-group case, this formula reduces to the density of
 #'   a truncated noncentral \emph{t} distribution. (See Taylor & Muller, 1996,
-#'   Equation 2.1, and Anderson & Maxwell, 2017, for more details.)
+#'   Equation 2.1; Anderson, Kelley, & Maxwell, 2017, Equation 3; and Anderson
+#'   & Maxwell, 2017, for more details.)
 #'
 #'   Assurance is the proportion of times that power will be at or above the
 #'   desired level, if the experiment were to be reproduced many times. For
@@ -119,6 +121,7 @@
 #'
 #' @templateVar size_phrase number of pairs
 #' @templateVar ncp_scale on the scale of the \emph{t} statistic (the noncentrality parameter of the prior study's noncentral \emph{t})
+#' @templateVar effect_phrase \code{dz_planning}, the standardized mean of the paired differences (Cohen's \eqn{d_z}{d_z}, a magnitude), \eqn{\lambda/\sqrt{N}}{lambda/sqrt(N)}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted} and \emph{N} the prior number of pairs
 #' @template return
 #'
 #' @export
@@ -183,6 +186,8 @@ ss_buc_paired_t <- function(t_observed, N, alpha_prior = .05, alpha_planned = .0
   .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_N",
+    effect_size_term = "dz_planning",
+    effect_size = .es_std_mean(ncp, N),
     actual_power = actual_power,
     df_effect = 1,
     df_error = df_error,

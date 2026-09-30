@@ -262,8 +262,12 @@ The replacements are:
   the interaction). Non-scalar, non-finite, and fractional inputs are
   rejected with a message naming the argument. Errors raised through these
   wrappers come from the \code{ss_buc_*} planners and name their
-  arguments (\code{t_observed} for \code{t.observed}, and so on). See
-  \code{NEWS} for the full accounting.
+  arguments (\code{t_observed} for \code{t.observed}, and so on). The
+  regression wrappers keep the 1.x fixed-predictor computation
+  (\code{random_predictors = FALSE}); call \code{\link{ss_buc_reg_coef}},
+  \code{\link{ss_buc_R2}}, or \code{\link{ss_buc_reg_joint}} directly for
+  predictors sampled along with the outcome. See \code{NEWS} for the full
+  accounting.
 }
 \seealso{
 The \code{ss_buc_*} replacements listed above.

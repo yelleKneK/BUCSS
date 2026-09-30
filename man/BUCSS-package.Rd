@@ -34,8 +34,9 @@ plan came from and reports how often such a plan attains its target power,
 and \code{\link[=plot.bucss_plan]{plot}} draws the largest assurance a prior
 result can support.
 
-The functions are also available, through a web interface, as Shiny apps at
-\url{https://designingexperiments.com}.
+The planners carried over from BUCSS 1.x are also available, through a web
+interface, as Shiny apps at \url{https://designingexperiments.com}; the
+designs added in 2.0.0 are available in R only.
 
 BUCSS follows the design and naming conventions of the \pkg{DMAR} package
 (Design, Measurement, and Analysis in R): its \code{ss_buc_*} planners
@@ -49,6 +50,59 @@ The bias and uncertainty adjusted noncentrality parameter is found by solving
 the truncated-likelihood equation directly with \code{\link[stats]{uniroot}},
 so it is no longer capped at 100 (the 1.x grid bound) and needs no
 resolution argument.
+
+\strong{How assurance is used.} Every planner takes an \code{assurance}: the
+long run proportion of planned studies whose power at the true effect
+reaches or surpasses the desired power, when each is planned from a prior
+study published under the rule \code{alpha_prior} describes. A planned study
+reaches its target power whenever the noncentrality parameter it was planned
+from is at or below the true one, because power rises with the effect (and,
+apart from rounding the sample size up to a whole number and from the
+smallest sample size a planner returns, the design's own minimum or the
+Welch planner's 10 per group, only then). The planners therefore plan from
+the lower limit of a one-sided confidence interval for the prior study's
+noncentrality parameter, at confidence level \code{assurance}, computed from
+the distribution of the prior statistic truncated at the publication
+threshold: the value at which a published prior study would exceed the
+observed statistic with probability 1 - \code{assurance} (what Anderson,
+Kelley, and Maxwell, 2017, call the (1 - \code{assurance}) quantile of the
+likelihood distribution). At \code{assurance = .5} this is the median
+unbiased estimate, which corrects for publication bias only; above .5 it
+adds the correction for uncertainty. The term follows Kelley and Maxwell
+(2003), who used assurance in sample size planning for the probability that
+a confidence interval will be no wider than desired; here it is the
+probability that the planned study's power will be at least the desired
+power. \code{\link{ss_buc_sensitivity}} checks the proportion by simulation
+for any plan, counting a refusal to plan as meeting the target, as the
+guarantee does, and also reporting the rate among the plans issued.
+
+\strong{Safeguard power is a special case.} Safeguard power (Perugini,
+Gallucci, & Costantini, 2014) plans from the lower limit of a two-sided 60
+percent confidence interval for the prior study's effect, running the
+ordinary power analysis at that value. It is the special case
+\code{alpha_prior = 1} and \code{assurance = .80} of the method here. With
+\code{alpha_prior = 1} there is no publication threshold, so the truncation
+is removed and the prior statistic has its ordinary distribution. At
+\code{assurance = .80} the adjusted noncentrality parameter is then the
+lower limit of a one-sided 80 percent confidence interval, which is the
+lower limit of the two-sided 60 percent interval (either way, 20 percent
+lies below it), and the plan is the smallest sample size whose ordinary
+power at that value reaches \code{desired_power}. In general, the lower
+limit of a two-sided interval at confidence level \emph{C} is
+\code{assurance = (1 + C)/2}, so a two-sided 80 percent interval is
+\code{assurance = .90}. A few differences remain, and each can only make
+the plan here the same as the safeguard plan or larger: the planners read
+\code{alpha_prior = 1} as .999, which leaves a slight truncation; for the
+\emph{t} tests and every other effect on one degree of freedom the interval
+bounds the size of the effect whatever its sign, because the publication
+rule is two-sided; an unbalanced prior design is read as a balanced one;
+and the Welch planner returns at least 10 per group. They are negligible for
+a convincing prior result and grow as the prior result weakens;
+\code{vignette("understanding-assurance", package = "BUCSS")} measures
+them. For the regression planners the equivalence holds in the frame
+\code{random_predictors} names. With \code{alpha_prior} below 1 the same
+construction is applied to the publication-truncated distribution, which is
+what the bias correction adds to safeguard power.
 }
 \references{
 Anderson, S. F., & Kelley, K. (2024). Sample size planning for replication
@@ -60,9 +114,18 @@ for more accurate statistical power: A method adjusting sample effect sizes
 for publication bias and uncertainty. \emph{Psychological Science, 28,}
 1547--1562. \doi{10.1177/0956797617723724}
 
+Kelley, K., & Maxwell, S. E. (2003). Sample size for multiple regression:
+Obtaining regression coefficients that are accurate, not simply
+significant. \emph{Psychological Methods, 8,} 305--321.
+\doi{10.1037/1082-989X.8.3.305}
+
 Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
 experiments and analyzing data: A model comparison perspective} (4th ed.).
 Routledge.
+
+Perugini, M., Gallucci, M., & Costantini, G. (2014). Safeguard power as a
+protection against imprecise power estimates. \emph{Perspectives on
+Psychological Science, 9,} 319--332. \doi{10.1177/1745691614528519}
 
 Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
 sample size calculation due to estimating noncentrality. \emph{Communications

@@ -11,8 +11,8 @@
 #'   that will achieve more accurate statistical power for a planned study, when
 #'   compared to approaches that use a sample effect size at face value or rely
 #'   on sample size only. The bias and uncertainty adjusted previous study
-#'   noncentrality parameter is also returned, which can be transformed to
-#'   various effect size metrics.
+#'   noncentrality parameter is also returned, together with the planning
+#'   effect size, the effect size the plan is built on, as Cohen's \emph{f}.
 #'
 #' @details Researchers often use the sample effect size from a prior study as
 #'   an estimate of the likely size of an expected future effect in sample size
@@ -34,7 +34,8 @@
 #'   The denominator is the power of the test, which serves to truncate the
 #'   distribution. Thus, the ratio of the numerator and the denominator is a
 #'   truncated noncentral \emph{F} distribution. (See Taylor & Muller, 1996,
-#'   Equation 2.1, and Anderson & Maxwell, 2017, for more details.)
+#'   Equation 2.1; Anderson, Kelley, & Maxwell, 2017, Equation 3; and Anderson
+#'   & Maxwell, 2017, for more details.)
 #'
 #'   Assurance is the proportion of times that power will be at or above the
 #'   desired level, if the experiment were to be reproduced many times. For
@@ -87,17 +88,101 @@
 #'   \code{actual_power} is never below the \code{desired_power} that was
 #'   requested and is usually a little above it.
 #'
-#'   \code{ss_buc_rm_anova_general} assumes sphericity for the within-subjects
-#'   effects.
+#'   \strong{Sphericity.} The default \code{epsilon = 1} assumes sphericity, as
+#'   the uncorrected within-subjects test does. When a prior study reports
+#'   Greenhouse-Geisser (1959) or Huynh-Feldt (1976) corrected degrees of
+#'   freedom, supply \code{epsilon}, the reported numerator degrees of freedom
+#'   divided by the uncorrected ones. For example, \emph{F}(1.73, 50.2) for an
+#'   effect with 2 numerator degrees of freedom gives \code{epsilon = 1.73/2},
+#'   about .865, and the denominator agrees: 50.2/58 is also about .865. The
+#'   ratio of the two reported degrees of freedom, 50.2/1.73 = 29.0, is one
+#'   less than the number of subjects the analysis used, here the study's 30;
+#'   when it points to a different number (after dropping subjects with missing
+#'   data, say), that number is the \emph{N} to supply. An implied
+#'   \code{epsilon} above 1 or below its lower bound (see Arguments) means the
+#'   reported degrees of freedom are not a Greenhouse-Geisser or Huynh-Feldt
+#'   correction of this effect; a Huynh-Feldt estimate above 1 is reported as
+#'   the uncorrected degrees of freedom, which is \code{epsilon = 1}.
+#'   \code{ss_buc_rm_anova_general} then applies the approximation of Muller
+#'   and Barton (1989) to both studies: the prior \emph{F} is treated as
+#'   noncentral \emph{F} with both degrees of freedom and the noncentrality
+#'   parameter multiplied by \code{epsilon}, the publication threshold is the
+#'   critical value at the corrected degrees of freedom, and the planned
+#'   study's power is computed the same way. Each within-subjects effect has
+#'   its own \eqn{\epsilon}, so supply the one reported for the effect you plan
+#'   from. The returned \code{ncp_adjusted} stays on the sphericity scale, so
+#'   it is comparable across values of \code{epsilon}, and the planned test's
+#'   corrected degrees of freedom are the \code{df_effect} and \code{df_error}
+#'   attributes. One \code{epsilon} describes both studies, because it is a
+#'   property of the covariance matrix of the repeated measures, which the
+#'   planned study shares with the prior one; the reported value is the prior
+#'   study's estimate of it, and re-running across the values you find
+#'   plausible shows how much the plan depends on it. The value used is echoed
+#'   as the \code{epsilon} row of the result, 1 when sphericity is assumed.
+#'
+#'   \strong{The correction under \code{epsilon} is an approximation.} Below
+#'   sphericity the distribution of a within-subjects \emph{F} depends on the
+#'   whole covariance matrix of the repeated measures, and on how the effect
+#'   lines up with it, not on \eqn{\epsilon} alone. In simulations of raw data
+#'   (one-way designs of 4 and 6 levels with \eqn{\epsilon} from .45 to .86,
+#'   prior studies of 12 to 40 subjects published when their Greenhouse-Geisser
+#'   test reached \emph{p} < .05, and a 2 x 4 split-plot interaction), planning
+#'   from each published study with its own reported Greenhouse-Geisser
+#'   estimate at an \code{assurance} of .80 gave a plan reaching .80 power for
+#'   the Greenhouse-Geisser test in .70 to .80 of replications when the effect
+#'   followed the dominant pattern of variation (a linear trend over
+#'   autocorrelated occasions), and in .92 to .99 when it lay in the least
+#'   variable contrasts. Ignoring the departure (\code{epsilon = 1}) reached it
+#'   in .26 to .64. The shortfall does not shrink as the prior study grows, and
+#'   is not larger near the lower bound of \eqn{\epsilon}. The planned study's
+#'   power is approximated the same way, and for the Greenhouse-Geisser test,
+#'   whose estimate of \eqn{\epsilon} is biased downward, the real power of a
+#'   plan of 10 to 30 subjects can be up to about .08 below \code{actual_power}
+#'   for a trend-like effect; a planned study analyzed with the Huynh-Feldt
+#'   correction tracks \code{actual_power} more closely. Even when sphericity
+#'   holds and \code{epsilon = 1}, a planned study analyzed with the
+#'   Greenhouse-Geisser correction anyway, as some software does by default,
+#'   has up to about .08 less power than \code{actual_power}, the power of the
+#'   uncorrected test, for plans of 10 to 30 subjects (the Huynh-Feldt test is
+#'   within about .02). When a paper reports both corrections, supply the
+#'   Greenhouse-Geisser one: the Huynh-Feldt estimate is larger, and planning
+#'   from it attained .03 to .08 less. When sphericity in fact holds but the
+#'   prior study reported a Greenhouse-Geisser correction anyway, supplying it
+#'   is conservative, with a median plan 7 to 34 percent larger.
+#'
+#'   \strong{The planning effect size and other power software.} Here
+#'   \code{f_planning} is Cohen's \emph{f} relative to the effect's own error
+#'   term, whose variance already reflects the correlation among the repeated
+#'   measures, so \eqn{f^2/(1 + f^2)}{f^2/(1 + f^2)} is the population value of
+#'   the partial eta squared a paper reports for the effect. It is not the
+#'   \emph{f} that power functions for repeated measures designs usually take,
+#'   such as \code{ss_power_rm_anova()} in the sibling package \code{DMAR}:
+#'   those standardize the effect by the standard deviation of the raw scores
+#'   and take the correlation among the measures as a separate argument, so
+#'   giving them \code{f_planning}, with any correlation, plans a different
+#'   study. For a one-way design with \emph{a} levels
+#'   (\code{df_numerator = a - 1}), the value that reproduces this plan in
+#'   \code{ss_power_rm_anova()}, with the correlation set to 0 and the same
+#'   \code{epsilon}, is \code{f_planning} times \eqn{\sqrt{(a - 1)/a}}{sqrt((a
+#'   - 1)/a)}.
 #'
 #' @param F_observed Observed \emph{F} value from a previous study used to plan
 #'   sample size for a planned study.
 #' @param N Total sample size of the previous study.
 #' @param df_numerator Numerator degrees of freedom for the effect of interest.
 #' @template planning-params
+#' @param epsilon The sphericity parameter \eqn{\epsilon} of the effect tested,
+#'   from 1/\code{df_numerator} (its lower bound) to 1 (the default, which
+#'   assumes sphericity). For a prior study reported with Greenhouse-Geisser or
+#'   Huynh-Feldt corrected degrees of freedom, it is the reported numerator
+#'   degrees of freedom divided by the uncorrected ones. An effect with
+#'   \code{df_numerator = 1} is always spherical and takes only 1. The same
+#'   value describes the planned study, and it is echoed as the \code{epsilon}
+#'   row of the result. See Details.
 #'
 #' @templateVar size_phrase total sample size
-#' @templateVar ncp_scale on the scale of the \emph{F} statistic, at the prior study's sample size
+#' @templateVar ncp_scale on the scale of the \emph{F} statistic, at the prior study's sample size, and on the sphericity scale for every \code{epsilon} (see Details)
+#' @templateVar effect_phrase \code{f_planning}, Cohen's \emph{f} for the effect tested, relative to its own error term, \eqn{\sqrt{\lambda/(kN)}}{sqrt(lambda/(k N))}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted}, \emph{N} the prior number of subjects, and \emph{k} is \code{df_numerator} (the error degrees of freedom per subject), so \eqn{f^2/(1 + f^2)}{f^2/(1 + f^2)} is the population partial eta squared for the effect; like \code{ncp_adjusted} it is on the sphericity scale, and for \code{epsilon} below 1 the power statement that follows holds under the same Muller and Barton (1989) approximation, with the corrected degrees of freedom and noncentrality parameter; it is not the \emph{f} that power functions for repeated measures take (see Details)
 #' @template return
 #'
 #' @export
@@ -106,6 +191,13 @@
 #' result <- ss_buc_rm_anova_general(F_observed = 6.5, N = 80, df_numerator = 1,
 #'   alpha_prior = .05, alpha_planned = .05, assurance = .50, desired_power = .80)
 #' result
+#'
+#' # A prior study reported with Greenhouse-Geisser corrected degrees of
+#' # freedom, 1.4 and 40.6, for an effect with 2 numerator degrees of freedom
+#' # and 30 subjects: the correction is 1.4/2 (under sphericity, the plan is
+#' # 46 subjects).
+#' ss_buc_rm_anova_general(F_observed = 8, N = 30, df_numerator = 2,
+#'   epsilon = .7)
 #'
 #' # Requesting more assurance than the prior result can support stops with an
 #' # informative error naming the largest workable assurance (here near .74):
@@ -116,9 +208,22 @@
 #'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'
 #' @template references
+#' @references Greenhouse, S. W., & Geisser, S. (1959). On methods in the
+#'   analysis of profile data. \emph{Psychometrika, 24,} 95--112.
+#'   \doi{10.1007/BF02289823}
+#'
+#'   Huynh, H., & Feldt, L. S. (1976). Estimation of the Box correction for
+#'   degrees of freedom from sample data in randomized block and split-plot
+#'   designs. \emph{Journal of Educational Statistics, 1,} 69--82.
+#'   \doi{10.3102/10769986001001069}
+#'
+#'   Muller, K. E., & Barton, C. N. (1989). Approximate power for
+#'   repeated-measures ANOVA lacking sphericity. \emph{Journal of the American
+#'   Statistical Association, 84,} 549--555.
+#'   \doi{10.1080/01621459.1989.10478802}
 ss_buc_rm_anova_general <- function(F_observed, N, df_numerator, alpha_prior = .05,
                                 alpha_planned = .05, assurance = .80,
-                                desired_power = .80) {
+                                desired_power = .80, epsilon = 1) {
   v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, desired_power)
   alpha_prior <- v$alpha_prior
   alpha_prior_input <- v$alpha_prior_input
@@ -130,40 +235,51 @@ ss_buc_rm_anova_general <- function(F_observed, N, df_numerator, alpha_prior = .
   .check_scalar_finite(F_observed, "F_observed")
   .check_count(N, "N", min = 2)
   .check_count(df_numerator, "df_numerator", min = 1)
+  epsilon <- .check_epsilon(epsilon, df_numerator)
 
   n <- N
 
   df_denominator <- df_numerator * (n - 1)
 
-  crit_F <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator)
+  # Under a sphericity correction (Muller & Barton, 1989) both degrees of
+  # freedom and the noncentrality parameter are multiplied by epsilon, for
+  # the prior study and the planned one alike; see .tm_f(). At epsilon = 1
+  # every product is exact.
+  crit_F <- qf(1 - alpha_prior, df1 = epsilon * df_numerator,
+               df2 = epsilon * df_denominator)
   if (F_observed <= crit_F) .stop_nonsignificant("F statistic", "'F_observed'")
 
   ncp_solution <- .solve_ncp_assurance(
-    .tm_f(F_observed, crit_F, df_numerator, df_denominator), assurance)
+    .tm_f(F_observed, crit_F, df_numerator, df_denominator, epsilon), assurance)
   ncp <- ncp_solution$ncp
 
   if (ncp == 0) .stop_zero_ncp(ncp_solution$ceiling)
 
   power_at <- function(n_rep) {
-    denom_df <- df_numerator * (n_rep - 1)
-    critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
-    1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / n) * ncp)
+    df1 <- epsilon * df_numerator
+    denom_df <- epsilon * (df_numerator * (n_rep - 1))
+    critical_F <- qf(1 - alpha_planned, df1 = df1, df2 = denom_df)
+    1 - pf(critical_F, df1 = df1, df2 = denom_df,
+           ncp = epsilon * ((n_rep / n) * ncp))
   }
   output_n <- .smallest_n_for_power(power_at, desired_power)
 
-  df_error <- df_numerator * (output_n - 1)
+  df_error <- epsilon * (df_numerator * (output_n - 1))
   actual_power <- power_at(output_n)
   .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_N",
+    effect_size_term = "f_planning",
+    effect_size = .es_f(ncp, N, k = df_numerator),
     actual_power = actual_power,
-    df_effect = df_numerator,
+    df_effect = epsilon * df_numerator,
     df_error = df_error,
     ncp = ncp,
     design = "Within-subjects ANOVA (any number of factors)",
     sample_size_unit = "total",
     assurance_ceiling = ncp_solution$ceiling,
     inputs = list(F_observed = F_observed, N = N, df_numerator = df_numerator,
+                  epsilon = epsilon,
                   alpha_prior = alpha_prior_input, alpha_planned = alpha_planned,
                   assurance = assurance, desired_power = desired_power)
   )

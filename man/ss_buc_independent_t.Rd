@@ -45,12 +45,23 @@ assume no publication bias, a value of 1 can be entered.}
 
 \item{alpha_planned}{Alpha level \eqn{\alpha} assumed for the planned study.}
 
-\item{assurance}{Desired level of assurance, or the long run proportion of
-times that the planned study power will reach or surpass the desired level
-(assurance > .5 corrects for uncertainty; assurance < .5 is not
-recommended). Enter it as a proportion in (0, 1) or as a percentage greater
-than 1 (for example, 80 is read as .80); a value of exactly 1 is read as 1
-percent. A percentage is echoed in the result's planning-input rows as
+\item{assurance}{Desired level of assurance: the long run proportion of
+planned studies whose statistical power at the true effect reaches or
+surpasses \code{desired_power}, when each is planned from a prior study
+published under the rule \code{alpha_prior} describes. The adjusted
+noncentrality parameter is the lower limit of a one-sided confidence
+interval at this level, computed from the publication-truncated
+distribution of the prior statistic, so \code{assurance = .5} plans from
+a median unbiased estimate (correcting for publication bias only), a
+larger value adds the correction for uncertainty, and a value below .5 is
+not recommended. The term follows Kelley and Maxwell (2003), who used
+assurance in sample size planning for the probability that a confidence
+interval will be no wider than desired. With \code{alpha_prior = 1} and
+\code{assurance = .80} the plan corresponds to safeguard power, a special
+case (see \code{\link{BUCSS-package}} for how, and for where the two
+differ). Enter it as a proportion in (0, 1) or as a percentage greater
+than 1 (for example, 80 is read as .80); a value of exactly 1 is read as
+1 percent. A percentage is echoed in the result's planning-input rows as
 the coerced proportion (80 is echoed as .80); the same applies to
 \code{desired_power}.}
 
@@ -68,15 +79,20 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   and per-cell designs, \code{total_N}, the implied total sample size;
   \code{actual_power}, the power of the plan returned, that is, of the
   returned sample size at the returned noncentrality parameter (see
-  Details); and \code{ncp_adjusted}, the publication bias and uncertainty
-  adjusted prior study noncentrality parameter, on the scale of the \emph{t} statistic (the noncentrality parameter of the prior study's noncentral \emph{t}). Rows
+  Details); \code{ncp_adjusted}, the publication bias and uncertainty
+  adjusted prior study noncentrality parameter, on the scale of the \emph{t} statistic (the noncentrality parameter of the prior study's noncentral \emph{t}); and the
+  planning effect size, the effect size the plan is built on, which is
+  \code{ncp_adjusted} restated in the design's usual metric:
+  \code{smd_planning}, a standardized mean difference (Cohen's \eqn{\delta}{delta}, a magnitude), \eqn{\lambda\sqrt{2/n}}{lambda * sqrt(2/n)}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted} and \emph{n} the per-group size of the balanced prior design it belongs to (see Details). Because it restates \code{ncp_adjusted},
+  \code{actual_power} is the ordinary power of a study of the returned
+  sample size when the population effect is the planning effect size. Rows
   echoing the planning inputs follow, so the assumptions travel with the
   result. The design, the unit the sample size is counted in, the largest
   assurance this prior can support (the assurance ceiling), and the
   planned test's degrees of freedom (\code{df_effect}, and \code{df_error}
   where the test has a denominator) travel on attributes.
-  \code{print.bucss_plan} shows the design, the unit, and the ceiling
-  beneath the table; \code{tidy()} and \code{glance()} give the compact and
+  \code{print.bucss_plan} shows the design, for the regression planners
+  the predictor frame, the unit, and the ceiling beneath the table; \code{tidy()} and \code{glance()} give the compact and
   wide views, the latter with every attribute as a column.
 }
 \description{
@@ -87,8 +103,9 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   bias and/or uncertainty to provide a sample size that will achieve more
   accurate statistical power for a planned study, when compared to approaches
   that use a sample effect size at face value or rely on sample size only.
-  The bias and uncertainty adjusted previous study noncentrality parameter is
-  also returned, which can be transformed to various effect size metrics.
+  The bias and uncertainty adjusted previous study noncentrality parameter
+  is also returned, together with the planning effect size, the effect size
+  the plan is built on, as a standardized mean difference.
 
   \code{ss_buc_smd} is an alias for \code{ss_buc_independent_t}: the two are the
   same function. The two-group \emph{t} test and the standardized mean
@@ -119,7 +136,8 @@ Researchers often use the sample effect size from a prior study as
   The denominator is the power of the test, which serves to truncate the
   distribution. In the two-group case, this formula reduces to the density of
   a truncated noncentral \emph{t} distribution. (See Taylor & Muller, 1996,
-  Equation 2.1, and Anderson & Maxwell, 2017, for more details.)
+  Equation 2.1; Anderson, Kelley, & Maxwell, 2017, Equation 3; and Anderson
+  & Maxwell, 2017, for more details.)
 
   Assurance is the proportion of times that power will be at or above the
   desired level, if the experiment were to be reproduced many times. For
@@ -192,24 +210,29 @@ Researchers often use the sample effect size from a prior study as
 
   \code{ss_buc_independent_t} assumes that the planned study will have equal
   \emph{n}. Unequal \emph{n} in the previous study is handled in the
-  following way for the independent \emph{t}. If the user enters an odd value
-  for \emph{N}, no information is available on the exact group sizes. The
-  function calculates \emph{n} by dividing \emph{N} by 2 and both rounding up
-  and rounding down the result, thus assuming equal \emph{n}. The suggested
-  sample size for the planned study is calculated using both of these values
-  of \emph{n}, and the function returns the larger of these two suggestions,
-  to be conservative. If the user enters a vector for \emph{n} with two
-  different values, specific information is available on the exact group
-  sizes. \emph{n} is calculated as the harmonic mean of these two values (a
-  measure of effective sample size). Again, this is rounded both up and down.
-  The suggested sample size for the planned study is calculated using both of
-  these values of \emph{n}, and the function returns the larger of these two
-  suggestions, to be conservative. The adjusted noncentrality parameter that
-  is output is the lower of the two possibilities, again, to be conservative.
-  When the individual group sizes of an unequal-\emph{n} previous study are
-  known, we highly encourage entering these explicitly, especially if the
-  sample sizes are quite discrepant, as this allows for the greatest
-  precision in estimating an appropriate planned study \emph{n}.
+  following way for the independent \emph{t}. If the user enters an odd
+  value for \emph{N}, no information is available on the exact group sizes.
+  The function calculates \emph{n} by dividing \emph{N} by 2 and both
+  rounding up and rounding down the result, thus assuming equal \emph{n}.
+  The suggested sample size for the planned study is calculated using both
+  of these values of \emph{n}, and the function returns the larger of these
+  two suggestions, to be conservative. If the user enters a vector for
+  \emph{n} with two different values, specific information is available on
+  the exact group sizes. \emph{n} is calculated as the harmonic mean of
+  these two values (a measure of effective sample size). Again, this is
+  rounded both up and down. The suggested sample size for the planned study
+  is calculated using both of these values of \emph{n}, and the function
+  returns the larger of these two suggestions, to be conservative. The
+  adjusted noncentrality parameter that is output is the lower of the two
+  possibilities, again, to be conservative. The planning effect size belongs
+  to the same balanced design as the reported noncentrality parameter, so an
+  ordinary power analysis at it can return a sample size a little smaller
+  than the one reported here (never a larger one), because the reported size
+  is the larger of the two rounded designs' requirements. When the
+  individual group sizes of an unequal-\emph{n} previous study are known, we
+  highly encourage entering these explicitly, especially if the sample sizes
+  are quite discrepant, as this allows for the greatest precision in
+  estimating an appropriate planned study \emph{n}.
 }
 \examples{
 result <- ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05,
@@ -240,6 +263,11 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   crisis": Using original studies to design replication studies with
   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
   305--324. \doi{10.1080/00273171.2017.1289361}
+
+  Kelley, K., & Maxwell, S. E. (2003). Sample size for multiple regression:
+  Obtaining regression coefficients that are accurate, not simply
+  significant. \emph{Psychological Methods, 8,} 305--321.
+  \doi{10.1037/1082-989X.8.3.305}
 
   Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
   experiments and analyzing data: A model comparison perspective} (4th ed.).

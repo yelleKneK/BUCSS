@@ -11,7 +11,7 @@ planning_sentence(x)
 \code{ss_buc_*} function.}
 }
 \value{
-A single character string.
+A single character string holding the two sentences.
 }
 \description{
 Turns a \code{bucss_plan} result into the sentence an author writes in a
@@ -20,9 +20,16 @@ design's unit, the desired power, the assurance, and a clause stating which
 corrections the plan made. The clause is built from the plan's own settings:
 the publication bias correction is named, with its assumed threshold, only
 when \code{alpha_prior} is below 1, and the uncertainty correction only when
-\code{assurance} is above .5 (at .5 the plan uses the median estimate). This
-mirrors the \code{results_sentence()} helper in the sibling package
-\code{DMAR}.
+\code{assurance} is above .5 (at .5 the plan uses the median estimate). A
+within-subjects or split-plot plan made with \code{epsilon} below 1 adds the
+departure from sphericity it allowed for. A second sentence names the
+planning effect size, the effect size the plan is built on (the result's
+row whose name ends in \code{_planning}), in the design's usual metric: a
+standardized mean difference, Cohen's \emph{f}, a correlation, and so on,
+as the planner's help page describes. It is shown at
+\code{getOption("bucss.digits", 3)} significant figures, and without a
+leading zero when the metric cannot exceed 1. This mirrors the
+\code{results_sentence()} helper in the sibling package \code{DMAR}.
 }
 \examples{
 result <- ss_buc_independent_t(t_observed = 3, n = c(50, 55),

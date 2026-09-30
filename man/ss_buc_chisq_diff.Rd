@@ -38,12 +38,23 @@ assume no publication bias, a value of 1 can be entered.}
 
 \item{alpha_planned}{Alpha level \eqn{\alpha} assumed for the planned study.}
 
-\item{assurance}{Desired level of assurance, or the long run proportion of
-times that the planned study power will reach or surpass the desired level
-(assurance > .5 corrects for uncertainty; assurance < .5 is not
-recommended). Enter it as a proportion in (0, 1) or as a percentage greater
-than 1 (for example, 80 is read as .80); a value of exactly 1 is read as 1
-percent. A percentage is echoed in the result's planning-input rows as
+\item{assurance}{Desired level of assurance: the long run proportion of
+planned studies whose statistical power at the true effect reaches or
+surpasses \code{desired_power}, when each is planned from a prior study
+published under the rule \code{alpha_prior} describes. The adjusted
+noncentrality parameter is the lower limit of a one-sided confidence
+interval at this level, computed from the publication-truncated
+distribution of the prior statistic, so \code{assurance = .5} plans from
+a median unbiased estimate (correcting for publication bias only), a
+larger value adds the correction for uncertainty, and a value below .5 is
+not recommended. The term follows Kelley and Maxwell (2003), who used
+assurance in sample size planning for the probability that a confidence
+interval will be no wider than desired. With \code{alpha_prior = 1} and
+\code{assurance = .80} the plan corresponds to safeguard power, a special
+case (see \code{\link{BUCSS-package}} for how, and for where the two
+differ). Enter it as a proportion in (0, 1) or as a percentage greater
+than 1 (for example, 80 is read as .80); a value of exactly 1 is read as
+1 percent. A percentage is echoed in the result's planning-input rows as
 the coerced proportion (80 is echoed as .80); the same applies to
 \code{desired_power}.}
 
@@ -61,15 +72,20 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   and per-cell designs, \code{total_N}, the implied total sample size;
   \code{actual_power}, the power of the plan returned, that is, of the
   returned sample size at the returned noncentrality parameter (see
-  Details); and \code{ncp_adjusted}, the publication bias and uncertainty
-  adjusted prior study noncentrality parameter, on the scale of the chi square statistic, at the prior study's sample size. Rows
+  Details); \code{ncp_adjusted}, the publication bias and uncertainty
+  adjusted prior study noncentrality parameter, on the scale of the chi square statistic, at the prior study's sample size; and the
+  planning effect size, the effect size the plan is built on, which is
+  \code{ncp_adjusted} restated in the design's usual metric:
+  \code{rmsea_d_planning}, the root mean square error of approximation of the difference test (Savalei, Brace, & Fouladi, 2024), \eqn{\sqrt{\lambda/(dN)}}{sqrt(lambda/(d N))}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted}, \emph{d} is the number of constraints (\code{df_restricted - df_full}), and \emph{N} the prior sample size, the scaling this planner plans with; the usual sample formula divides by \eqn{N - 1}{N - 1} instead, which gives a value larger by the factor \eqn{\sqrt{N/(N - 1)}}{sqrt(N/(N - 1))}. Because it restates \code{ncp_adjusted},
+  \code{actual_power} is the ordinary power of a study of the returned
+  sample size when the population effect is the planning effect size. Rows
   echoing the planning inputs follow, so the assumptions travel with the
   result. The design, the unit the sample size is counted in, the largest
   assurance this prior can support (the assurance ceiling), and the
   planned test's degrees of freedom (\code{df_effect}, and \code{df_error}
   where the test has a denominator) travel on attributes.
-  \code{print.bucss_plan} shows the design, the unit, and the ceiling
-  beneath the table; \code{tidy()} and \code{glance()} give the compact and
+  \code{print.bucss_plan} shows the design, for the regression planners
+  the predictor frame, the unit, and the ceiling beneath the table; \code{tidy()} and \code{glance()} give the compact and
   wide views, the latter with every attribute as a column.
 }
 \description{
@@ -83,7 +99,9 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   that will achieve more accurate statistical power for a planned study, when
   compared to approaches that use a sample effect size at face value or rely
   on sample size only. The bias and uncertainty adjusted previous study
-  noncentrality parameter is also returned.
+  noncentrality parameter is also returned, together with the planning
+  effect size, the effect size the plan is built on, as the root mean square
+  error of approximation of the difference test.
 }
 \details{
 Researchers often use the sample effect size from a prior study as
@@ -125,12 +143,13 @@ Researchers often use the sample effect size from a prior study as
 
   The correction uses a likelihood function of a truncated noncentral
   chi square distribution, the same construction the rest of the package uses
-  for the noncentral \emph{F} (see Taylor & Muller, 1996, Equation 2.1, and
-  Anderson & Maxwell, 2017): the truncated area between the critical value
-  and the observed statistic, divided by the power of the test. Because the
-  noncentrality parameter of a likelihood ratio test is proportional to
-  sample size, the planned study's noncentrality parameter is the corrected
-  one scaled by the ratio of the planned to the prior sample size.
+  for the noncentral \emph{F} (see Taylor & Muller, 1996, Equation 2.1;
+  Anderson, Kelley, & Maxwell, 2017, Equation 3; and Anderson & Maxwell,
+  2017): the truncated area between the critical value and the observed
+  statistic, divided by the power of the test. Because the noncentrality
+  parameter of a likelihood ratio test is proportional to sample size, the
+  planned study's noncentrality parameter is the corrected one scaled by the
+  ratio of the planned to the prior sample size.
 
   Assurance is the proportion of times that power will be at or above the
   desired level, if the experiment were to be reproduced many times. For
@@ -193,7 +212,10 @@ Researchers often use the sample effect size from a prior study as
   or below \code{actual_power}. Treat a planned sample size that is small
   relative to the number of parameters estimated with caution, and read a
   very small one as a signal that the prior effect was large rather than as
-  a serious recommendation.
+  a serious recommendation. The search for the planned sample size starts
+  at the number of constraints plus 2 (\code{df_restricted - df_full + 2}),
+  so no plan is smaller than that, even when a smaller study would already
+  reach the desired power.
 }
 \examples{
 # A path constrained to zero: the full model has 42 degrees of freedom and
@@ -229,6 +251,11 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
   305--324. \doi{10.1080/00273171.2017.1289361}
 
+  Kelley, K., & Maxwell, S. E. (2003). Sample size for multiple regression:
+  Obtaining regression coefficients that are accurate, not simply
+  significant. \emph{Psychological Methods, 8,} 305--321.
+  \doi{10.1037/1082-989X.8.3.305}
+
   Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
   experiments and analyzing data: A model comparison perspective} (4th ed.).
   Routledge.
@@ -237,6 +264,11 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   sample size calculation due to estimating noncentrality. \emph{Communications
   in Statistics: Theory and Methods, 25,} 1595--1610.
   \doi{10.1080/03610929608831787}
+
+Savalei, V., Brace, J. C., & Fouladi, R. T. (2024). We need to
+  change how we compute RMSEA for nested model comparisons in structural
+  equation modeling. \emph{Psychological Methods, 29,} 480--493.
+  \doi{10.1037/met0000537}
 }
 \author{
 Ken Kelley (\email{kkelley@nd.edu})

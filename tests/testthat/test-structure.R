@@ -8,19 +8,63 @@ test_that("ss_buc_* returns a tidy bucss_plan data.frame", {
   expect_s3_class(result, "bucss_plan")
   expect_s3_class(result, "data.frame")
   expect_type(result$value, "double")
-  # design results first (the size row is named for its unit), then the rows
-  # echoing the planning inputs
+  # design results first (the size row is named for its unit, and the
+  # planning effect size follows ncp_adjusted), then the rows echoing the
+  # planning inputs
   expect_identical(result$term,
                    c("necessary_n_per_group", "total_N", "actual_power",
-                     "ncp_adjusted", "t_observed", "n", "alpha_prior",
-                     "alpha_planned", "assurance", "desired_power"))
+                     "ncp_adjusted", "smd_planning", "t_observed", "n",
+                     "alpha_prior", "alpha_planned", "assurance",
+                     "desired_power"))
 
   total_unit <- ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2,
                                  assurance = .80, desired_power = .80)
   expect_identical(total_unit$term,
-                   c("necessary_N", "actual_power", "ncp_adjusted",
-                     "F_observed", "N", "p", "p_joint", "alpha_prior",
+                   c("necessary_N", "actual_power", "ncp_adjusted", "f2_planning",
+                     "F_observed", "N", "p", "p_joint", "random_predictors",
+                     "alpha_prior", "alpha_planned", "assurance",
+                     "desired_power"))
+
+  # The within-subjects and split-plot planners echo epsilon after the design
+  # counts, for every effect it applies to (1 when sphericity is assumed),
+  # and not for a between-subjects effect.
+  rm <- ss_buc_rm_anova(F_observed = 5, N = 60, levels_A = 2, levels_B = 3,
+                        effect = "factor_B")
+  expect_identical(rm$term,
+                   c("necessary_N", "actual_power", "ncp_adjusted", "f_planning",
+                     "F_observed", "N", "levels_A", "levels_B", "epsilon",
+                     "alpha_prior", "alpha_planned", "assurance",
+                     "desired_power"))
+  expect_identical(rm$value[rm$term == "epsilon"], 1)
+  rmg <- ss_buc_rm_anova_general(F_observed = 8, N = 30, df_numerator = 2,
+                                 epsilon = .7)
+  expect_identical(rmg$term,
+                   c("necessary_N", "actual_power", "ncp_adjusted", "f_planning",
+                     "F_observed", "N", "df_numerator", "epsilon", "alpha_prior",
                      "alpha_planned", "assurance", "desired_power"))
+  split_within <- ss_buc_mixed_anova(F_observed = 5, N = 60, levels_between = 2,
+                                     levels_within = 3, effect = "within")
+  expect_identical(split_within$term,
+                   c("necessary_n_per_group", "total_N", "actual_power",
+                     "ncp_adjusted", "f_planning", "F_observed", "N",
+                     "levels_between", "levels_within", "epsilon", "alpha_prior",
+                     "alpha_planned", "assurance", "desired_power"))
+  split_between <- ss_buc_mixed_anova(F_observed = 9, N = 60, levels_between = 2,
+                                      levels_within = 3, effect = "between")
+  expect_identical(split_between$term, setdiff(split_within$term, "epsilon"))
+  general_bw <- ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 6,
+                                           num_groups = 3, effect = "between_within",
+                                           df_num_within = 3)
+  expect_identical(general_bw$term,
+                   c("necessary_n_per_group", "total_N", "actual_power",
+                     "ncp_adjusted", "f_planning", "F_observed", "N",
+                     "df_numerator", "df_num_within", "num_groups", "epsilon",
+                     "alpha_prior", "alpha_planned", "assurance",
+                     "desired_power"))
+  general_between <- ss_buc_mixed_anova_general(F_observed = 5, N = 90,
+                                                df_numerator = 2, num_groups = 3,
+                                                effect = "between_only")
+  expect_false("epsilon" %in% general_between$term)
 
   # a length-2 prior n echoes as n_1/n_2 rows
   unequal <- ss_buc_independent_t(t_observed = 3, n = c(50, 55), assurance = .90)
@@ -151,7 +195,7 @@ test_that("knit_print() renders the table and the same footers as print()", {
   expect_match(txt, "Design: Independent t test", fixed = TRUE)
   expect_match(txt, "Sample size unit: per group", fixed = TRUE)
   expect_match(txt, "Largest supportable assurance: ", fixed = TRUE)
-  ceiling_value <- floor(attr(res, "assurance_ceiling") * 100 + 1e-9) / 100
+  ceiling_value <- floor(attr(res, "assurance_ceiling") * 100 - 1e-9) / 100
   expect_match(txt, sub("^0", "", sprintf("%.2f", ceiling_value)), fixed = TRUE)
 
   # the effect appears in the footer for the designs that carry one

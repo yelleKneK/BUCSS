@@ -32,6 +32,25 @@ test_that("independent t test (unequal n vector)", {
     1485, 0.526)
 })
 
+test_that("independent t test (scalar n, assurance .90)", {
+  # The vignette "Assurance and the Publication Bias Correction" tabulates it.
+  # 1.2.1 grid gave 5069; uniroot gives 5042 (same rounded ncp).
+  expect_oracle(
+    ss_buc_independent_t(t_observed = 3, n = 20, assurance = .90, desired_power = .80),
+    5042, 0.176)
+})
+
+test_that("paired t test at alpha_prior = 1 (the safeguard power table)", {
+  # The vignette "Assurance and the Publication Bias Correction" tabulates it:
+  # a prior t with a two-sided p value of .15 from 30 pairs, planned at
+  # alpha_prior = 1 and assurance .80. 1.2.1 grid gave 915; uniroot gives 913
+  # (same rounded ncp).
+  expect_oracle(
+    ss_buc_paired_t(t_observed = qt(1 - .15 / 2, df = 29), N = 30, alpha_prior = 1,
+                    assurance = .80),
+    913, 0.508)
+})
+
 test_that("dependent t test", {
   expect_oracle(
     ss_buc_paired_t(t_observed = 3, N = 40, alpha_prior = .05, alpha_planned = .05,
@@ -184,4 +203,42 @@ test_that("previously unpinned planner arms match their verified values", {
   expect_oracle(
     ss_buc_independent_t(t_observed = 3, N = 41, assurance = .80, desired_power = .80),
     132, 1.105)
+})
+
+test_that("the sphericity correction (epsilon) pins its plans", {
+  # epsilon below 1 applies the Muller and Barton (1989) approximation: both
+  # degrees of freedom and the noncentrality parameter are multiplied by
+  # epsilon, for the prior study and the planned one, with ncp_adjusted on the
+  # sphericity scale. Pinned to full precision (the size exactly, the
+  # parameter to 1e-10); the spec's independent prototype gave the same
+  # values to ten decimals. The first is the help page's and the vignette's
+  # example (F(1.73, 50.2) with 30 subjects), which plans 92 under
+  # sphericity; the fourth plans 60 per group under sphericity.
+  pin <- function(result, sample_size, ncp_adjusted) {
+    expect_equal(ss(result), sample_size)
+    expect_equal(ncp(result), ncp_adjusted, tolerance = 1e-10)
+  }
+  pin(ss_buc_rm_anova(F_observed = 6.5, N = 30, levels_A = 3, epsilon = 1.73 / 2),
+      162, 2.0025989386642826)
+  pin(ss_buc_rm_anova(F_observed = 9, N = 40, levels_A = 2, levels_B = 3,
+                      effect = "interaction", epsilon = .7),
+      82, 6.1816562006893037)
+  pin(ss_buc_rm_anova_general(F_observed = 8, N = 30, df_numerator = 2, epsilon = .7),
+      109, 3.4731264397829271)
+  pin(ss_buc_mixed_anova(F_observed = 7, N = 60, levels_between = 2, levels_within = 3,
+                         effect = "within", epsilon = .8),
+      108, 3.1743021455404503)
+  pin(ss_buc_mixed_anova(F_observed = 8, N = 61, levels_between = 2, levels_within = 3,
+                         effect = "interaction", epsilon = .8),
+      64, 5.5142729566147777)
+  pin(ss_buc_mixed_anova_general(F_observed = 8, N = 91, df_numerator = 2, num_groups = 3,
+                                 effect = "within_only", epsilon = .75),
+      71, 5.2106738807869997)
+  pin(ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 6, num_groups = 3,
+                                 effect = "between_within", df_num_within = 3,
+                                 epsilon = .6),
+      56, 10.512636680923496)
+  expect_oracle(ss_buc_rm_anova(F_observed = 6.5, N = 30, levels_A = 3), 92, 3.213)
+  expect_oracle(ss_buc_mixed_anova(F_observed = 7, N = 60, levels_between = 2,
+                                   levels_within = 3, effect = "within"), 60, 4.937)
 })

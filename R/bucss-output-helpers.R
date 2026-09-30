@@ -22,9 +22,10 @@ knit_print.bucss_plan <- function(x, ...) {
     footers <- c(footers, paste0("Design: ", design,
                                  if (!is.null(effect)) paste0(" (", effect, ")")))
   }
+  footers <- c(footers, .predictor_footer(x))
   if (!is.null(unit)) footers <- c(footers, paste0("Sample size unit: ", unit))
   if (!is.null(assurance_ceiling)) {
-    cval <- floor(assurance_ceiling * 100 + 1e-9) / 100
+    cval <- .floor_assurance(assurance_ceiling)
     footers <- c(footers, paste0("Largest supportable assurance: ",
                                  sub("^0", "", sprintf("%.2f", cval))))
   }
@@ -38,7 +39,7 @@ knit_print.bucss_plan <- function(x, ...) {
 # as 100: it gets as many decimals as it needs (0.9999 -> "99.99").
 .format_pct <- function(p) {
   d <- 1L
-  while (p < 1 && round(100 * p, d) >= 100 && d < 8L) d <- d + 1L
+  while (p < 1 && round(100 * p, d) >= 100 && d < 15L) d <- d + 1L
   sub("\\.?0+$", "", sprintf(paste0("%.", d, "f"), round(100 * p, d)))
 }
 
@@ -64,14 +65,21 @@ knit_print.bucss_plan <- function(x, ...) {
 #' corrections the plan made. The clause is built from the plan's own settings:
 #' the publication bias correction is named, with its assumed threshold, only
 #' when \code{alpha_prior} is below 1, and the uncertainty correction only when
-#' \code{assurance} is above .5 (at .5 the plan uses the median estimate). This
-#' mirrors the \code{results_sentence()} helper in the sibling package
-#' \code{DMAR}.
+#' \code{assurance} is above .5 (at .5 the plan uses the median estimate). A
+#' within-subjects or split-plot plan made with \code{epsilon} below 1 adds the
+#' departure from sphericity it allowed for. A second sentence names the
+#' planning effect size, the effect size the plan is built on (the result's
+#' row whose name ends in \code{_planning}), in the design's usual metric: a
+#' standardized mean difference, Cohen's \emph{f}, a correlation, and so on,
+#' as the planner's help page describes. It is shown at
+#' \code{getOption("bucss.digits", 3)} significant figures, and without a
+#' leading zero when the metric cannot exceed 1. This mirrors the
+#' \code{results_sentence()} helper in the sibling package \code{DMAR}.
 #'
 #' @param x An object of class \code{bucss_plan}, as returned by any
 #'   \code{ss_buc_*} function.
 #'
-#' @return A single character string.
+#' @return A single character string holding the two sentences.
 #'
 #' @export
 #'
@@ -131,7 +139,35 @@ planning_sentence <- function(x) {
     paste0("using the prior study's result with no correction for publication ",
            "bias or for uncertainty")
   }
+  # A within-subjects plan made under a sphericity correction says so; one
+  # that assumed sphericity (its epsilon row is 1) reads as it always has.
+  epsilon <- x$value[x$term == "epsilon"]
+  departure <- length(epsilon) == 1L && epsilon < 1
+  sphericity <- if (departure)
+    paste0(", allowing for a departure from sphericity (epsilon = ",
+           sub("^0", "", format(signif(epsilon, 3))), ")")
+  # The second sentence names the planning effect size, the effect size the
+  # plan is built on, in the design's usual metric. Under a sphericity
+  # correction it stays on the sphericity scale, as ncp_adjusted does.
+  effect_size_term <- x$term[x$term %in% .BUCSS_EFFECT_TERMS]
+  effect_size <- .format_effect_size(x$value[x$term == effect_size_term],
+                                     effect_size_term)
   paste0("A planned study with ", size_phrase, " attains ",
          .format_pct(desired_power), "% power with ",
-         .format_pct(assurance), "% assurance, ", clause, ".")
+         .format_pct(assurance), "% assurance, ", clause, sphericity, ". ",
+         "The plan is built on a planning effect size of ", effect_size,
+         ", expressed as ", .BUCSS_EFFECT_LABELS[[effect_size_term]],
+         if (departure) " on the sphericity scale", ".")
+}
+
+# The planning effect size as the sentence writes it: at
+# getOption("bucss.digits", 3) significant figures, never in scientific
+# notation, and, for the metrics that cannot exceed 1 (.BUCSS_EFFECT_BOUNDED),
+# without the leading zero, as APA style writes such statistics. Display
+# only; the stored row keeps full precision.
+.format_effect_size <- function(value, term) {
+  shown <- format(signif(value, getOption("bucss.digits", 3L)),
+                  scientific = FALSE)
+  if (term %in% .BUCSS_EFFECT_BOUNDED) shown <- sub("^0\\.", ".", shown)
+  shown
 }

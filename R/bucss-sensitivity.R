@@ -15,15 +15,25 @@
     f_from_t = sqrt(rf(m, df1 = 1, df2 = df[2], ncp = ncp)),
     # A correlation samples both variables: the noncentrality parameter is
     # itself random, proportional to the sampled spread of the predictor. See
-    # .p_correlation_f() in R/bucss-internal.R.
-    correlation = {
-      N <- df
-      lambda <- (ncp / N) * rchisq(m, df = N - 1)
-      sqrt(rf(m, df1 = 1, df2 = N - 2, ncp = lambda))
-    },
+    # .p_random_f() in R/bucss-internal.R. df is the prior N.
+    correlation = sqrt(.draw_random_f(m, c(1, df - 2, df - 1, df), ncp)),
+    # Regression with sampled predictors (random_predictors = TRUE): the same
+    # mixture with q numerator df, residual df df[2], and m = df[3] chi square
+    # df, at the prior N = df[4].
+    f_random = .draw_random_f(m, df, ncp),
+    f_from_t_random = sqrt(.draw_random_f(m, df, ncp)),
     chisq = rchisq(m, df = df, ncp = ncp),
     stop("Unknown sampling family.", call. = FALSE)
   )
+}
+
+# M draws of the random-predictor F statistic, one per study: the
+# noncentrality parameter is itself random, the partial f squared (ncp/N)
+# times a chi square on m df. df = c(q, df2, m, N). The chi square draws come
+# first, then the F draws, as the correlation's draw always did.
+.draw_random_f <- function(M, df, ncp) {
+  lambda <- (ncp / df[4]) * rchisq(M, df = df[3])
+  rf(M, df1 = df[1], df2 = df[2], ncp = lambda)
 }
 
 # The publication threshold on the same scale, and the proportion of studies
@@ -42,6 +52,18 @@
       crit_f <- qf(1 - alpha_prior, 1, df - 2)
       list(crit = sqrt(crit_f),
            rate = 1 - .p_correlation_f(crit_f, df, ncp / (ncp + df)))
+    },
+    f_random = {
+      crit_f <- qf(1 - alpha_prior, df[1], df[2])
+      list(crit = crit_f,
+           rate = 1 - .p_random_f(crit_f, df[1], df[2], df[3],
+                                  1 - ncp / (ncp + df[4])))
+    },
+    f_from_t_random = {
+      crit_f <- qf(1 - alpha_prior, 1, df[2])
+      list(crit = sqrt(crit_f),
+           rate = 1 - .p_random_f(crit_f, 1, df[2], df[3],
+                                  1 - ncp / (ncp + df[4])))
     },
     chisq = list(crit = qchisq(1 - alpha_prior, df),
                  rate = 1 - pchisq(qchisq(1 - alpha_prior, df), df, ncp))
@@ -125,13 +147,23 @@
 #'   right, and a demonstration of what publication bias does. It cannot detect
 #'   a violated distributional assumption, since the simulation shares that
 #'   assumption. For \code{\link{ss_buc_welch_t}}, in particular, it holds the
-#'   variance ratio fixed at the value you supplied.
+#'   variance ratio fixed at the value you supplied. For the regression
+#'   planners the simulated prior studies follow the plan's own
+#'   \code{random_predictors} setting, so audit a plan in the frame your
+#'   research actually uses. For a within-subjects or split-plot plan made
+#'   with \code{epsilon} below 1, the prior studies are drawn under the same
+#'   approximation to a departure from sphericity that the planner corrects
+#'   under, so the audit checks the method's internal consistency, not the
+#'   approximation itself; the planner's help page reports how well the
+#'   approximation holds against simulated raw data.
 #'
 #'   \strong{The package-wide verification ships with the package.} This
 #'   function audits one plan; the harness that verifies the planners
 #'   themselves, including checks against raw simulated data that do not share
 #'   the method's distributional assumptions (bivariate normal samples for the
-#'   correlation planner, two-group normal samples for the Welch planner), is
+#'   correlation planner, multivariate normal samples for a regression
+#'   coefficient with \code{random_predictors = TRUE}, two-group normal
+#'   samples for the Welch planner), is
 #'   installed with \code{BUCSS} and can be rerun in a few seconds with
 #'   \code{source(system.file("tools", "verify_by_simulation.R", package =
 #'   "BUCSS"))}.
@@ -172,8 +204,8 @@
 #' ncp
 #'
 #' # Take the corrected estimate at face value as the truth. (200 replications
-#' # keep the example quick; the rates are good to about .03. A reported audit
-#' # deserves 10000.)
+#' # keep the example quick: the rate counting refusals is good to about .03,
+#' # the rate over issued plans to about .06. A reported audit deserves 10000.)
 #' ss_buc_sensitivity(plan, true_ncp = ncp, replications = 200, seed = 113)
 #'
 #' # And ask what happens if the truth is smaller than the correction assumed.
@@ -204,6 +236,9 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
     stop("No simulation is defined for the design '", design, "'.", call. = FALSE)
 
   inputs <- .bucss_design_inputs(object)
+  # The regression entries name a fixed and a random sampling family; the
+  # plan's own random_predictors row picks the one it was computed in.
+  spec <- .bucss_resolve_spec(spec, inputs)
   effect <- attr(object, "effect")
   df <- if (length(formals(spec$df)) > 1L) spec$df(inputs, effect) else spec$df(inputs)
 
@@ -224,7 +259,14 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
 
   alpha_prior <- inputs$alpha_prior
   if (alpha_prior == 1) alpha_prior <- .999
-  pub <- .prior_publication(spec, df, true_ncp, alpha_prior)
+  # A within-subjects plan made under a sphericity correction draws its prior
+  # studies under the same approximation: the registry's df are already
+  # scaled by epsilon, and the noncentrality parameter is scaled here, so
+  # 'true_ncp' stays on the scale of the plan's 'ncp_adjusted'. The factor is
+  # 1 for every other design, and for a within-subjects plan that assumed
+  # sphericity, so their draws are unchanged.
+  ncp_scale <- if (is.null(spec$ncp_scale)) 1 else spec$ncp_scale(inputs)
+  pub <- .prior_publication(spec, df, true_ncp * ncp_scale, alpha_prior)
 
   # One planner run on a candidate statistic: the corrected parameter, the
   # sample size, or NA when the correction refuses. Only the planner's own
@@ -234,7 +276,9 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
   # message rather than being counted as a refusal, which would count it as
   # attaining. Planner warnings are collected and reported once.
   # Warnings are counted separately for the search for the sample size the
-  # true effect requires and for the simulated prior studies themselves.
+  # true effect requires and for the simulated prior studies themselves, and
+  # a planner run that raises several warnings is counted once, so the count
+  # is of runs (studies), never more than there were.
   warned <- new.env(parent = emptyenv())
   warned$phase <- "search"
   warned$n <- c(search = 0L, studies = 0L)
@@ -242,6 +286,7 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
   run <- function(stat) {
     a <- args
     a[[spec$statistic]] <- stat
+    warned$this_run <- FALSE
     out <- withCallingHandlers(
       tryCatch(do.call(planner, a),
                bucss_zero_ncp = function(e) NULL,
@@ -249,7 +294,10 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
                error = function(e) stop("While replaying the planner: ",
                                         conditionMessage(e), call. = FALSE)),
       warning = function(w) {
-        warned$n[[warned$phase]] <- warned$n[[warned$phase]] + 1L
+        if (!warned$this_run) {
+          warned$this_run <- TRUE
+          warned$n[[warned$phase]] <- warned$n[[warned$phase]] + 1L
+        }
         if (is.null(warned$first)) warned$first <- conditionMessage(w)
         invokeRestart("muffleWarning")
       })
@@ -274,7 +322,7 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
   budget <- 0L
   block <- max(1000L, ceiling(replications / max(pub$rate, .01)))
   while (length(drawn) < replications && budget < 500L * replications) {
-    s <- .draw_prior_statistic(spec, df, true_ncp, block)
+    s <- .draw_prior_statistic(spec, df, true_ncp * ncp_scale, block)
     budget <- budget + block
     drawn <- c(drawn, s[abs(s) > pub$crit])
   }

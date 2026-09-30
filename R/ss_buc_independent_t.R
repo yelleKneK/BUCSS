@@ -9,8 +9,9 @@
 #'   bias and/or uncertainty to provide a sample size that will achieve more
 #'   accurate statistical power for a planned study, when compared to approaches
 #'   that use a sample effect size at face value or rely on sample size only.
-#'   The bias and uncertainty adjusted previous study noncentrality parameter is
-#'   also returned, which can be transformed to various effect size metrics.
+#'   The bias and uncertainty adjusted previous study noncentrality parameter
+#'   is also returned, together with the planning effect size, the effect size
+#'   the plan is built on, as a standardized mean difference.
 #'
 #'   \code{ss_buc_smd} is an alias for \code{ss_buc_independent_t}: the two are the
 #'   same function. The two-group \emph{t} test and the standardized mean
@@ -40,7 +41,8 @@
 #'   The denominator is the power of the test, which serves to truncate the
 #'   distribution. In the two-group case, this formula reduces to the density of
 #'   a truncated noncentral \emph{t} distribution. (See Taylor & Muller, 1996,
-#'   Equation 2.1, and Anderson & Maxwell, 2017, for more details.)
+#'   Equation 2.1; Anderson, Kelley, & Maxwell, 2017, Equation 3; and Anderson
+#'   & Maxwell, 2017, for more details.)
 #'
 #'   Assurance is the proportion of times that power will be at or above the
 #'   desired level, if the experiment were to be reproduced many times. For
@@ -113,24 +115,29 @@
 #'
 #'   \code{ss_buc_independent_t} assumes that the planned study will have equal
 #'   \emph{n}. Unequal \emph{n} in the previous study is handled in the
-#'   following way for the independent \emph{t}. If the user enters an odd value
-#'   for \emph{N}, no information is available on the exact group sizes. The
-#'   function calculates \emph{n} by dividing \emph{N} by 2 and both rounding up
-#'   and rounding down the result, thus assuming equal \emph{n}. The suggested
-#'   sample size for the planned study is calculated using both of these values
-#'   of \emph{n}, and the function returns the larger of these two suggestions,
-#'   to be conservative. If the user enters a vector for \emph{n} with two
-#'   different values, specific information is available on the exact group
-#'   sizes. \emph{n} is calculated as the harmonic mean of these two values (a
-#'   measure of effective sample size). Again, this is rounded both up and down.
-#'   The suggested sample size for the planned study is calculated using both of
-#'   these values of \emph{n}, and the function returns the larger of these two
-#'   suggestions, to be conservative. The adjusted noncentrality parameter that
-#'   is output is the lower of the two possibilities, again, to be conservative.
-#'   When the individual group sizes of an unequal-\emph{n} previous study are
-#'   known, we highly encourage entering these explicitly, especially if the
-#'   sample sizes are quite discrepant, as this allows for the greatest
-#'   precision in estimating an appropriate planned study \emph{n}.
+#'   following way for the independent \emph{t}. If the user enters an odd
+#'   value for \emph{N}, no information is available on the exact group sizes.
+#'   The function calculates \emph{n} by dividing \emph{N} by 2 and both
+#'   rounding up and rounding down the result, thus assuming equal \emph{n}.
+#'   The suggested sample size for the planned study is calculated using both
+#'   of these values of \emph{n}, and the function returns the larger of these
+#'   two suggestions, to be conservative. If the user enters a vector for
+#'   \emph{n} with two different values, specific information is available on
+#'   the exact group sizes. \emph{n} is calculated as the harmonic mean of
+#'   these two values (a measure of effective sample size). Again, this is
+#'   rounded both up and down. The suggested sample size for the planned study
+#'   is calculated using both of these values of \emph{n}, and the function
+#'   returns the larger of these two suggestions, to be conservative. The
+#'   adjusted noncentrality parameter that is output is the lower of the two
+#'   possibilities, again, to be conservative. The planning effect size belongs
+#'   to the same balanced design as the reported noncentrality parameter, so an
+#'   ordinary power analysis at it can return a sample size a little smaller
+#'   than the one reported here (never a larger one), because the reported size
+#'   is the larger of the two rounded designs' requirements. When the
+#'   individual group sizes of an unequal-\emph{n} previous study are known, we
+#'   highly encourage entering these explicitly, especially if the sample sizes
+#'   are quite discrepant, as this allows for the greatest precision in
+#'   estimating an appropriate planned study \emph{n}.
 #'
 #' @param t_observed Observed \emph{t} value from a previous study used to plan
 #'   sample size for a planned study. Either sign is accepted: the
@@ -144,6 +151,7 @@
 #'
 #' @templateVar size_phrase per-group sample size
 #' @templateVar ncp_scale on the scale of the \emph{t} statistic (the noncentrality parameter of the prior study's noncentral \emph{t})
+#' @templateVar effect_phrase \code{smd_planning}, a standardized mean difference (Cohen's \eqn{\delta}{delta}, a magnitude), \eqn{\lambda\sqrt{2/n}}{lambda * sqrt(2/n)}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted} and \emph{n} the per-group size of the balanced prior design it belongs to (see Details)
 #' @template return
 #'
 #' @export
@@ -209,6 +217,7 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
   if (missing(N) || is.null(N)) {
     if (!(length(n) %in% c(1, 2))) stop("The value of 'n' should be a vector of length two or a single value (for equal group sample sizes).", call. = FALSE)
     for (n_i in n) .check_count(n_i, "n", min = 2)
+    n <- as.numeric(n)  # integer sizes overflow R's integer range in n_1 + n_2
     if (length(n) == 2) {
       n_1 <- n[1]
       n_2 <- n[2]
@@ -277,20 +286,28 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
 
   output_n <- max(repn_ru, repn_rd)
   df_error <- 2 * output_n - 2
-  # The power of the pair this function reports: the returned sample size
-  # evaluated at the returned (adjusted) noncentrality parameter, using the
-  # prior n that parameter came from. It is at least 'desired_power', because
-  # the returned size is the larger of the two roundings' requirements, and
-  # usually a little higher, because the size is a whole number.
-  actual_power <- if (ncp_rd <= ncp_ru) power_at(output_n, n_rd, ncp_rd) else
-    power_at(output_n, n_ru, ncp_ru)
+  # The reported noncentrality parameter is the smaller of the two branches',
+  # and n_b the prior per-group size it belongs to. The power of the pair this
+  # function reports: the returned sample size evaluated at the returned
+  # (adjusted) noncentrality parameter, using the prior n that parameter came
+  # from. It is at least 'desired_power', because the returned size is the
+  # larger of the two roundings' requirements, and usually a little higher,
+  # because the size is a whole number. The planning effect size restates the
+  # same parameter as a standardized mean difference at n_b, so the ordinary
+  # power of the returned size at that effect is exactly actual_power.
+  use_rd <- ncp_rd <= ncp_ru
+  n_b <- if (use_rd) n_rd else n_ru
+  ncp_b <- if (use_rd) ncp_rd else ncp_ru
+  actual_power <- power_at(output_n, n_b, ncp_b)
   .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_n_per_group",
+    effect_size_term = "smd_planning",
+    effect_size = .es_smd(ncp_b, n_b),
     actual_power = actual_power,
     df_effect = 1,
     df_error = df_error,
-    ncp = min(ncp_ru, ncp_rd),
+    ncp = ncp_b,
     design = "Independent t test",
     sample_size_unit = "per group",
     assurance_ceiling = min(solution_ru$ceiling, solution_rd$ceiling),

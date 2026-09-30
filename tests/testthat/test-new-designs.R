@@ -107,7 +107,7 @@ test_that("the multivariate planner agrees with itself through T squared", {
   t2_form <- ss_buc_manova(T2_observed = 4.5 * 3 * 78 / 76, N = 80, p_variables = 3)
   # the design results agree; only the echoed input row differs (F versus T2)
   design_rows <- c("necessary_n_per_group", "total_N", "actual_power",
-                   "ncp_adjusted")
+                   "ncp_adjusted", "D2_planning")
   expect_equal(f_form$value[f_form$term %in% design_rows],
                t2_form$value[t2_form$term %in% design_rows])
   # one outcome variable is the equal-variance two-group t test: the same plan,
@@ -255,7 +255,7 @@ test_that("the Welch planner takes the spread three equivalent ways", {
   by_var <- ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, var_1 = 70.56,
                            var_2 = 158.76)
   design_rows <- c("necessary_n_per_group", "total_N", "actual_power",
-                   "ncp_adjusted")
+                   "ncp_adjusted", "smd_planning")
   expect_equal(by_sd$value[by_sd$term %in% design_rows],
                by_ratio$value[by_ratio$term %in% design_rows])
   expect_equal(by_var$value[by_var$term %in% design_rows],

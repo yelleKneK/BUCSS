@@ -21,7 +21,8 @@
 \description{
 Prints the aligned \code{term}/\code{value} table (the planned-study
 results followed by the rows echoing the planning inputs), then factual
-footer lines naming the design, the unit the sample size is counted in,
+footer lines naming the design, for the regression planners the predictor
+frame (\code{random_predictors}), the unit the sample size is counted in,
 and the largest assurance the prior result can support. Whole numbers
 print clean; other values print at \code{getOption("bucss.digits", 3)}
 significant figures. Only the display is rounded; the stored values keep

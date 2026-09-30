@@ -13,7 +13,7 @@
 # statistical facts the help pages state, not BUCSS code, so they do not call
 # the package.
 #
-# Four checks:
+# Five checks:
 #   1. Assurance calibration, statistic scale. For six designs spanning every
 #      sampling family (t, F, chi square, Welch, correlation mixture), simulate
 #      published prior studies from a named true effect and confirm that the
@@ -25,10 +25,10 @@
 #      covers the true lambda at the assurance rate, (b) plans attain the
 #      sample size the true rho requires at about the assurance rate, and
 #      (c) the fixed-predictor calculation (r converted to t, planned by
-#      ss_buc_reg_coef at p = 1, which is what ss_buc_correlation did before
-#      the random-predictor upgrade) overstates the power of every plan it
-#      issues, by roughly 1/n for a plan of n, and plans a few participants
-#      light.
+#      ss_buc_reg_coef at p = 1 with random_predictors = FALSE, which is what
+#      ss_buc_correlation did before the random-predictor upgrade) overstates
+#      the power of every plan it issues, by roughly 1/n for a plan of n, and
+#      plans a few participants light.
 #   3. Welch, raw data. Confirm the real Welch test's Type I error is near
 #      nominal across variance ratios 1 to 3, that a planned study simulated
 #      at the corrected effect reaches the actual_power the function reports,
@@ -40,12 +40,22 @@
 #      without raw data, and it also has a closed form: confirm the two agree
 #      at total N = 50, 200, and 400 and equal the figures the help page
 #      quotes (.07, .055, and .052).
+#   5. Regression with sampled predictors, raw data. Draw correlated
+#      multivariate normal predictors with nonzero means and a normal outcome
+#      (not statistics), compute the F test of one coefficient among four by
+#      least squares, publish at the .05 level, and confirm that
+#      ss_buc_reg_coef(random_predictors = TRUE) (a) covers the true lambda at
+#      the assurance rate and (b) plans attain the sample size the true effect
+#      requires at about that rate; then simulate a planned study at the plan's
+#      own effect and confirm (c) it reaches the actual_power the function
+#      reports, and (d) the fixed-predictor power of the same plan overstates
+#      it.
 #
 # This file ships with the package (inst/tools/), so anyone who installs
 # BUCSS can rerun the verification without the source repository.
 #
 # Usage, from an installed package (quick mode runs in a few seconds; the
-# full mode, with published-precision replications, in about half a minute):
+# full mode, with published-precision replications, in under a minute):
 #   source(system.file("tools", "verify_by_simulation.R", package = "BUCSS"))
 #   Sys.setenv(BUCSS_VERIFY = "full")   # before source(), for the full mode
 # or from the root of the BUCSS source repository, which loads that source
@@ -89,6 +99,7 @@ invisible(local({
   reps_data  <- if (mode == "full") 20000L else 3000L
   reps_welch <- if (mode == "full") 100000L else 20000L
   reps_lrt   <- if (mode == "full") 1000000L else 200000L
+  reps_power <- if (mode == "full") 100000L else 20000L
   cat("mode:", mode, "\n\n")
 
   withr::local_seed(2017, .rng_kind = "Mersenne-Twister",
@@ -176,7 +187,8 @@ invisible(local({
                        error = function(e) NULL)
     plan_f <- tryCatch(ss_buc_reg_coef(t_observed = t_pub[j], N = n_prior,
                                        p = 1, assurance = assurance,
-                                       desired_power = desired_power),
+                                       desired_power = desired_power,
+                                       random_predictors = FALSE),
                        error = function(e) NULL)
     # A refusal is the limiting conservative answer: the corrected parameter is
     # driven to zero, which is at or below any positive truth, and declining to
@@ -207,7 +219,7 @@ invisible(local({
   # its planned N must reproduce the plan's own actual_power under the plain
   # noncentral F, or the rho^2 conversion would be reading the wrong scale.
   plan_f <- ss_buc_reg_coef(t_observed = 3.5, N = n_prior, p = 1,
-                            assurance = assurance)
+                            assurance = assurance, random_predictors = FALSE)
   n_f <- plan_f$value[plan_f$term == "necessary_N"]
   lam_f <- plan_f$value[plan_f$term == "ncp_adjusted"]
   stopifnot(abs((1 - pf(qf(.95, 1, n_f - 2), 1, n_f - 2,
@@ -331,6 +343,105 @@ invisible(local({
           abs(lrt_alpha_exact(400) - .052) < .0025,
         sprintf("exact %.4f, %.4f, %.4f", lrt_alpha_exact(50),
                 lrt_alpha_exact(200), lrt_alpha_exact(400)))
+
+  ## Check 5: regression with sampled predictors, raw data ---------------------
+
+  cat("Check 5: a regression coefficient with random predictors against raw multivariate normal data\n")
+  # The F statistic for the last q of p predictors, by least squares on raw
+  # data: correlated multivariate normal predictors (L is the Cholesky factor
+  # of their covariance, mu their means) and a normal outcome with unit error
+  # variance. One statistic per simulated study.
+  reg_F <- function(reps, N, p, q, beta, L, mu) {
+    keep <- seq_len(1 + p - q)
+    vapply(seq_len(reps), function(r) {
+      X <- sweep(matrix(rnorm(N * p), N) %*% L, 2, mu, "+")
+      y <- drop(X %*% beta) + rnorm(N)
+      Xf <- cbind(1, X)
+      rss_full <- sum(.lm.fit(Xf, y)$residuals^2)
+      rss_reduced <- sum(.lm.fit(Xf[, keep, drop = FALSE], y)$residuals^2)
+      ((rss_reduced - rss_full) / q) / (rss_full / (N - p - 1))
+    }, 0)
+  }
+  # Predictors with correlation .5, and coefficients that give the last one a
+  # population partial f squared of f2: its coefficient squared times its
+  # variance given the others (the other coefficients are .3).
+  exchangeable <- function(p) {
+    S <- matrix(.5, p, p)
+    diag(S) <- 1
+    S
+  }
+  coefficients_for <- function(Sigma, f2) {
+    p <- nrow(Sigma)
+    i1 <- seq_len(p - 1)
+    v <- Sigma[p, p] - drop(Sigma[p, i1] %*% solve(Sigma[i1, i1], Sigma[i1, p]))
+    c(rep(.3, p - 1), sqrt(f2 / v))
+  }
+
+  # (a) and (b): one coefficient among four, prior studies of 40, partial f
+  # squared .20 (lambda = 8 at the prior N).
+  p_reg <- 4L
+  n_reg <- 40L
+  f2_reg <- .20
+  Sigma_reg <- exchangeable(p_reg)
+  true_lambda_reg <- f2_reg * n_reg
+  # The sample size the true effect requires under the random-predictor
+  # distribution: m = n - p chi square df for one coefficient among p.
+  power_reg <- function(n) {
+    d2 <- n - p_reg - 1
+    1 - BUCSS:::.p_random_f(qf(1 - .05, 1, d2), 1, d2, n - p_reg,
+                            1 / (1 + f2_reg))
+  }
+  n_required_reg <- p_reg + 3L
+  while (power_reg(n_required_reg) < desired_power)
+    n_required_reg <- n_required_reg + 1L
+  t_reg <- sqrt(reg_F(reps_data, n_reg, p_reg, 1, coefficients_for(Sigma_reg, f2_reg),
+                      chol(Sigma_reg), seq(-1, 1, length.out = p_reg)))
+  t_reg <- t_reg[t_reg^2 > qf(1 - .05, 1, n_reg - p_reg - 1)]
+  plans_reg <- vapply(t_reg, function(t) {
+    plan <- tryCatch(ss_buc_reg_coef(t_observed = t, N = n_reg, p = p_reg,
+                                     assurance = assurance,
+                                     desired_power = desired_power,
+                                     random_predictors = TRUE),
+                     bucss_zero_ncp = function(e) NULL)
+    # a refusal counts as covered and attaining, as in Check 2
+    if (is.null(plan)) c(TRUE, TRUE) else
+      c(plan$value[plan$term == "ncp_adjusted"] <= true_lambda_reg,
+        plan$value[plan$term == "necessary_N"] >= n_required_reg)
+  }, logical(2))
+  tol_reg <- 4 * sqrt(assurance * (1 - assurance) / length(t_reg))
+  check("regression, random predictors: coverage of true lambda",
+        abs(mean(plans_reg[1, ]) - assurance) <= tol_reg,
+        sprintf("coverage %.3f vs assurance %.2f over %d published, tol %.3f",
+                mean(plans_reg[1, ]), assurance, length(t_reg), tol_reg))
+  check("regression, random predictors: attainment of the required size",
+        abs(mean(plans_reg[2, ]) - assurance) <= tol_reg + .02,
+        sprintf("attainment %.3f, required N %d for one coefficient among %d",
+                mean(plans_reg[2, ]), n_required_reg, p_reg))
+
+  # (c) and (d): a planned study simulated from raw data at the plan's own
+  # effect, ncp_adjusted divided by the prior N, one coefficient among three.
+  plan_rp <- ss_buc_reg_coef(t_observed = 3.5, N = 40, p = 3, assurance = assurance,
+                             random_predictors = TRUE)
+  n_rp <- plan_rp$value[plan_rp$term == "necessary_N"]
+  ncp_rp <- plan_rp$value[plan_rp$term == "ncp_adjusted"]
+  Sigma_rp <- exchangeable(3L)
+  F_rp <- reg_F(reps_power, n_rp, 3L, 1, coefficients_for(Sigma_rp, ncp_rp / 40),
+                chol(Sigma_rp), seq(-1, 1, length.out = 3L))
+  crit_rp <- qf(1 - .05, 1, n_rp - 4)
+  power_rp <- mean(F_rp > crit_rp)
+  mcse_rp <- sqrt(power_rp * (1 - power_rp) / reps_power)
+  claimed_rp <- plan_rp$value[plan_rp$term == "actual_power"]
+  check("regression, random predictors: planned study reaches the reported actual_power",
+        abs(power_rp - claimed_rp) <= 4 * mcse_rp,
+        sprintf("empirical %.4f vs reported %.4f for a plan of %d, tol %.4f",
+                power_rp, claimed_rp, as.integer(n_rp), 4 * mcse_rp))
+  # The same plan's power in the fixed frame: the noncentral F with the
+  # parameter scaled to the planned N. With sampled predictors it overstates.
+  fixed_rp <- 1 - pf(crit_rp, 1, n_rp - 4, ncp = ncp_rp * n_rp / 40)
+  check("regression: treating sampled predictors as fixed overstates a plan's power",
+        fixed_rp - power_rp > 4 * mcse_rp,
+        sprintf("fixed-predictor power %.4f vs empirical %.4f, overstated by %.2f/n at n = %d (the help page: about 1.9/n with three predictors)",
+                fixed_rp, power_rp, (fixed_rp - power_rp) * n_rp, as.integer(n_rp)))
 
   ## Summary -------------------------------------------------------------------
 

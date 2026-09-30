@@ -163,7 +163,7 @@ test_that("the zero-ncp error reports the closed-form assurance ceiling (indepen
   # and the default alpha_prior = .05 that ceiling is about .90, so the
   # requested assurance of .95 is out of reach and the corrected ncp is zero.
   p_prior <- 2 * (1 - pt(3, df = 38))
-  ceiling_assurance <- floor((1 - p_prior / .05) * 100 + 1e-9) / 100
+  ceiling_assurance <- floor((1 - p_prior / .05) * 100 - 1e-9) / 100
   fragment <- paste0("usable plan is about ",
                      sub("^0", "", sprintf("%.2f", ceiling_assurance)))
   expect_error(ss_buc_independent_t(t_observed = 3, n = 20, assurance = .95),
@@ -178,7 +178,7 @@ test_that("the zero-ncp error reports the closed-form assurance ceiling (joint F
   # the requested assurance of .95, confirming the ceiling on the single-branch
   # F path as well as the two-branch t path above.
   p_prior <- 1 - pf(5, df1 = 2, df2 = 145)
-  ceiling_assurance <- floor((1 - p_prior / .05) * 100 + 1e-9) / 100
+  ceiling_assurance <- floor((1 - p_prior / .05) * 100 - 1e-9) / 100
   fragment <- paste0("usable plan is about ",
                      sub("^0", "", sprintf("%.2f", ceiling_assurance)))
   expect_error(
@@ -221,6 +221,21 @@ test_that("the regression planners require 'p' (and 'p_joint')", {
   expect_error(ss_buc_R2(F_observed = 5, N = 150), "specify 'p'", fixed = TRUE)
   expect_error(ss_buc_reg_joint(F_observed = 5, N = 150, p = 4),
                "specify 'p_joint'", fixed = TRUE)
+})
+
+test_that("'random_predictors' must be TRUE or FALSE", {
+  # A number is refused on purpose: the echoed row is 1 or 0, and only the
+  # registry converts it back, so a value read from a CSV cannot slip in
+  # unconverted.
+  msg <- "'random_predictors' must be TRUE or FALSE."
+  for (bad in list(NA, 1, 0, "yes", c(TRUE, FALSE), NULL, logical(0))) {
+    expect_error(ss_buc_reg_coef(t_observed = 3, N = 150, p = 3,
+                                 random_predictors = bad), msg, fixed = TRUE)
+    expect_error(ss_buc_R2(F_observed = 5, N = 150, p = 4,
+                           random_predictors = bad), msg, fixed = TRUE)
+    expect_error(ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2,
+                                  random_predictors = bad), msg, fixed = TRUE)
+  }
 })
 
 test_that("non-scalar, non-finite, and non-whole inputs get friendly errors", {
@@ -400,4 +415,25 @@ test_that("independent t without any prior sample size gets a friendly error", {
                "either 'n'", fixed = TRUE)
   expect_error(ss_buc_independent_t(t_observed = 3, N = NULL),
                "either 'n'", fixed = TRUE)
+})
+
+test_that("integer group sizes plan exactly as the same sizes stored as doubles", {
+  # n_1 + n_2 overflowed R's integer range for integer sizes above about
+  # 1.07e9, and the planner died with "missing value where TRUE/FALSE needed"
+  # (QC 2026-09-30, finding 12).
+  expect_identical(unclass(ss_buc_independent_t(3, n = c(1500000000L, 1500000000L))),
+                   unclass(ss_buc_independent_t(3, n = c(1.5e9, 1.5e9))))
+  expect_identical(unclass(ss_buc_independent_t(3, n = c(50L, 55L), assurance = .9)),
+                   unclass(ss_buc_independent_t(3, n = c(50, 55), assurance = .9)))
+})
+
+test_that("the regression and chi square planners never plan below their search floors", {
+  # The help pages state these floors (QC 2026-09-30, finding 15): p + 3 for
+  # the regression planners, the number of constraints plus 2 for the chi
+  # square difference test. Both priors are strong enough that a smaller
+  # study would reach the target (power .999 at N = 6 for the coefficient,
+  # .88 at N = 2 for the chi square test), so each plan sits on its floor.
+  expect_identical(ss_buc_reg_coef(t_observed = 80, N = 12, p = 4)$value[1], 7)
+  expect_identical(ss_buc_chisq_diff(chisq_observed = 400, N = 50, df_full = 3,
+                                     df_restricted = 7)$value[1], 6)
 })

@@ -97,13 +97,23 @@ The bias and uncertainty correction rests on a claim about the long
   right, and a demonstration of what publication bias does. It cannot detect
   a violated distributional assumption, since the simulation shares that
   assumption. For \code{\link{ss_buc_welch_t}}, in particular, it holds the
-  variance ratio fixed at the value you supplied.
+  variance ratio fixed at the value you supplied. For the regression
+  planners the simulated prior studies follow the plan's own
+  \code{random_predictors} setting, so audit a plan in the frame your
+  research actually uses. For a within-subjects or split-plot plan made
+  with \code{epsilon} below 1, the prior studies are drawn under the same
+  approximation to a departure from sphericity that the planner corrects
+  under, so the audit checks the method's internal consistency, not the
+  approximation itself; the planner's help page reports how well the
+  approximation holds against simulated raw data.
 
   \strong{The package-wide verification ships with the package.} This
   function audits one plan; the harness that verifies the planners
   themselves, including checks against raw simulated data that do not share
   the method's distributional assumptions (bivariate normal samples for the
-  correlation planner, two-group normal samples for the Welch planner), is
+  correlation planner, multivariate normal samples for a regression
+  coefficient with \code{random_predictors = TRUE}, two-group normal
+  samples for the Welch planner), is
   installed with \code{BUCSS} and can be rerun in a few seconds with
   \code{source(system.file("tools", "verify_by_simulation.R", package =
   "BUCSS"))}.
@@ -114,8 +124,8 @@ ncp <- plan$value[plan$term == "ncp_adjusted"]
 ncp
 
 # Take the corrected estimate at face value as the truth. (200 replications
-# keep the example quick; the rates are good to about .03. A reported audit
-# deserves 10000.)
+# keep the example quick: the rate counting refusals is good to about .03,
+# the rate over issued plans to about .06. A reported audit deserves 10000.)
 ss_buc_sensitivity(plan, true_ncp = ncp, replications = 200, seed = 113)
 
 # And ask what happens if the truth is smaller than the correction assumed.
@@ -136,6 +146,11 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   crisis": Using original studies to design replication studies with
   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
   305--324. \doi{10.1080/00273171.2017.1289361}
+
+  Kelley, K., & Maxwell, S. E. (2003). Sample size for multiple regression:
+  Obtaining regression coefficients that are accurate, not simply
+  significant. \emph{Psychological Methods, 8,} 305--321.
+  \doi{10.1037/1082-989X.8.3.305}
 
   Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
   experiments and analyzing data: A model comparison perspective} (4th ed.).

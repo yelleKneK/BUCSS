@@ -237,7 +237,7 @@ test_that("H-10: alpha_prior = 1 is .999, pinned where the difference shows", {
   expect_plan(one, 305, 0.5084746316)
   point999 <- ss_buc_independent_t(t_observed = 1.5, n = 10, alpha_prior = .999,
                                    assurance = .8)
-  computed <- c(BUCSS:::.BUCSS_SIZE_TERMS, "total_N", "actual_power", "ncp_adjusted")
+  computed <- BUCSS:::.BUCSS_COMPUTED_TERMS
   expect_identical(one$value[one$term %in% computed],
                    point999$value[point999$term %in% computed])
   expect_identical(attr(one, "assurance_ceiling"), attr(point999, "assurance_ceiling"))

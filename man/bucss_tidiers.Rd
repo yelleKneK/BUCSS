@@ -21,7 +21,8 @@ A one-row \code{data.frame}. For \code{tidy()}, the columns
   \code{term}, \code{estimate}, and \code{power}. For \code{glance()}, the
   wide summary described above. Both stop with an explanation if the object
   no longer has the shape of a single plan (for example, several plans
-  stacked with \code{dplyr::bind_rows()}, which keeps the class).
+  stacked with \code{dplyr::bind_rows()}, or a plan with a row removed by
+  \code{dplyr::filter()}; both keep the class).
 }
 \description{
 \code{tidy()} returns the compact estimate view, as the sibling package
@@ -31,10 +32,12 @@ design's unit, which the result's \code{sample_size_unit} attribute names),
 and \code{power} (the power of the plan the result reports; see
 \code{actual_power} on the planner's help page). \code{glance()} returns
 the one-row wide view: the same three columns, then one column per row of
-the result (the sample size row, \code{total_N} where applicable,
-\code{actual_power}, \code{ncp_adjusted}, and every echoed planning input)
-together with the design, the effect tested, the unit, the planned test's
-degrees of freedom where the design has them, and the assurance ceiling.
+the result, namely the sample size row, \code{total_N} where applicable,
+\code{actual_power}, \code{ncp_adjusted}, the planning effect size (the
+row whose name ends in \code{_planning}, such as \code{smd_planning}), and
+every echoed planning input, together with the design, the effect tested,
+the unit, the planned test's degrees of freedom where the design has them,
+and the assurance ceiling.
 }
 \details{
 These methods come from the \pkg{generics} package and need no extra setup;

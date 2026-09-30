@@ -110,8 +110,12 @@
 #'   the interaction). Non-scalar, non-finite, and fractional inputs are
 #'   rejected with a message naming the argument. Errors raised through these
 #'   wrappers come from the \code{ss_buc_*} planners and name their
-#'   arguments (\code{t_observed} for \code{t.observed}, and so on). See
-#'   \code{NEWS} for the full accounting.
+#'   arguments (\code{t_observed} for \code{t.observed}, and so on). The
+#'   regression wrappers keep the 1.x fixed-predictor computation
+#'   (\code{random_predictors = FALSE}); call \code{\link{ss_buc_reg_coef}},
+#'   \code{\link{ss_buc_R2}}, or \code{\link{ss_buc_reg_joint}} directly for
+#'   predictors sampled along with the outcome. See \code{NEWS} for the full
+#'   accounting.
 #'
 #' @param t.observed,F.observed The observed \emph{t} or \emph{F} statistic from
 #'   the prior study (the 1.x spelling of \code{t_observed} / \code{F_observed}).
@@ -284,7 +288,8 @@ ss.power.reg1 <- function(t.observed, N, p, alpha.prior = .05, alpha.planned = .
   .deprecate_once("ss.power.reg1", "'ss_buc_reg_coef'")
   ss_buc_reg_coef(t_observed = t.observed, N = N, p = p,
                   alpha_prior = alpha.prior, alpha_planned = alpha.planned,
-                  assurance = assurance, desired_power = power)
+                  assurance = assurance, desired_power = power,
+                  random_predictors = FALSE)
 }
 
 #' @rdname bucss-deprecated
@@ -294,7 +299,8 @@ ss.power.reg.all <- function(F.observed, N, p, alpha.prior = .05, alpha.planned 
   .deprecate_once("ss.power.reg.all", "'ss_buc_R2'")
   ss_buc_R2(F_observed = F.observed, N = N, p = p,
             alpha_prior = alpha.prior, alpha_planned = alpha.planned,
-            assurance = assurance, desired_power = power)
+            assurance = assurance, desired_power = power,
+            random_predictors = FALSE)
 }
 
 #' @rdname bucss-deprecated
@@ -305,7 +311,8 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
   .deprecate_once("ss.power.reg.joint", "'ss_buc_reg_joint'")
   ss_buc_reg_joint(F_observed = F.observed, N = N, p = p, p_joint = p.joint,
                    alpha_prior = alpha.prior, alpha_planned = alpha.planned,
-                   assurance = assurance, desired_power = power)
+                   assurance = assurance, desired_power = power,
+                   random_predictors = FALSE)
 }
 
 #' Positional Extraction From a Bias and Uncertainty Corrected Sample Size Result

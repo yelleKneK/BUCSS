@@ -87,6 +87,11 @@ test_that("a proportion below 1 never prints as 100%", {
   higher <- planning_sentence(ss_buc_paired_t(t_observed = 10, N = 40, assurance = .9999))
   expect_match(higher, "attains 80% power with 99.99% assurance", fixed = TRUE)
   expect_no_match(higher, "100%", fixed = TRUE)
+  # However close to 1 (QC 2026-09-30, finding 10: 1 - 1e-11 printed as 100%).
+  near_one <- planning_sentence(ss_buc_independent_t(t_observed = 12, n = c(50, 55),
+                                                     desired_power = 1 - 1e-11))
+  expect_match(near_one, "attains 99.999999999% power", fixed = TRUE)
+  expect_no_match(near_one, "100%", fixed = TRUE)
   # A proportion that needs no decimals still gets none.
   expect_match(planning_sentence(ss_buc_paired_t(t_observed = 3, N = 40, assurance = .825)),
                "attains 80% power with 82.5% assurance", fixed = TRUE)
@@ -156,6 +161,115 @@ test_that("a plan with an added column is not printed or tidied as one plan", {
   expect_false(any(grepl("Sample size unit:", shown, fixed = TRUE)))
   expect_false(any(grepl("Largest supportable assurance", shown, fixed = TRUE)))
   expect_error(tidy(wide), "no longer has the shape of a single plan", fixed = TRUE)
+})
+
+test_that("a plan missing any row its planner echoed is not one plan", {
+  # dplyr::filter() and the like keep the class and the attributes, so rows
+  # are removed here the way they remove them. Without its 'alpha_prior' row
+  # a plan corrected at .05 was narrated "with no publication bias assumed",
+  # ss_buc_sensitivity() failed with "argument is of length zero", and with
+  # 'alpha_prior = .10' the audit and the figure blamed the package (QC
+  # 2026-09-30, finding 3). Every row of every echoed form is now required.
+  drop_row <- function(x, term)
+    restore_plan_attributes(as.data.frame(x)[x$term != term, ], x)
+  shape <- "no longer has the shape of a single plan"
+  pdf(NULL)
+  on.exit(dev.off(), add = TRUE)
+
+  x <- ss_buc_independent_t(t_observed = 3, n = c(50, 55), assurance = .9,
+                            alpha_prior = .10)
+  trimmed <- drop_row(x, "alpha_prior")
+  expect_s3_class(trimmed, "bucss_plan")
+  expect_identical(attr(trimmed, "design"), "Independent t test")
+  expect_error(planning_sentence(trimmed), shape, fixed = TRUE)
+  expect_error(tidy(trimmed), shape, fixed = TRUE)
+  expect_error(glance(trimmed), shape, fixed = TRUE)
+  expect_error(ss_buc_sensitivity(trimmed, true_ncp = 2, replications = 10, seed = 2017),
+               shape, fixed = TRUE)
+  expect_error(plot(trimmed), shape, fixed = TRUE)
+  shown <- capture.output(print(trimmed))
+  expect_false(any(grepl("Design:", shown, fixed = TRUE)))
+
+  # One plan in each echoed form of every design. Each plan as returned has
+  # the shape; with any one row removed it does not.
+  plans <- list(
+    x,
+    ss_buc_independent_t(t_observed = 3, n = 20),
+    ss_buc_independent_t(t_observed = 3, N = 41),
+    ss_buc_paired_t(t_observed = 3, N = 30),
+    ss_buc_one_sample_t(t_observed = 3, N = 30),
+    ss_buc_welch_t(t_observed = 3, n_1 = 30, n_2 = 40, sd_ratio = 1.5),
+    ss_buc_welch_t(t_observed = 3, n_1 = 30, n_2 = 40, sd_1 = 1, sd_2 = 2),
+    ss_buc_welch_t(t_observed = 3, n_1 = 30, n_2 = 40, var_1 = 1, var_2 = 3),
+    ss_buc_one_way_anova(F_observed = 5, N = 60, levels_A = 3),
+    ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2, levels_B = 3,
+                           effect = "factor_B"),
+    ss_buc_factorial_anova_general(F_observed = 5, N = 120, cells = 6, df_numerator = 2,
+                                   df_denominator = 114),
+    ss_buc_ancova(F_observed = 5, N = 120, cells = 6, n_covariates = 2, df_numerator = 2),
+    ss_buc_rm_anova(F_observed = 5, N = 30, levels_A = 3),
+    ss_buc_rm_anova(F_observed = 10, N = 30, levels_A = 3, levels_B = 2, effect = "factor_B"),
+    ss_buc_rm_anova(F_observed = 10, N = 30, levels_A = 3, levels_B = 2, effect = "interaction"),
+    ss_buc_rm_anova_general(F_observed = 5, N = 60, df_numerator = 2),
+    ss_buc_mixed_anova(F_observed = 5, N = 60, levels_between = 2, levels_within = 3,
+                       effect = "within"),
+    ss_buc_mixed_anova(F_observed = 8, N = 60, levels_between = 2, levels_within = 3,
+                       effect = "interaction", epsilon = .8),
+    ss_buc_mixed_anova(F_observed = 9, N = 60, levels_between = 2, levels_within = 3,
+                       effect = "between"),
+    ss_buc_mixed_anova_general(F_observed = 5, N = 60, df_numerator = 2, num_groups = 3,
+                               effect = "between_only"),
+    ss_buc_mixed_anova_general(F_observed = 8, N = 90, df_numerator = 2, num_groups = 3,
+                               effect = "within_only"),
+    ss_buc_mixed_anova_general(F_observed = 5, N = 60, df_numerator = 4, num_groups = 3,
+                               effect = "between_within", df_num_within = 2),
+    ss_buc_reg_coef(t_observed = 3, N = 100, p = 3),
+    ss_buc_R2(F_observed = 5, N = 100, p = 3),
+    ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2),
+    ss_buc_correlation(r_observed = .35, N = 100),
+    ss_buc_correlation(t_observed = 3.7, N = 100),
+    ss_buc_manova(F_observed = 5, N = 60, p_variables = 3),
+    ss_buc_manova(T2_observed = 16, N = 60, p_variables = 3),
+    ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42, df_restricted = 43))
+  covered <- unique(vapply(plans, attr, character(1), which = "design"))
+  expect_setequal(covered, names(BUCSS:::.BUCSS_DESIGN_SPECS))
+  for (p in plans) {
+    expect_true(BUCSS:::.is_plan_shape(p), info = attr(p, "design"))
+    for (term in p$term)
+      expect_false(BUCSS:::.is_plan_shape(drop_row(p, term)),
+                   info = paste(attr(p, "design"), "without", term))
+  }
+
+  # The one row that may be absent: levels_B of a two-way within-subjects
+  # plan for Factor A, which is the one-way plan, so the replay still
+  # reproduces it (and a one-way plan has no levels_B row to begin with).
+  factor_a <- ss_buc_rm_anova(F_observed = 5, N = 30, levels_A = 3, levels_B = 2)
+  expect_true(BUCSS:::.is_plan_shape(drop_row(factor_a, "levels_B")))
+})
+
+test_that("every registry entry states its echoed rows in the shape check's form", {
+  # 'echo' is the design's requirements and 'echo_effect' a list named by
+  # effects its planner accepts, each holding that effect's further
+  # requirements, so a planning input added to a design is required by the
+  # shape check once it is listed there (QC 2026-09-30, finding 3). A name
+  # that is not one of the planner's effects would require nothing, silently.
+  specs <- BUCSS:::.BUCSS_DESIGN_SPECS
+  for (nm in names(specs)) {
+    spec <- specs[[nm]]
+    expect_type(spec$echo, "character")
+    expect_gte(length(spec$echo), 2L)
+    if (is.null(spec$echo_effect)) next
+    expect_type(spec$echo_effect, "list")
+    effects <- eval(formals(get(spec$planner, envir = asNamespace("BUCSS")))$effect)
+    expect_true(length(effects) > 1L && all(names(spec$echo_effect) %in% effects),
+                info = nm)
+    expect_true(all(vapply(spec$echo_effect, is.character, logical(1))), info = nm)
+    expect_identical(BUCSS:::.bucss_echo_requirements(spec, names(spec$echo_effect)[1]),
+                     c(spec$echo, spec$echo_effect[[1]]))
+  }
+  rm <- specs[["One- or two-way within-subjects ANOVA"]]
+  expect_identical(BUCSS:::.bucss_echo_requirements(rm, "factor_A"), rm$echo)
+  expect_identical(BUCSS:::.bucss_echo_requirements(rm, NULL), rm$echo)
 })
 
 test_that("a plan whose rows were reordered still audits and plots as itself", {
@@ -307,6 +421,28 @@ test_that("the planner's warnings reach the user once, summarized and counted", 
   expect_identical(counts[1], reps)                     # every simulated study
   expect_identical(counts[2], reps)
   expect_gt(counts[3], 0)                               # and the search, counted apart
+})
+
+test_that("a planner run that warns twice is counted once", {
+  # Every run warns twice here, the assurance below .5 and a second warning
+  # injected into the planner, and the summary counts runs, not warnings (QC
+  # 2026-09-30, finding 9: it reported warnings on 40 of the 20 studies).
+  plan <- suppressWarnings(ss_buc_paired_t(t_observed = 3, N = 30, assurance = .4))
+  planner <- ss_buc_paired_t
+  local_mocked_bindings(ss_buc_paired_t = function(...) {
+    warning("a second warning")
+    planner(...)
+  })
+  reps <- 20
+  seen <- collect_warnings(
+    ss_buc_sensitivity(plan, true_ncp = 1.5, replications = reps, seed = 2017))$seen
+  expect_length(seen, 1L)
+  pattern <- paste0("^The planner raised warnings on ([0-9]+) of the ([0-9]+) simulated ",
+                    "prior studies and ([0-9]+) times while finding")
+  counts <- as.numeric(regmatches(seen, regexec(pattern, seen))[[1]][-1])
+  expect_identical(counts[1], reps)
+  expect_identical(counts[2], reps)
+  expect_match(seen, "the first was: a second warning", fixed = TRUE)
 })
 
 test_that("an audit of a plan whose planner never warns raises no summary", {

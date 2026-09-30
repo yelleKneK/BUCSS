@@ -72,6 +72,13 @@ test_that("plot works for every design in the registry", {
                        levels_within = 3, effect = "between"),
     ss_buc_mixed_anova_general(F_observed = 20, N = 60, num_groups = 2,
                                df_numerator = 1, effect = "between_only"),
+    # a sphericity correction replays with its echoed epsilon
+    ss_buc_rm_anova(F_observed = 8, N = 30, levels_A = 3, epsilon = .7),
+    ss_buc_mixed_anova(F_observed = 20, N = 60, levels_between = 2,
+                       levels_within = 3, effect = "interaction", epsilon = .7),
+    ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 6,
+                               num_groups = 3, effect = "between_within",
+                               df_num_within = 3, epsilon = .6),
     ss_buc_reg_coef(t_observed = 3.5, N = 60, p = 3),
     ss_buc_R2(F_observed = 8, N = 60, p = 3),
     ss_buc_reg_joint(F_observed = 12, N = 60, p = 5, p_joint = 2),

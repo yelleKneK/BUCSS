@@ -10,7 +10,8 @@
 #'   statistical power for a planned study, when compared to approaches that use
 #'   a sample effect size at face value or rely on sample size only. The bias
 #'   and uncertainty adjusted previous study noncentrality parameter is also
-#'   returned, which can be transformed to various effect size metrics.
+#'   returned, together with the planning effect size, the effect size the plan
+#'   is built on, as Cohen's \emph{f}.
 #'
 #' @details Researchers often use the sample effect size from a prior study as
 #'   an estimate of the likely size of an expected future effect in sample size
@@ -40,7 +41,8 @@
 #'   The denominator is the power of the test, which serves to truncate the
 #'   distribution. Thus, the ratio of the numerator and the denominator is a
 #'   truncated noncentral \emph{F} distribution. (See Taylor & Muller, 1996,
-#'   Equation 2.1, and Anderson & Maxwell, 2017, for more details.)
+#'   Equation 2.1; Anderson, Kelley, & Maxwell, 2017, Equation 3; and Anderson
+#'   & Maxwell, 2017, for more details.)
 #'
 #'   Assurance is the proportion of times that power will be at or above the
 #'   desired level, if the experiment were to be reproduced many times. For
@@ -103,7 +105,11 @@
 #'   cells, the per-cell size is rounded both up and down, the planned sample
 #'   size is computed under each, and the larger of the two is returned, with
 #'   the smaller of the two adjusted noncentrality parameters, to be
-#'   conservative.
+#'   conservative. The planning effect size belongs to the same balanced design
+#'   as the reported noncentrality parameter, so an ordinary power analysis at
+#'   it can return a sample size a little smaller than the one reported here
+#'   (never a larger one), because the reported size is the larger of the two
+#'   rounded designs' requirements.
 #'
 #' @param F_observed Observed \emph{F} value for the effect of interest from a
 #'   previous study used to plan sample size for a planned study. For a
@@ -118,7 +124,8 @@
 #' @template planning-params
 #'
 #' @templateVar size_phrase per-cell sample size
-#' @templateVar ncp_scale on the scale of the \emph{F} statistic, at the prior study's sample size
+#' @templateVar ncp_scale on the scale of the \emph{F} statistic, at the prior study's sample size (for a prior \emph{N} that does not divide evenly, at the balanced sample size the planner substitutes for it; see Details)
+#' @templateVar effect_phrase \code{f_planning}, Cohen's \emph{f} for the effect tested, relative to the covariate-adjusted error variance, \eqn{\sqrt{\lambda/N}}{sqrt(lambda/N)}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted} and \emph{N} the total of the balanced prior design it belongs to (see Details), so \eqn{\lambda = N f^2}{lambda = N f^2}, the convention of power analysis for between-subjects designs, and \eqn{f^2/(1 + f^2)}{f^2/(1 + f^2)} is the population partial eta squared for the effect
 #' @template return
 #'
 #' @export

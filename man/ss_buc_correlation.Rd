@@ -32,12 +32,23 @@ assume no publication bias, a value of 1 can be entered.}
 
 \item{alpha_planned}{Alpha level \eqn{\alpha} assumed for the planned study.}
 
-\item{assurance}{Desired level of assurance, or the long run proportion of
-times that the planned study power will reach or surpass the desired level
-(assurance > .5 corrects for uncertainty; assurance < .5 is not
-recommended). Enter it as a proportion in (0, 1) or as a percentage greater
-than 1 (for example, 80 is read as .80); a value of exactly 1 is read as 1
-percent. A percentage is echoed in the result's planning-input rows as
+\item{assurance}{Desired level of assurance: the long run proportion of
+planned studies whose statistical power at the true effect reaches or
+surpasses \code{desired_power}, when each is planned from a prior study
+published under the rule \code{alpha_prior} describes. The adjusted
+noncentrality parameter is the lower limit of a one-sided confidence
+interval at this level, computed from the publication-truncated
+distribution of the prior statistic, so \code{assurance = .5} plans from
+a median unbiased estimate (correcting for publication bias only), a
+larger value adds the correction for uncertainty, and a value below .5 is
+not recommended. The term follows Kelley and Maxwell (2003), who used
+assurance in sample size planning for the probability that a confidence
+interval will be no wider than desired. With \code{alpha_prior = 1} and
+\code{assurance = .80} the plan corresponds to safeguard power, a special
+case (see \code{\link{BUCSS-package}} for how, and for where the two
+differ). Enter it as a proportion in (0, 1) or as a percentage greater
+than 1 (for example, 80 is read as .80); a value of exactly 1 is read as
+1 percent. A percentage is echoed in the result's planning-input rows as
 the coerced proportion (80 is echoed as .80); the same applies to
 \code{desired_power}.}
 
@@ -55,15 +66,20 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   and per-cell designs, \code{total_N}, the implied total sample size;
   \code{actual_power}, the power of the plan returned, that is, of the
   returned sample size at the returned noncentrality parameter (see
-  Details); and \code{ncp_adjusted}, the publication bias and uncertainty
-  adjusted prior study noncentrality parameter, on the scale of the \emph{F} statistic, \eqn{N\rho^2/(1 - \rho^2)}{N rho^2/(1 - rho^2)} at the prior study's sample size. Rows
+  Details); \code{ncp_adjusted}, the publication bias and uncertainty
+  adjusted prior study noncentrality parameter, on the scale of the \emph{F} statistic, \eqn{N\rho^2/(1 - \rho^2)}{N rho^2/(1 - rho^2)} at the prior study's sample size; and the
+  planning effect size, the effect size the plan is built on, which is
+  \code{ncp_adjusted} restated in the design's usual metric:
+  \code{rho_planning}, the population correlation (a magnitude), \eqn{\sqrt{\lambda/(\lambda + N)}}{sqrt(lambda/(lambda + N))}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted} and \emph{N} the prior sample size; the power statement that follows is for sampled variables, the exact distribution this planner uses. Because it restates \code{ncp_adjusted},
+  \code{actual_power} is the ordinary power of a study of the returned
+  sample size when the population effect is the planning effect size. Rows
   echoing the planning inputs follow, so the assumptions travel with the
   result. The design, the unit the sample size is counted in, the largest
   assurance this prior can support (the assurance ceiling), and the
   planned test's degrees of freedom (\code{df_effect}, and \code{df_error}
   where the test has a denominator) travel on attributes.
-  \code{print.bucss_plan} shows the design, the unit, and the ceiling
-  beneath the table; \code{tidy()} and \code{glance()} give the compact and
+  \code{print.bucss_plan} shows the design, for the regression planners
+  the predictor frame, the unit, and the ceiling beneath the table; \code{tidy()} and \code{glance()} give the compact and
   wide views, the latter with every attribute as a column.
 }
 \description{
@@ -75,8 +91,8 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   achieve more accurate statistical power for a planned study, when compared
   to approaches that use a sample effect size at face value or rely on sample
   size only. The bias and uncertainty adjusted previous study noncentrality
-  parameter is also returned, which can be transformed to various effect size
-  metrics.
+  parameter is also returned, together with the planning effect size, the
+  effect size the plan is built on, as a correlation.
 }
 \details{
 Researchers often use the sample effect size from a prior study as
@@ -103,15 +119,21 @@ Researchers often use the sample effect size from a prior study as
   publication bias. The numerator of the likelihood function is the density
   of the test statistic; the denominator is the power of the test, which
   serves to truncate the distribution. (See Taylor & Muller, 1996, Equation
-  2.1, and Anderson & Maxwell, 2017, for more details.) Which density
-  belongs in that numerator is the one substantive difference between this
-  planner and \code{\link{ss_buc_reg_coef}}, and it is described next.
+  2.1; Anderson, Kelley, & Maxwell, 2017, Equation 3; and Anderson &
+  Maxwell, 2017, for more details.) Which density belongs in that numerator
+  is described next; it is the density \code{\link{ss_buc_reg_coef}} uses
+  with \code{p = 1} and \code{random_predictors = TRUE}, and that call
+  returns exactly this planner's result.
 
   \strong{Both variables are sampled, and that changes the distribution.}
   The test of a correlation is arithmetically the test of the slope in a
   simple regression, so it is tempting to plan it as one. That is exact only
   when the predictor is fixed by design, as it is in an experiment where the
-  researcher sets the values of \emph{X}. A correlation study samples
+  researcher sets the values of \emph{X}: the estimates, and the
+  distribution of the statistic when there is no effect, are the same
+  whether the predictor is fixed or sampled, but the distribution when there
+  is an effect, and so the power, is not (Sampson, 1974; Gatsonis &
+  Sampson, 1989; Kelley & Maxwell, 2003). A correlation study samples
   \emph{both} variables. Conditional on the sampled \emph{X}, the statistic
   is noncentral \emph{F}, but its noncentrality parameter is itself random:
   it is proportional to the sampled spread of \emph{X}, which follows a
@@ -130,9 +152,14 @@ Researchers often use the sample effect size from a prior study as
   than a few participants light, and it is typically 2 to 5 participants
   larger than the fixed-predictor calculation (1 to 3 for the smallest plans,
   up to about 8 for plans in the hundreds). Near the assurance ceiling the
-  difference reverses and the mixture calls for a slightly smaller sample. If your predictor really is fixed by design,
-  the analysis is a regression slope rather than a correlation, and
-  \code{\link{ss_buc_reg_coef}} with \code{p = 1} is the planner for it.
+  difference reverses and the mixture calls for a sample a few percent
+  smaller, which can be hundreds of participants because plans there are
+  very large (7,346 rather than the 7,722 of treating the predictor as
+  fixed, for \emph{r} = .50 from a prior study of 20 at an
+  \code{assurance} of .5). If your predictor really is fixed by design, the
+  analysis is a regression slope rather than a correlation, and
+  \code{\link{ss_buc_reg_coef}} with \code{p = 1} and
+  \code{random_predictors = FALSE} is the planner for it.
 
   The largest assurance the prior result can support is the same in either
   frame, since at a zero effect the mixture is the central \emph{F}
@@ -194,11 +221,13 @@ Researchers often use the sample effect size from a prior study as
   magnitude enters the computation.
 
   The returned \code{ncp_adjusted} is the noncentrality parameter the
-  adjusted correlation implies at the prior study's sample size,
+  planning effect size implies at the prior study's sample size,
   \eqn{N\rho^2/(1 - \rho^2)}{N rho^2/(1 - rho^2)}, on the scale of the
   \emph{F} statistic, as in the regression planners (the \emph{t}-based
-  planners report theirs on the scale of \emph{t} instead). The adjusted
-  correlation itself is \code{sqrt(ncp_adjusted / (ncp_adjusted + N))}.
+  planners report theirs on the scale of \emph{t} instead). The planning
+  effect size itself, the correlation
+  \code{sqrt(ncp_adjusted / (ncp_adjusted + N))}, is returned as the
+  \code{rho_planning} row.
 }
 \examples{
 result <- ss_buc_correlation(r_observed = .35, N = 100, alpha_prior = .05,
@@ -230,6 +259,11 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
   305--324. \doi{10.1080/00273171.2017.1289361}
 
+  Kelley, K., & Maxwell, S. E. (2003). Sample size for multiple regression:
+  Obtaining regression coefficients that are accurate, not simply
+  significant. \emph{Psychological Methods, 8,} 305--321.
+  \doi{10.1037/1082-989X.8.3.305}
+
   Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
   experiments and analyzing data: A model comparison perspective} (4th ed.).
   Routledge.
@@ -238,10 +272,19 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   sample size calculation due to estimating noncentrality. \emph{Communications
   in Statistics: Theory and Methods, 25,} 1595--1610.
   \doi{10.1080/03610929608831787}
+
+Gatsonis, C., & Sampson, A. R. (1989). Multiple correlation:
+  Exact power and sample size calculations. \emph{Psychological Bulletin,
+  106,} 516--524. \doi{10.1037/0033-2909.106.3.516}
+
+  Sampson, A. R. (1974). A tale of two regressions. \emph{Journal of the
+  American Statistical Association, 69,} 682--689.
+  \doi{10.1080/01621459.1974.10480189}
 }
 \seealso{
 \code{\link{ss_buc_reg_coef}} for a coefficient in a model with
-  more than one predictor.
+  more than one predictor (with \code{random_predictors = TRUE} for
+  sampled predictors).
 }
 \author{
 Ken Kelley (\email{kkelley@nd.edu})

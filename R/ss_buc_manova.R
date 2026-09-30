@@ -11,7 +11,8 @@
 #'   statistical power for a planned study, when compared to approaches that use
 #'   a sample effect size at face value or rely on sample size only. The bias
 #'   and uncertainty adjusted previous study noncentrality parameter is also
-#'   returned, which can be transformed to various effect size metrics.
+#'   returned, together with the planning effect size, the effect size the plan
+#'   is built on, as a squared Mahalanobis distance.
 #'
 #' @details Researchers often use the sample effect size from a prior study as
 #'   an estimate of the likely size of an expected future effect in sample size
@@ -39,7 +40,8 @@
 #'   The denominator is the power of the test, which serves to truncate the
 #'   distribution. Thus, the ratio of the numerator and the denominator is a
 #'   truncated noncentral \emph{F} distribution. (See Taylor & Muller, 1996,
-#'   Equation 2.1, and Anderson & Maxwell, 2017, for more details.)
+#'   Equation 2.1; Anderson, Kelley, & Maxwell, 2017, Equation 3; and Anderson
+#'   & Maxwell, 2017, for more details.)
 #'
 #'   Assurance is the proportion of times that power will be at or above the
 #'   desired level, if the experiment were to be reproduced many times. For
@@ -95,8 +97,12 @@
 #'   \code{ss_buc_manova} assumes that the planned study will have equal
 #'   \emph{n} per group. If the prior \emph{N} is odd, the per-group size is
 #'   rounded both up and down, the planned sample size is computed under each,
-#'   and the larger of the two is returned, with the smaller of the two adjusted
-#'   noncentrality parameters, to be conservative.
+#'   and the larger of the two is returned, with the smaller of the two
+#'   adjusted noncentrality parameters, to be conservative. The planning effect
+#'   size belongs to the same balanced design as the reported noncentrality
+#'   parameter, so an ordinary power analysis at it can return a sample size a
+#'   little smaller than the one reported here (never a larger one), because
+#'   the reported size is the larger of the two rounded designs' requirements.
 #'
 #' @param F_observed Observed \emph{F} value for the multivariate comparison
 #'   from a previous study. Supply either \code{F_observed} or
@@ -108,7 +114,8 @@
 #' @template planning-params
 #'
 #' @templateVar size_phrase per-group sample size
-#' @templateVar ncp_scale on the scale of the \emph{F} statistic, at the prior study's sample size (with one outcome variable it is the square of the independent \emph{t} planner's)
+#' @templateVar ncp_scale on the scale of the \emph{F} statistic, at the prior study's sample size (for an odd prior \emph{N}, at the balanced sample size the planner substitutes for it; with one outcome variable it is the square of the independent \emph{t} planner's)
+#' @templateVar effect_phrase \code{D2_planning}, the squared Mahalanobis distance between the two population mean vectors, \eqn{2\lambda/n}{2 lambda/n}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted} and \emph{n} the per-group size of the balanced prior design it belongs to (see Details); with one outcome variable it is the square of the \code{smd_planning} of \code{\link{ss_buc_independent_t}}
 #' @template return
 #'
 #' @export
@@ -212,17 +219,25 @@ ss_buc_manova <- function(F_observed, N, p_variables, T2_observed,
                                    desired_power, start = n_start)
 
   output_n <- max(repn_ru, repn_rd)
-  actual_power <- if (solution_rd$ncp <= solution_ru$ncp)
-    power_at(output_n, n_rd, solution_rd$ncp) else
-      power_at(output_n, n_ru, solution_ru$ncp)
+  # The reported noncentrality parameter is the smaller of the two branches',
+  # and n_b the prior per-group size it belongs to; actual_power is the power
+  # of the returned size at that parameter. The planning effect size restates
+  # it as the squared Mahalanobis distance at n_b, so the ordinary power of
+  # the returned size at that effect is exactly actual_power.
+  use_rd <- solution_rd$ncp <= solution_ru$ncp
+  n_b <- if (use_rd) n_rd else n_ru
+  ncp_b <- if (use_rd) solution_rd$ncp else solution_ru$ncp
+  actual_power <- power_at(output_n, n_b, ncp_b)
 
   .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_n_per_group",
+    effect_size_term = "D2_planning",
+    effect_size = .es_D2(ncp_b, n_b),
     actual_power = actual_power,
     df_effect = df_numerator,
     df_error = (2 * output_n) - p_variables - 1,
-    ncp = min(solution_ru$ncp, solution_rd$ncp),
+    ncp = ncp_b,
     design = "Two-group multivariate comparison (Hotelling's T squared)",
     sample_size_unit = "per group",
     assurance_ceiling = min(solution_ru$ceiling, solution_rd$ceiling),

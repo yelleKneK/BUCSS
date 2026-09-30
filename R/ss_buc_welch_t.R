@@ -10,7 +10,8 @@
 #'   statistical power for a planned study, when compared to approaches that use
 #'   a sample effect size at face value or rely on sample size only. The bias
 #'   and uncertainty adjusted previous study noncentrality parameter is also
-#'   returned, which can be transformed to various effect size metrics.
+#'   returned, together with the planning effect size, the effect size the plan
+#'   is built on, as a standardized mean difference.
 #'
 #' @details Researchers often use the sample effect size from a prior study as
 #'   an estimate of the likely size of an expected future effect in sample size
@@ -26,28 +27,30 @@
 #'   statistic as noncentral \emph{t} on the Welch-Satterthwaite degrees of
 #'   freedom implied by the prior study's group sizes and the standard deviation
 #'   ratio you supply, which is the usual approximation in power analysis for
-#'   this test, and computes the planned study's power the same way. Once each
-#'   group has about ten participants that treatment is accurate: across ratios
-#'   from 1 to 5, the power of the real Welch test is within .006 of what this
-#'   function reports for every plan it returns (10 per group or more), and
-#'   within .003 from about 12 per group at a target power of .80, and its
-#'   Type I error stays between .047 and .054 against a nominal .05 across
-#'   ratios from 1 to 3. With smaller groups the approximation
-#'   overstates the power of the real test, badly so for the smallest (a plan
-#'   of 2 per group that it puts at .82 has real power near .50), because the
-#'   real test estimates its degrees of freedom from very few observations.
-#'   \strong{The planner therefore never returns fewer than 10 per group}: when
-#'   the target power is reached with fewer, it returns 10, whose power exceeds
-#'   the target. The correction of the prior study's statistic uses the same
-#'   approximation and holds up well: simulating prior studies of 5 to 20 per
-#'   group as raw data, published by the real Welch test, the corrected
-#'   parameter fell at or below the truth in about .79 to .82 of them at an
-#'   \code{assurance} of .80 (a refusal counted as at or below). One
-#'   consequence of reading the prior study on the Welch-Satterthwaite degrees
-#'   of freedom the supplied ratio implies, rather than on those its data
-#'   produced: with very small groups and a large ratio, a prior result its
-#'   paper reported as significant can fall short of the critical value here
-#'   and be refused as nonsignificant.
+#'   this test, and computes the planned study's power the same way.
+#'   \strong{A minimum planned sample size of 10 per group is imposed, because
+#'   of estimation accuracy issues at smaller sample sizes.} With fewer per
+#'   group the approximation is not accurate enough: the real test estimates
+#'   its two variances, and so its degrees of freedom, from too few
+#'   observations for the noncentral \emph{t} to describe it, and the
+#'   approximation overstates its power, badly so for the smallest (a plan of
+#'   2 per group that it puts at .82 has real power near .50). From 10 per
+#'   group the approximation is accurate: across ratios from 1 to 5, the power
+#'   of the real Welch test is within .006 of what this function reports for
+#'   every plan it returns, and within .003 from about 12 per group at a
+#'   target power of .80, and its Type I error stays between .047 and .054
+#'   against a nominal .05 across ratios from 1 to 3. When the target power is
+#'   reached with fewer than 10 per group, the planner returns 10, whose power
+#'   exceeds the target. The correction of the prior study's statistic uses
+#'   the same approximation and holds up well: simulating prior studies of 5
+#'   to 20 per group as raw data, published by the real Welch test, the
+#'   corrected parameter fell at or below the truth in about .79 to .82 of
+#'   them at an \code{assurance} of .80 (a refusal counted as at or below).
+#'   One consequence of reading the prior study on the Welch-Satterthwaite
+#'   degrees of freedom the supplied ratio implies, rather than on those its
+#'   data produced: with very small groups and a large ratio, a prior result
+#'   its paper reported as significant can fall short of the critical value
+#'   here and be refused as nonsignificant.
 #'
 #'   \strong{The assumption that matters is the ratio itself.} One
 #'   \code{sd_ratio} describes both studies: the prior study, whose statistic
@@ -66,8 +69,8 @@
 #'   more variable is the smaller one.
 #'
 #'   When the ratio is 1 and the prior groups were the same size, this planner
-#'   returns what \code{\link{ss_buc_independent_t}} returns, except that it
-#'   never returns fewer than 10 per group. With
+#'   returns what \code{\link{ss_buc_independent_t}} returns, except for the
+#'   minimum of 10 per group imposed here. With
 #'   unequal prior group sizes the two differ, and should: the equal-variance
 #'   planner reduces the prior study to an equivalent equal-\emph{n} design at
 #'   the harmonic mean, while this one uses the actual Welch-Satterthwaite
@@ -81,7 +84,8 @@
 #'   The denominator is the power of the test, which serves to truncate the
 #'   distribution. In the two-group case, this formula reduces to the density of
 #'   a truncated noncentral \emph{t} distribution. (See Taylor & Muller, 1996,
-#'   Equation 2.1, and Anderson & Maxwell, 2017, for more details.)
+#'   Equation 2.1; Anderson, Kelley, & Maxwell, 2017, Equation 3; and Anderson
+#'   & Maxwell, 2017, for more details.)
 #'
 #'   Assurance is the proportion of times that power will be at or above the
 #'   desired level, if the experiment were to be reproduced many times. For
@@ -160,6 +164,7 @@
 #'
 #' @templateVar size_phrase per-group sample size
 #' @templateVar ncp_scale on the scale of the \emph{t} statistic (the noncentrality parameter of the prior study's noncentral \emph{t})
+#' @templateVar effect_phrase \code{smd_planning}, a standardized mean difference (a magnitude) whose standardizer is the root mean square of the two groups' standard deviations (Bonett, 2008), \eqn{\lambda\sqrt{(1/n_1 + r^2/n_2)/((1 + r^2)/2)}}{lambda * sqrt((1/n_1 + r^2/n_2)/((1 + r^2)/2))}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted}, \eqn{n_1}{n_1} and \eqn{n_2}{n_2} are the prior group sizes, and \emph{r} is the ratio of standard deviations; with \emph{n} per group in the planned study its noncentrality parameter is this value times \eqn{\sqrt{n/2}}{sqrt(n/2)}, as for the equal-variance test, and with a ratio of 1 it is Cohen's \eqn{\delta}{delta}
 #' @template return
 #'
 #' @export
@@ -192,6 +197,9 @@
 #' @author Ken Kelley (\email{kkelley@@nd.edu})
 #'
 #' @template references
+#' @references Bonett, D. G. (2008). Confidence intervals for standardized
+#'   linear contrasts of means. \emph{Psychological Methods, 13,} 99--109.
+#'   \doi{10.1037/1082-989X.13.2.99}
 ss_buc_welch_t <- function(t_observed, n_1, n_2, sd_ratio = 1,
                            sd_1, sd_2, var_1, var_2,
                            alpha_prior = .05, alpha_planned = .05,
@@ -267,7 +275,8 @@ ss_buc_welch_t <- function(t_observed, n_1, n_2, sd_ratio = 1,
     (1 - pt(critical_t, df = denom_df, ncp = scaled)) +
       pt(-1 * critical_t, df = denom_df, ncp = scaled)
   }
-  # The search starts at 10 per group. Below that the noncentral t on the
+  # The search starts at 10 per group, a minimum imposed because of estimation
+  # accuracy issues at smaller sample sizes. Below it the noncentral t on the
   # population Welch-Satterthwaite df overstates the power of the real Welch
   # test, whose degrees of freedom are estimated from the planned study's data:
   # by up to about .33 at 2 per group, and by more than .006 below 10 per group
@@ -280,6 +289,8 @@ ss_buc_welch_t <- function(t_observed, n_1, n_2, sd_ratio = 1,
   .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_n_per_group",
+    effect_size_term = "smd_planning",
+    effect_size = .es_smd_welch(ncp, n_1, n_2, sd_ratio),
     actual_power = actual_power,
     df_effect = 1,
     df_error = welch_df(output_n, output_n, sd_ratio),

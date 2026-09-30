@@ -9,8 +9,8 @@
 #'   achieve more accurate statistical power for a planned study, when compared
 #'   to approaches that use a sample effect size at face value or rely on sample
 #'   size only. The bias and uncertainty adjusted previous study noncentrality
-#'   parameter is also returned, which can be transformed to various effect size
-#'   metrics.
+#'   parameter is also returned, together with the planning effect size, the
+#'   effect size the plan is built on, as a correlation.
 #'
 #' @details Researchers often use the sample effect size from a prior study as
 #'   an estimate of the likely size of an expected future effect in sample size
@@ -36,15 +36,21 @@
 #'   publication bias. The numerator of the likelihood function is the density
 #'   of the test statistic; the denominator is the power of the test, which
 #'   serves to truncate the distribution. (See Taylor & Muller, 1996, Equation
-#'   2.1, and Anderson & Maxwell, 2017, for more details.) Which density
-#'   belongs in that numerator is the one substantive difference between this
-#'   planner and \code{\link{ss_buc_reg_coef}}, and it is described next.
+#'   2.1; Anderson, Kelley, & Maxwell, 2017, Equation 3; and Anderson &
+#'   Maxwell, 2017, for more details.) Which density belongs in that numerator
+#'   is described next; it is the density \code{\link{ss_buc_reg_coef}} uses
+#'   with \code{p = 1} and \code{random_predictors = TRUE}, and that call
+#'   returns exactly this planner's result.
 #'
 #'   \strong{Both variables are sampled, and that changes the distribution.}
 #'   The test of a correlation is arithmetically the test of the slope in a
 #'   simple regression, so it is tempting to plan it as one. That is exact only
 #'   when the predictor is fixed by design, as it is in an experiment where the
-#'   researcher sets the values of \emph{X}. A correlation study samples
+#'   researcher sets the values of \emph{X}: the estimates, and the
+#'   distribution of the statistic when there is no effect, are the same
+#'   whether the predictor is fixed or sampled, but the distribution when there
+#'   is an effect, and so the power, is not (Sampson, 1974; Gatsonis &
+#'   Sampson, 1989; Kelley & Maxwell, 2003). A correlation study samples
 #'   \emph{both} variables. Conditional on the sampled \emph{X}, the statistic
 #'   is noncentral \emph{F}, but its noncentrality parameter is itself random:
 #'   it is proportional to the sampled spread of \emph{X}, which follows a
@@ -63,9 +69,14 @@
 #'   than a few participants light, and it is typically 2 to 5 participants
 #'   larger than the fixed-predictor calculation (1 to 3 for the smallest plans,
 #'   up to about 8 for plans in the hundreds). Near the assurance ceiling the
-#'   difference reverses and the mixture calls for a slightly smaller sample. If your predictor really is fixed by design,
-#'   the analysis is a regression slope rather than a correlation, and
-#'   \code{\link{ss_buc_reg_coef}} with \code{p = 1} is the planner for it.
+#'   difference reverses and the mixture calls for a sample a few percent
+#'   smaller, which can be hundreds of participants because plans there are
+#'   very large (7,346 rather than the 7,722 of treating the predictor as
+#'   fixed, for \emph{r} = .50 from a prior study of 20 at an
+#'   \code{assurance} of .5). If your predictor really is fixed by design, the
+#'   analysis is a regression slope rather than a correlation, and
+#'   \code{\link{ss_buc_reg_coef}} with \code{p = 1} and
+#'   \code{random_predictors = FALSE} is the planner for it.
 #'
 #'   The largest assurance the prior result can support is the same in either
 #'   frame, since at a zero effect the mixture is the central \emph{F}
@@ -127,11 +138,13 @@
 #'   magnitude enters the computation.
 #'
 #'   The returned \code{ncp_adjusted} is the noncentrality parameter the
-#'   adjusted correlation implies at the prior study's sample size,
+#'   planning effect size implies at the prior study's sample size,
 #'   \eqn{N\rho^2/(1 - \rho^2)}{N rho^2/(1 - rho^2)}, on the scale of the
 #'   \emph{F} statistic, as in the regression planners (the \emph{t}-based
-#'   planners report theirs on the scale of \emph{t} instead). The adjusted
-#'   correlation itself is \code{sqrt(ncp_adjusted / (ncp_adjusted + N))}.
+#'   planners report theirs on the scale of \emph{t} instead). The planning
+#'   effect size itself, the correlation
+#'   \code{sqrt(ncp_adjusted / (ncp_adjusted + N))}, is returned as the
+#'   \code{rho_planning} row.
 #'
 #' @param r_observed Observed Pearson correlation from a previous study used to
 #'   plan sample size for a planned study. Either sign is accepted; only the
@@ -144,6 +157,7 @@
 #'
 #' @templateVar size_phrase total sample size
 #' @templateVar ncp_scale on the scale of the \emph{F} statistic, \eqn{N\rho^2/(1 - \rho^2)}{N rho^2/(1 - rho^2)} at the prior study's sample size
+#' @templateVar effect_phrase \code{rho_planning}, the population correlation (a magnitude), \eqn{\sqrt{\lambda/(\lambda + N)}}{sqrt(lambda/(lambda + N))}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted} and \emph{N} the prior sample size; the power statement that follows is for sampled variables, the exact distribution this planner uses
 #' @template return
 #'
 #' @export
@@ -163,11 +177,19 @@
 #' try(ss_buc_correlation(r_observed = .27, N = 100, assurance = .95))
 #'
 #' @seealso \code{\link{ss_buc_reg_coef}} for a coefficient in a model with
-#'   more than one predictor.
+#'   more than one predictor (with \code{random_predictors = TRUE} for
+#'   sampled predictors).
 #'
 #' @author Ken Kelley (\email{kkelley@@nd.edu})
 #'
 #' @template references
+#' @references Gatsonis, C., & Sampson, A. R. (1989). Multiple correlation:
+#'   Exact power and sample size calculations. \emph{Psychological Bulletin,
+#'   106,} 516--524. \doi{10.1037/0033-2909.106.3.516}
+#'
+#'   Sampson, A. R. (1974). A tale of two regressions. \emph{Journal of the
+#'   American Statistical Association, 69,} 682--689.
+#'   \doi{10.1080/01621459.1974.10480189}
 ss_buc_correlation <- function(r_observed, N, t_observed, alpha_prior = .05,
                                alpha_planned = .05, assurance = .80,
                                desired_power = .80) {
@@ -209,7 +231,8 @@ ss_buc_correlation <- function(r_observed, N, t_observed, alpha_prior = .05,
   # study samples both variables. The adjusted parameter is reported on the
   # usual scale, the noncentrality parameter the adjusted correlation implies
   # at the prior study's N, so it stays comparable with the other planners;
-  # the correlation itself is recoverable as sqrt(ncp / (ncp + N)).
+  # the correlation itself, sqrt(ncp / (ncp + N)), is the planning effect size
+  # row.
   ncp_solution <- .solve_ncp_assurance(
     .tm_correlation(t_stat^2, value_critical, N), assurance)
   ncp <- ncp_solution$ncp
@@ -227,6 +250,8 @@ ss_buc_correlation <- function(r_observed, N, t_observed, alpha_prior = .05,
   .bucss_plan_result(
     sample_size = output_n,
     size_term = "necessary_N",
+    effect_size_term = "rho_planning",
+    effect_size = .es_rho(ncp, N),
     actual_power = actual_power,
     df_effect = df_numerator,
     df_error = output_n - 2,

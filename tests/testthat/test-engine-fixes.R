@@ -297,7 +297,7 @@ test_that("every two-branch planner names the smaller branch ceiling, and it pla
   # round-down branch, with fewer error degrees of freedom, has the smaller.
   # The message must name the smaller, floored; a re-run at that value must
   # return a plan, and a re-run at the larger branch's floored value refuses.
-  fl <- function(x) floor(x * 100 + 1e-9) / 100
+  fl <- function(x) floor(x * 100 - 1e-9) / 100
   ceiling_f <- function(F, df1, df2) 1 - pf(F, df1, df2, lower.tail = FALSE) / .05
   ceiling_t <- function(t, df) 1 - 2 * pt(t, df, lower.tail = FALSE) / .05
   cases <- list(
@@ -385,38 +385,50 @@ test_that("a prior significant at its own df is not called nonsignificant", {
   expect_no_match(msg, "own degrees of freedom", fixed = TRUE)
 })
 
-test_that("the band message reports the balanced design's p value and the alpha_prior planning needs", {
+test_that("the band message reports the balanced design's p value and an alpha_prior that plans", {
   # The message reports the p value at the rounded-down balanced design (the
-  # one with the fewest degrees of freedom, where the statistic fell short),
-  # the 'alpha_prior' that planning at the requested assurance would need,
-  # p/(1 - assurance), and the recommended floor of .5 only when the own-df
-  # ceiling is below it. The p values are from pt() alone (independent check
-  # 2026-09-29).
+  # one with the fewest degrees of freedom, where the statistic fell short) and
+  # an 'alpha_prior' at which planning at the requested assurance works: the
+  # threshold p/(1 - assurance), rounded up to three significant digits,
+  # strictly above it (at the threshold itself the ceiling equals the
+  # assurance and the planner refuses). It mentions the recommended floor of
+  # .5 only when the own-df ceiling is below it. The p values are from pt()
+  # alone (independent check 2026-09-29); the printed values are pinned as
+  # text and re-run (QC 2026-09-30, finding 2).
   fmt3 <- function(p) sub("^0", "", format(signif(p, 3), scientific = FALSE))
+  printed_alpha <- function(msg)
+    as.numeric(sub(".*an 'alpha_prior' of ([.0-9]+) or more.*", "\\1", msg))
   opening <- paste0("Your observed t statistic is significant at the prior study's own ",
                     "degrees of freedom (p = ")
+  advice <- paste0("Near that value the plan is very large, because the result then ",
+                   "barely supports the requested assurance; a larger 'alpha_prior' ",
+                   "gives a practical plan, and so does a lower 'assurance', which ",
+                   "lowers the 'alpha_prior' needed.")
 
   # Below .5: t = 2.05, n = c(5, 200). The harmonic mean 9.76 rounds down to 9
   # per group (df 16), where p = .0571; the own df are 203 (p = .0416, ceiling
-  # 1 - .0416/.05, floored to .16).
+  # 1 - .0416/.05, floored to .16). The threshold is .0571/.2 = .28561.
   p_bal <- 2 * pt(2.05, 16, lower.tail = FALSE)
+  expect_equal(p_bal / .2, 0.2856145, tolerance = 1e-6)
   low <- tryCatch(ss_buc_independent_t(t_observed = 2.05, n = c(5, 200)),
                   bucss_nonsignificant = conditionMessage)
   expect_match(low, paste0(opening, ".0416)"), fixed = TRUE)
   expect_match(low, paste0("and there its p value is ", fmt3(p_bal), ", above 'alpha_prior'."),
                fixed = TRUE)
   expect_match(low, paste0("Planning from it at an 'assurance' of .80 would need an ",
-                           "'alpha_prior' of at least about ", fmt3(p_bal / .2)), fixed = TRUE)
+                           "'alpha_prior' of .286 or more, which assumes a more lenient ",
+                           "publication threshold. "), fixed = TRUE)
+  expect_match(low, advice, fixed = TRUE)
   expect_match(low, paste0("Even at its own degrees of freedom the result supports an ",
                            "assurance of at most about .16, below the recommended floor ",
                            "of .5."), fixed = TRUE)
-  # The advice is true: at the alpha_prior it names the planner plans, and
-  # just below it the planner still refuses.
-  needed <- p_bal / .2
-  expect_s3_class(ss_buc_independent_t(t_observed = 2.05, n = c(5, 200),
-                                       alpha_prior = needed * 1.01), "bucss_plan")
+  # The advice is true: at the printed value the planner plans (59,048 per
+  # group, very large), and at the threshold itself it still refuses.
+  expect_identical(printed_alpha(low), .286)
+  expect_identical(size(ss_buc_independent_t(t_observed = 2.05, n = c(5, 200),
+                                             alpha_prior = .286)), 59048)
   expect_error(ss_buc_independent_t(t_observed = 2.05, n = c(5, 200),
-                                    alpha_prior = needed * .99),
+                                    alpha_prior = p_bal / .2 * (1 - 1e-9)),
                class = "bucss_zero_ncp")
 
   # .5 or more: t = 2.77, n = c(2, 1000). The own df are 1000 (p = .00571,
@@ -427,13 +439,113 @@ test_that("the band message reports the balanced design's p value and the alpha_
                    bucss_nonsignificant = conditionMessage)
   expect_match(high, paste0(opening, ".00571)"), fixed = TRUE)
   expect_match(high, paste0("its p value is ", fmt3(p_bal), ","), fixed = TRUE)
-  expect_match(high, paste0("at least about ", fmt3(p_bal / .2)), fixed = TRUE)
+  expect_match(high, "an 'alpha_prior' of .252 or more", fixed = TRUE)
+  expect_gt(.252, p_bal / .2)
+  expect_s3_class(ss_buc_independent_t(t_observed = 2.77, n = c(2, 1000), alpha_prior = .252),
+                  "bucss_plan")
   expect_no_match(high, "below the recommended floor", fixed = TRUE)
-  expect_no_match(high, "only just", fixed = TRUE)
+  expect_no_match(high, "at least about", fixed = TRUE)
 
-  # An assurance so high that no alpha_prior below 1 would do.
+  # The audit's case: N = 9 rounds to 4 per group (df 6), where p = .0529, so
+  # the threshold is .26439. Rounded to the nearest three digits it was .264,
+  # at which the planner refuses; the message now names .265, which plans.
+  t9 <- (qt(.975, 7) + qt(.975, 6)) / 2
+  n9 <- tryCatch(ss_buc_independent_t(t9, N = 9, assurance = .8),
+                 bucss_nonsignificant = conditionMessage)
+  expect_match(n9, "an 'alpha_prior' of .265 or more", fixed = TRUE)
+  expect_identical(size(ss_buc_independent_t(t9, N = 9, assurance = .8, alpha_prior = .265)),
+                   11246)
+  expect_error(ss_buc_independent_t(t9, N = 9, assurance = .8, alpha_prior = .264),
+               class = "bucss_zero_ncp")
+
+  # An assurance so high that no practical alpha_prior will do: the threshold
+  # is 1.26 here, and at .999 or more even 'alpha_prior = 1' (read as .999)
+  # refuses. The assurance prints as entered, never as 1.00.
   none <- tryCatch(ss_buc_independent_t(t_observed = 2.77, n = c(2, 1000), assurance = .96),
                    bucss_nonsignificant = conditionMessage)
-  expect_match(none, "No 'alpha_prior' below 1 allows planning from it at an 'assurance' of .96.",
+  expect_match(none, paste0("Planning from it at an 'assurance' of .96 would need an ",
+                            "'alpha_prior' above .999, and 'alpha_prior = 1' (no publication ",
+                            "bias) is treated as .999, so no practical 'alpha_prior' allows ",
+                            "it; a lower 'assurance' lowers the 'alpha_prior' needed."),
                fixed = TRUE)
+  p9 <- 2 * pt(t9, 6, lower.tail = FALSE)
+  edge <- 1 - p9 / .9995                         # a threshold of .9995
+  msg <- tryCatch(ss_buc_independent_t(t9, N = 9, assurance = edge),
+                  bucss_nonsignificant = conditionMessage)
+  expect_match(msg, "would need an 'alpha_prior' above .999", fixed = TRUE)
+  expect_no_match(msg, "or more", fixed = TRUE)
+  expect_error(ss_buc_independent_t(t9, N = 9, assurance = edge, alpha_prior = 1),
+               class = "bucss_zero_ncp")
+  top <- tryCatch(ss_buc_independent_t(t_observed = 2.77, n = c(2, 1000), assurance = .999),
+                  bucss_nonsignificant = conditionMessage)
+  expect_match(top, "at an 'assurance' of .999 would need", fixed = TRUE)
+  expect_no_match(top, "1.00", fixed = TRUE)
+})
+
+test_that("every rounding planner's band message names an alpha_prior that plans", {
+  # One unbalanced prior study per planner that reduces it to a balanced
+  # design, with a statistic halfway between the critical values at the prior
+  # study's own error df and at the rounded-down design's, at five assurances.
+  # Rounding the threshold to the nearest three digits named a refused value
+  # in 30 of these 40 cases (QC 2026-09-30, finding 2); every printed value
+  # must now be above the threshold and plan.
+  mid <- function(a, b) (a + b) / 2
+  f_mid <- mid(qf(.95, 2, 10), qf(.95, 2, 9))
+  f_mid2 <- mid(qf(.95, 2, 19), qf(.95, 2, 18))
+  designs <- list(
+    function(...) ss_buc_independent_t(t_observed = mid(qt(.975, 7), qt(.975, 6)), N = 9, ...),
+    function(...) ss_buc_independent_t(t_observed = 2.05, n = c(5, 200), ...),
+    function(...) ss_buc_one_way_anova(F_observed = f_mid, N = 13, levels_A = 3, ...),
+    function(...) ss_buc_factorial_anova(F_observed = f_mid2, N = 25, levels_A = 2, levels_B = 3,
+                                         effect = "factor_B", ...),
+    function(...) ss_buc_factorial_anova_general(F_observed = f_mid2, N = 25, cells = 6,
+                                                 df_numerator = 2, df_denominator = 19, ...),
+    function(...) ss_buc_mixed_anova(F_observed = f_mid, N = 13, levels_between = 3,
+                                     levels_within = 3, effect = "between", ...),
+    function(...) ss_buc_mixed_anova_general(F_observed = f_mid, N = 13, df_numerator = 2,
+                                             num_groups = 3, effect = "between_only", ...),
+    function(...) ss_buc_manova(F_observed = f_mid, N = 13, p_variables = 2, ...))
+  named <- 0L
+  for (d in designs) for (a in c(.5, .6, .7, .8, .9)) {
+    msg <- tryCatch(d(assurance = a), bucss_nonsignificant = conditionMessage)
+    expect_type(msg, "character")
+    expect_match(msg, "or more, which assumes", fixed = TRUE)
+    alpha <- as.numeric(sub(".*an 'alpha_prior' of ([.0-9]+) or more.*", "\\1", msg))
+    expect_s3_class(d(assurance = a, alpha_prior = alpha), "bucss_plan")
+    named <- named + 1L
+  }
+  expect_identical(named, 40L)
+})
+
+test_that("a stated ceiling is strictly below the true one, so it plans", {
+  # A ceiling a hair below .87 (the audit's construction: N = 61, whose
+  # rounded-down design has 58 error df) and one a hair above it (N = 60, df
+  # 58, stored as 0.87000000000000066). Both used to be stated as .87, where
+  # the first refuses again (a plan needs the ceiling above the assurance)
+  # and the second plans more than 2^52 per group. Both are now stated as .86,
+  # in the zero-NCP message and in the print and knit_print footers, and .86
+  # plans 4,700 per group (QC 2026-09-30, finding 8).
+  below <- qt(.05 * (1 - (.87 - 5e-12)) / 2, 58, lower.tail = FALSE)
+  above <- qt(.05 * .13 / 2, 58, lower.tail = FALSE)
+  for (case in list(list(t = below, N = 61), list(t = above, N = 60))) {
+    msg <- tryCatch(ss_buc_independent_t(t_observed = case$t, N = case$N, assurance = .95),
+                    bucss_zero_ncp = conditionMessage)
+    expect_match(msg, "usable plan is about .86;", fixed = TRUE)
+    plan <- ss_buc_independent_t(t_observed = case$t, N = case$N, assurance = .86)
+    expect_identical(size(plan), 4700)
+    expect_equal(attr(plan, "assurance_ceiling"), .87, tolerance = 1e-10)
+    expect_true(any(grepl("Largest supportable assurance: .86", capture.output(print(plan)),
+                          fixed = TRUE)))
+    if (requireNamespace("knitr", quietly = TRUE))
+      expect_match(as.character(knitr::knit_print(plan)), "Largest supportable assurance: .86",
+                   fixed = TRUE)
+  }
+  expect_error(ss_buc_independent_t(t_observed = below, N = 61, assurance = .87),
+               class = "bucss_zero_ncp")
+  # A ceiling of 1 in double precision (t = 30 on 38 df, p = 4.6e-28) is stated as
+  # .99, an assurance a planner accepts, not as 1.00, which none does.
+  strong <- ss_buc_independent_t(t_observed = 30, n = 20)
+  expect_identical(attr(strong, "assurance_ceiling"), 1)
+  expect_true(any(grepl("Largest supportable assurance: .99", capture.output(print(strong)),
+                        fixed = TRUE)))
 })
