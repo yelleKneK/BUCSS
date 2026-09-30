@@ -2,7 +2,7 @@ Package: BUCSS
 Type: Package
 Title: Bias and Uncertainty Corrected Sample Size
 Version: 2.0.0
-Date: 2026-09-29
+Date: 2026-09-30
 Authors@R: c(
     person("Ken", "Kelley", role = c("aut", "cre"),
            email = "kkelley@nd.edu",
@@ -20,9 +20,12 @@ Description: Implements sample size planning for a future study from the summary
     analysis of variance and covariance; within-subjects and split-plot analysis
     of variance; a regression coefficient, the squared multiple correlation, and a
     subset of predictors; the Pearson correlation; a two-group multivariate
-    comparison; and the chi square difference between nested models. A simulation
-    function audits how often a plan attains its target power. The method is
-    described in Anderson, Kelley, and Maxwell (2017) <doi:10.1177/0956797617723724>
+    comparison; and the chi square difference between nested models. The
+    regression planners can treat the predictors as fixed or as sampled, the
+    within-subjects and split-plot planners accept a sphericity correction, and
+    each plan reports the effect size it is built on. A simulation function
+    audits how often a plan attains its target power. The method is described in
+    Anderson, Kelley, and Maxwell (2017) <doi:10.1177/0956797617723724>
     and extended to replication studies in Anderson and Kelley (2024)
     <doi:10.1037/met0000520>.
 License: GPL (>= 3)

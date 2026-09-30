@@ -1,19 +1,26 @@
 # BUCSS 2.0.0
 
-This is a major release that modernizes the user-facing API and refines the
-internal computation. It is the first CRAN release since 1.2.1.
+This is a major release that modernizes the user-facing API, refines the
+internal computation, and adds planning options. It is the first CRAN release
+since 1.2.1.
 
-The corrected noncentrality and sample size computations follow the same method
-as 1.2.1; the rounded (three-decimal) adjusted noncentrality parameters match
-the 1.2.1 values for every documented example. The main numerical change is the
-engine that finds the noncentrality parameter (see "Engine" below), which
-shifts some planned sample sizes, most by a few units, and makes them more
-accurate. Two smaller deliberate changes are described under "Bug Fixes": the
-general between-subjects function's `df_denominator` argument, silently
-ignored in 1.x, now functions, and the independent *t* planner rounds the
-harmonic mean of two prior group sizes in integer arithmetic, which changes
-the plan (to a smaller, correct one) for pairs whose harmonic mean is a whole
-number.
+The bias and uncertainty correction and the sample size computations follow
+the same method as 1.2.1. The new options default to what 1.2.1 assumed: the
+regression planners' `random_predictors` defaults to `FALSE` (predictors fixed
+by design) and the within-subjects and split-plot planners' `epsilon` defaults
+to 1 (sphericity), so a plan that uses neither is computed in the frame 1.2.1
+used. For every documented example that 1.2.1 can also compute, the rounded
+(three-decimal) adjusted noncentrality parameter matches the 1.2.1 value. The
+main numerical change is the engine that finds the noncentrality parameter
+(see "Engine" below), which shifts some planned sample sizes, most by a few
+units, and makes them more accurate. Two smaller deliberate changes are
+described under "Bug Fixes": the general between-subjects function's
+`df_denominator` argument, silently ignored in 1.x, now functions, and the
+independent *t* planner rounds the harmonic mean of two prior group sizes in
+integer arithmetic, which changes the plan (to a smaller, correct one) for
+pairs whose harmonic mean is a whole number. Every plan also gains one row,
+its planning effect size (see "Sampled Predictors, Sphericity, and the
+Planning Effect Size" below).
 
 ## Engine: Root Finding Instead of a Fixed Grid
 
@@ -28,30 +35,38 @@ number.
   * The parameter is exact rather than snapped to the grid resolution. The
     rounded (three-decimal) parameters are unchanged from 1.2.1 (apart from
     the harmonic-mean cases above), but the extra precision shifts some
-    planned sample sizes. For the documented unequal-*n*
-    replication example
-    (`ss_buc_independent_t(t_observed = 3, n = c(50, 55), assurance = .90)`), the
-    necessary sample size moves from 1482 (the value BUCSS 1.x reported under
-    its grid search) to 1485, which is the smallest sample size that actually
-    reaches the target power. Across the developer characterization grid,
+    planned sample sizes. For the documented unequal-*n* replication example
+    (`ss_buc_independent_t(t_observed = 3, n = c(50, 55), assurance = .90)`),
+    the necessary sample size moves from 1482 (the value BUCSS 1.x reported
+    under its grid search) to 1485, which is the smallest sample size that
+    actually reaches the target power. Across the developer characterization grid,
     leaving out the cases the old cap affected, the `df_denominator` change,
-    and the harmonic-mean correction, about 95% of sample sizes are unchanged; most of the rest move by a
-    few units and none by more than 2 percent, except close to the assurance
-    ceiling, where the corrected parameter is small and the grid's resolution
-    mattered most (up to about 5 percent). Among the documented examples, five
-    planned sample sizes move: 1482 to 1485 (`ss_buc_independent_t`), 1904 to
-    1902 (`ss_buc_rm_anova`), 968 to 969 (`ss_buc_mixed_anova`), 1491 to 1489
-    (`ss_buc_mixed_anova_general`), and 3963 to 3960 (`ss_buc_reg_joint`). Each
-    new value is the smallest sample size that actually attains the target
-    power at the exact noncentrality parameter; they are pinned in the
-    package's regression tests.
+    and the harmonic-mean correction, about 95% of sample sizes are
+    unchanged; most of the rest move by a few units and none by more than 2
+    percent, except close to the assurance ceiling, where the corrected
+    parameter is small and the grid's resolution mattered most (up to about 5
+    percent). Among the documented examples, seven planned sample sizes move:
+    1482 to 1485 (`ss_buc_independent_t`); 1904 to 1902 (`ss_buc_rm_anova`);
+    968 to 969 (`ss_buc_mixed_anova`); 1491 to 1489
+    (`ss_buc_mixed_anova_general`); 3963 to 3960 (`ss_buc_reg_joint`); and,
+    in the tables of the vignette "Assurance and the Publication Bias
+    Correction", 5069 to 5042
+    (`ss_buc_independent_t(t_observed = 3, n = 20, assurance = .90)`) and 915
+    to 913 (`ss_buc_paired_t()` with `alpha_prior = 1` and `assurance = .80`,
+    for a prior *t* with a two-sided *p* value of .15 from 30 pairs). Each new
+    value is the smallest sample size that actually attains the target power
+    at the exact noncentrality parameter; they are pinned in the package's
+    regression tests.
 * Every worked example in Anderson, Kelley, and Maxwell (2017) and its
   supplemental material is reproduced, and the values are pinned in the
-  regression tests. Where a printed sample size appears to differ by a unit or
-  two (332 per group for the article's first researcher, where *d* = 0.68 gives
-  330), the printed effect size is a rounded simulation median (the article's
-  notes 18 to 20); the median before rounding (*d* = 0.6799) gives 332, in
-  BUCSS 1.2.1 as in 2.0.0.
+  regression tests. The article's three researchers plan from effect sizes it
+  prints rounded (they are simulation medians; its notes 18 to 20), and at the
+  printed values four of its sample sizes differ: *d* = 0.68 gives 330 per
+  group where the article prints 332, an *f* squared of .09 gives 1,400 where
+  it prints 1,418, and a paired *d* of .50 gives 50 and 80 where it prints 49
+  and 79. Each printed size is reproduced by a value that rounds to the
+  printed one (*d* = 0.6799, an *f* squared of .08996, and a paired *d* of
+  .502), in BUCSS 1.2.1 as in 2.0.0.
 * There is no grid-resolution argument or option. The 1.x `step` argument and
   any grid resolution setting are gone, since root finding has no resolution
   parameter.
@@ -121,10 +136,10 @@ number.
 
 ## New Designs
 
-Six designs join the twelve the package has always covered. Two re-present
-computations the package already made (the one-sample *t* and the analysis of
-covariance); four extend the correction to statistics or distributions it did
-not previously handle.
+Six designs join the twelve that 1.2.1 covered. Two re-present computations
+the package already made (the one-sample *t* and the analysis of covariance);
+four extend the correction to statistics or distributions it did not
+previously handle.
 
 * `ss_buc_correlation()` plans from a prior Pearson correlation (or its *t*).
   A correlation study samples both variables, so its test statistic is not
@@ -140,7 +155,9 @@ not previously handle.
   study's power by roughly 1/*n* for a plan of *n* participants (about .01 at
   *n* = 100 and .05 at *n* = 20) and returns a sample size typically 2 to 5
   participants light. When the predictor really is fixed, the analysis is a
-  regression slope and `ss_buc_reg_coef()` with `p = 1` is the planner for it.
+  regression slope and `ss_buc_reg_coef()` with `p = 1` and
+  `random_predictors = FALSE` is the planner for it; with
+  `random_predictors = TRUE` that call returns exactly this planner's result.
   The largest supportable assurance is the same either way, because at a zero
   effect the mixture is the central *F* distribution.
 
@@ -185,11 +202,11 @@ not previously handle.
   given is the one echoed back in the result. A Welch statistic is not exactly
   noncentral *t*, so this planner is an approximation, and its help page says
   which assumption it needs and suggests re-running across a range of ratios.
-  The approximation is accurate once each group has about ten participants
-  (within .006 of the real Welch test's power for every plan it returns, from
-  10 per group) but overstates
-  the power of smaller planned studies, badly so for the smallest, so the
-  planner never returns fewer than 10 per group.
+  A minimum planned sample size of 10 per group is imposed because of
+  estimation accuracy issues at smaller sample sizes: below 10 per group the
+  approximation overstates the real Welch test's power, badly so for the
+  smallest, while from 10 per group it is within .006 of the real test's
+  power for every plan returned.
 
 ## The Assurance Ceiling, Drawn
 
@@ -241,11 +258,12 @@ not previously handle.
   defect.
 
 * The package-wide verification ships with the package. The simulation harness
-  that validated the planners, twenty checks covering assurance calibration
-  across every sampling family plus raw-data audits of the correlation and
-  Welch planners and the finite-sample behavior behind the chi square
-  caveat, is installed under `inst/tools/` and reruns in a few seconds (about
-  half a minute in its full mode) with
+  that validated the planners, twenty-four checks covering assurance
+  calibration across every sampling family, raw-data audits of the
+  correlation planner, the Welch planner, and the regression coefficient
+  planner with sampled predictors, and the finite-sample behavior behind the
+  chi square caveat, is installed under `inst/tools/` and reruns in a few
+  seconds (under a minute in its full mode) with
   `source(system.file("tools", "verify_by_simulation.R", package = "BUCSS"))`.
   It reports the version and location of the BUCSS it verified.
 
@@ -267,6 +285,91 @@ not previously handle.
   the caller's random number state as it was, and reports a failed check as
   an error rather than quitting the session.
 
+## Sampled Predictors, Sphericity, and the Planning Effect Size
+
+* The three regression planners, `ss_buc_reg_coef()`, `ss_buc_R2()`, and
+  `ss_buc_reg_joint()`, take a `random_predictors` argument (default `FALSE`,
+  the fixed-predictor frame of 1.2.1) for predictors sampled along with the
+  outcome, as is typical of observational research in the behavioral
+  sciences (Kelley & Maxwell, 2003). Whether the predictors are fixed by
+  design or sampled changes neither the estimates nor the distribution of
+  the test statistic when the effect is zero, but it changes the statistic's
+  distribution, and so the power, when the effect is not zero (Sampson, 1974;
+  Gatsonis & Sampson, 1989). With `random_predictors = TRUE` the
+  noncentrality parameter is itself random, proportional to the sampled
+  spread of the tested predictors once the other predictors are accounted
+  for (chi square on *N* - 1 - (*p* - *q*) degrees of freedom when *q* of *p*
+  predictors are tested), so the statistic follows a chi square mixture of
+  noncentral *F* distributions. The mixture has an exact closed form (the
+  Poisson weights of the noncentral *F* become negative binomial weights),
+  used for both the correction and the planned study's power; it is the
+  distribution `ss_buc_correlation()` uses, and
+  `ss_buc_reg_coef(p = 1, random_predictors = TRUE)` returns exactly what
+  `ss_buc_correlation()` returns for the same prior *t* and *N*. Treating
+  sampled predictors as fixed overstates the planned study's power, by about
+  1/*n* for a plan of *n* participants with one predictor and about 4/*n* for
+  a coefficient among eight (1/*n* to 1.4/*n* for the squared multiple
+  correlation). Which frame plans the larger study depends on the other
+  predictors and on how far the plan outgrows the prior study; the help
+  pages give the pattern. The largest supportable assurance is the same in
+  both frames. The frame is echoed as a `random_predictors` row (1 or 0) on
+  every regression plan, named in the printed footer, and followed by
+  `ss_buc_sensitivity()` and `plot()`. The deprecated `ss.power.reg1()`,
+  `ss.power.reg.all()`, and `ss.power.reg.joint()` keep the fixed-predictor
+  computation of 1.x.
+
+* The within-subjects and split-plot planners, `ss_buc_rm_anova()`,
+  `ss_buc_rm_anova_general()`, `ss_buc_mixed_anova()`, and
+  `ss_buc_mixed_anova_general()`, take an `epsilon` argument (the last
+  argument, default 1) for a prior study reported with Greenhouse-Geisser or
+  Huynh-Feldt corrected degrees of freedom: `epsilon` is the reported
+  numerator degrees of freedom divided by the uncorrected ones. The prior
+  study's *F* and the planned study's power are both treated under the
+  approximation of Muller and Barton (1989), with the degrees of freedom and
+  the noncentrality parameter multiplied by `epsilon` (the convention of
+  `DMAR`'s `ss_power_rm_anova()` and `ss_power_split_plot_anova()`), and
+  `ncp_adjusted` stays on the sphericity scale. It applies to within-subjects
+  effects and to the interaction of a between-subjects and a within-subjects
+  factor, each with its own lower bound; the between-subjects effect of a
+  split-plot design involves no sphericity, so a value other than 1 is
+  ignored there, with a warning. The correction is an approximation, and the
+  help pages report its accuracy in simulations of raw data: at an
+  `assurance` of .80, plans reached the target power in .70 to .80 of
+  replications for trend-like effects and in .92 to .99 for effects in the
+  least variable contrasts, against .26 to .64 when the departure was
+  ignored. The default, `epsilon = 1`, reproduces the plans that assume
+  sphericity exactly. Every plan for an effect with a within-subjects
+  component echoes `epsilon` as a row (1 under sphericity), and
+  `ss_buc_sensitivity()`, `plot()`, and `planning_sentence()` follow it.
+
+* Every plan reports its planning effect size, the effect size the plan is
+  built on: `ncp_adjusted` restated in the design's usual metric, as a row
+  directly after `ncp_adjusted`. The rows are `smd_planning` (the
+  independent *t* planner and its alias `ss_buc_smd()`, and the Welch *t*
+  planner, which standardizes by the root mean square of the two standard
+  deviations, following Bonett, 2008), `dz_planning` (the paired *t* planner
+  and its alias), `std_mean_planning` (the one-sample *t*), `f_planning`
+  (Cohen's *f* relative to the effect's own error term, for all eight
+  analysis of variance and covariance planners, so that *f* squared over 1
+  plus *f* squared is the population partial eta squared for the effect),
+  `f2_planning` (Cohen's *f* squared, for a regression coefficient and for a
+  subset of predictors), `R2_planning` (the squared multiple correlation),
+  `rho_planning` (the correlation), `D2_planning` (the squared Mahalanobis
+  distance, for the two-group multivariate comparison), and
+  `rmsea_d_planning` (the RMSEA of the chi square difference test, following
+  Savalei, Brace, & Fouladi, 2024). `actual_power` is exactly the ordinary
+  power of a study of the returned sample size when the population effect is
+  the planning effect size, in the plan's own frame (with sampled predictors,
+  the random-predictor power; with `epsilon` below 1, the Muller and Barton
+  approximation, the effect staying on the sphericity scale). For an
+  unbalanced prior study the row belongs to the same balanced design as
+  `ncp_adjusted`. `planning_sentence()` names it in a second sentence and
+  `glance()` gives it a column; `tidy()` and the 1.x `[[1]]`/`[[2]]`
+  positions are unchanged. For the within-subjects and split-plot planners,
+  `f_planning` is not the raw-score *f* that repeated measures power
+  functions such as `DMAR`'s `ss_power_rm_anova()` take; the help pages give
+  the conversion.
+
 ## New Features
 
 * The independent and paired *t* test planners are available under both
@@ -277,9 +380,10 @@ not previously handle.
 * Added `print.bucss_plan()`, which prints the aligned `term`/`value` table
   in the `DMAR` display style (whole numbers clean, other values at
   `options(bucss.digits)` significant figures, stored values never rounded)
-  and closes with factual footer lines naming the design, the unit the sample
-  size is counted in, and the largest assurance the prior result supports. A
-  `knitr::knit_print` method renders the same table as a kable in R Markdown.
+  and closes with factual footer lines naming the design, for the regression
+  planners the predictor frame, the unit the sample size is counted in, and
+  the largest assurance the prior result supports. A `knitr::knit_print`
+  method renders the same table as a kable in R Markdown.
 
 * The `effect` argument also accepts case-insensitive shorthand in the two-way
   between-subjects, within-subjects, and split-plot planners, for example `"A"`
@@ -295,20 +399,24 @@ not previously handle.
   a column, plus the design metadata and the planned study's test degrees of
   freedom (`df_effect`, and `df_error` where the test has a denominator). Both
   stop with an explanation, rather than reporting one plan's numbers for
-  another, when given several plans stacked into one object.
+  another, when given several plans stacked into one object or a plan with
+  one of its rows removed.
 
 * Every planner reports `actual_power`, the statistical power of the plan it
   reports: the power of a study of the returned sample size when the effect is
-  the returned adjusted noncentrality parameter. Because a sample size must be
-  a whole number, it is never below the requested `desired_power` and is
-  usually a little above it. Each help page states this definition.
+  the returned adjusted noncentrality parameter (equivalently, the planning
+  effect size). Because a sample size must be a whole number, it is never
+  below the requested `desired_power` and is usually a little above it. Each
+  help page states this definition.
 
 * Added `planning_sentence()`, which turns a result into the sentence an
   author writes in a manuscript's planning section (the analog of `DMAR`'s
   `results_sentence()`). The sentence names only the corrections the plan
   actually made: the publication bias correction, with its assumed threshold,
   when `alpha_prior` is below 1, and the uncertainty correction when
-  `assurance` is above .5.
+  `assurance` is above .5, and it notes a departure from sphericity when
+  `epsilon` is below 1. A second sentence names the planning effect size and
+  its metric.
 
 * The zero-noncentrality error now says plainly that re-running at a lower
   assurance is not free: the plan it returns carries that lower assurance, not
@@ -384,7 +492,8 @@ not previously handle.
   `ss.power.it`) have a harmonic mean that is a whole number, the planner no
   longer plans from a spurious second rounding one unit off. The mean was
   computed in floating point, where a whole number can land a hair away from
-  itself: `n = c(49, 49)` planned 222 per group where `n = 49` plans 219, and
+  itself: with `t_observed = 3` and the other arguments at their defaults,
+  `n = c(49, 49)` planned 222 per group where `n = 49` plans 219, and
   `n = c(10, 15)`, whose harmonic mean is exactly 12, planned 177 where 12
   plans 154. The mean is now rounded in integer arithmetic. Only such inputs
   change, and the change is in the direction of a smaller, correct plan.
@@ -394,10 +503,11 @@ not previously handle.
   to a balanced design rounded both down and up. When a statistic is
   significant at the prior study's own degrees of freedom but not at the
   rounded-down design, the error now says exactly that, rather than calling
-  the prior result nonsignificant. And when the correction reaches zero, the
-  error names the smaller of the two rounded designs' ceilings, so re-running
-  at the assurance it names now produces a plan; before, it could name the
-  larger one, which failed again.
+  the prior result nonsignificant, and names an `alpha_prior` at which a plan
+  can be made. And when the correction reaches zero, the error names the
+  smaller of the two rounded designs' ceilings, so re-running at the
+  assurance it names now produces a plan; before, it could name the larger
+  one, which failed again.
 
 * `ss.power.ba` and `ss.power.wa` refuse `effect = "factor.B"` (as well as the
   interaction) when `levels.B` is not given. 1.2.1 refused only the
@@ -453,8 +563,9 @@ not previously handle.
   number and that its design counts (`n`, `N`, levels, `cells`, `num_groups`,
   `p`, `p_joint`, prior degrees of freedom) are single whole numbers, naming
   the offending argument. In 1.x a fractional count could flow through the
-  search and return a non-integer "sample size" (`p = 2.5` returned 624.5),
-  and `NA`, infinite, or vector inputs died inside base R with "missing value
+  search and return a non-integer "sample size"
+  (`ss.power.reg1(t.observed = 3, N = 150, p = 2.5)` returned 624.5), and
+  `NA`, infinite, or vector inputs died inside base R with "missing value
   where TRUE/FALSE needed" or "the condition has length > 1". A within-subjects
   `N` of 1, or an independent-samples total `N` below 4, is likewise rejected
   up front instead of reaching `qt()`/`qf()` with zero degrees of freedom.
@@ -466,12 +577,35 @@ not previously handle.
   references, DOIs for Anderson and Maxwell (2017) and Taylor and Muller
   (1996), and ORCIDs for all three authors.
 
-* The regression planners' help pages state that they treat the predictors as
-  fixed, and what that costs when the predictors are sampled: the reported
-  power is then too high by an amount that shrinks as 1/*n* for a plan of *n*
-  participants and grows with the number of predictors (roughly 1/*n* to
-  1.4/*n* for the squared multiple correlation, and from about 1/*n* with one
-  predictor to about 4/*n* with eight for a coefficient or a subset).
+* The package help page, every planner's `assurance` argument, and
+  `vignette("understanding-assurance", package = "BUCSS")` spell out how
+  assurance is used. It is the long run proportion of planned studies whose
+  power at the true effect reaches `desired_power`, when each is planned from
+  a prior study published under the rule `alpha_prior` describes, and the
+  planners deliver it by planning from the lower limit of a one-sided
+  confidence interval at level `assurance`, computed from the
+  publication-truncated distribution of the prior statistic. The term follows
+  Kelley and Maxwell (2003), who used assurance in sample size planning for
+  the probability that a confidence interval will be no wider than desired;
+  that reference joins every planner's help page.
+
+* Safeguard power (Perugini, Gallucci, & Costantini, 2014) is shown to be a
+  special case of the method: with `alpha_prior = 1` and `assurance = .80`,
+  the adjusted noncentrality parameter is the lower limit of the two-sided
+  60% confidence interval that safeguard power plans from, and in general a
+  two-sided confidence level *C* corresponds to `assurance = (1 + C)/2`. The
+  package help page and the assurance vignette explain how, and where the
+  two differ: every difference makes the plan here the same as the safeguard
+  plan or larger, never smaller (for the regression planners, within the
+  frame `random_predictors` names). `tests/testthat/test-safeguard-power.R`
+  pins the equivalence.
+
+* The regression planners' help pages describe both predictor frames, what
+  treating sampled predictors as fixed costs, and which frame plans the
+  larger study (see "Sampled Predictors, Sphericity, and the Planning Effect
+  Size" above). The regression and chi square difference pages also state
+  where the planned sample size search starts (a total of *p* + 3, and the
+  number of constraints plus 2), so no plan is smaller than that.
 
 * The package help page and the Getting Started vignette list all eighteen
   planners.
@@ -498,11 +632,13 @@ not previously handle.
 * The planned sample size search stops with a message rather than looping
   forever once the answer exceeds about 4.5e15 (2^52). Doubles hold every
   whole number exactly only up to 2^53, beyond which the bisection could not
-  finish; answers below the bound are found exactly. Only an assurance a hair below the
-  ceiling gets there. The correlation planner's series is summed over a window
-  around its mode, so it stays exact for a strong correlation in a very large
-  prior study (an *r* of .9 with an *N* in the hundreds of thousands), where a
-  fixed number of terms would have dropped most of its mass.
+  finish; answers below the bound are found exactly. Only an assurance a hair
+  below the ceiling gets there. The random-predictor series (the correlation
+  planner's, and the regression planners' with `random_predictors = TRUE`) is
+  one internal function, summed over a window around its mode, so it stays
+  exact for a strong correlation in a very large prior study (an *r* of .9
+  with an *N* in the hundreds of thousands), where a fixed number of terms
+  would have dropped most of its mass.
 
 * Seeds are set through `withr` (>= 3.0.3), and R 3.6.0 is now the stated
   minimum, which the package's delayed S3 registration and its dependencies
@@ -528,4 +664,11 @@ not previously handle.
 * Added a `testthat` (edition 3) test suite: regression oracles that pin the
   computed outputs, object-structure smoke tests, input-validation tests,
   coercion tests, and tests confirming each deprecated dotted name forwards to
-  its `ss_buc_*` replacement.
+  its `ss_buc_*` replacement. The new options have their own files
+  (`test-random-predictors.R`, `test-epsilon.R`, `test-effect-rows.R`, and
+  `test-safeguard-power.R`), which check each against an independent
+  computation: the random-predictor mixture against quadrature and against
+  the correlation planner, `epsilon` against the corrected-degrees-of-freedom
+  power, the planning effect size against the ordinary power of the returned
+  sample size, and safeguard power against confidence limits computed
+  directly.

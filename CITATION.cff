@@ -16,7 +16,7 @@ authors:
     orcid: "https://orcid.org/0000-0001-8067-7027"
     affiliation: "University of Notre Dame"
 version: 2.0.0
-date-released: "2026-09-29"
+date-released: "2026-09-30"
 license: GPL-3.0-or-later
 repository-code: "https://github.com/yelleKneK/BUCSS"
 repository-artifact: "https://CRAN.R-project.org/package=BUCSS"
