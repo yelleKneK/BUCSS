@@ -1,0 +1,52 @@
+{
+  "title": "BUCSS: Bias and Uncertainty Corrected Sample Size",
+  "upload_type": "software",
+  "description": "<p>BUCSS plans the sample size of a future study from the summary statistics of a prior study, correcting the prior effect for publication bias and uncertainty. A published sample effect size is, on average, an overestimate of the population effect size, because studies that reached statistical significance are more likely to have been published, and it is also uncertain; planning a new study on the reported effect size therefore yields less power than intended. BUCSS adjusts the observed effect for both and plans the sample size on the adjusted value, for t tests, analysis of variance and covariance, regression, correlation, a two-group multivariate comparison, and the chi square difference between nested models. See Anderson, Kelley, and Maxwell (2017), Psychological Science, 28, 1547-1562, and Anderson and Kelley (2024), Psychological Methods, 29, 844-867.<\/p><p>The released package is on CRAN at https://CRAN.R-project.org/package=BUCSS.<\/p>",
+  "creators": [
+    {
+      "name": "Kelley, Ken",
+      "affiliation": "University of Notre Dame",
+      "orcid": "0000-0002-4756-8360"
+    },
+    {
+      "name": "Anderson, Samantha F.",
+      "affiliation": "Arizona State University",
+      "orcid": "0000-0003-4451-5295"
+    },
+    {
+      "name": "Maxwell, Scott E.",
+      "affiliation": "University of Notre Dame",
+      "orcid": "0000-0001-8067-7027"
+    }
+  ],
+  "license": "gpl-3.0-or-later",
+  "access_right": "open",
+  "language": "eng",
+  "keywords": [
+    "R package",
+    "sample size planning",
+    "statistical power",
+    "publication bias",
+    "effect size uncertainty",
+    "replication"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://CRAN.R-project.org/package=BUCSS",
+      "relation": "isVariantFormOf",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "10.1177/0956797617723724",
+      "relation": "isSupplementTo",
+      "resource_type": "publication-article"
+    },
+    {
+      "identifier": "10.1037/met0000520",
+      "relation": "isSupplementTo",
+      "resource_type": "publication-article"
+    }
+  ],
+  "version": "2.0.0",
+  "publication_date": "2026-09-29"
+}

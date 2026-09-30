@@ -16,3 +16,5 @@
 ^dev$
 ^man/figures/logo-hires\.png$
 ^man/figures/logo\.svg$
+^CITATION\.cff$
+^\.zenodo\.json$
