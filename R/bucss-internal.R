@@ -84,6 +84,25 @@
   invisible(x)
 }
 
+# Seed discipline for every function that takes a 'seed' argument. A NULL
+# seed is a no-op: the draws come from the caller's current random number
+# stream, exactly as if the function had no 'seed' argument. A supplied seed
+# (a whole number of at least 1) is set for the duration of the calling
+# function only, and the caller's generator state, including the generator
+# kind, is restored when that function exits, or removed again if the caller
+# had none, so a reproducible call does not perturb the script around it. The
+# saving and restoring is delegated to withr::local_seed(), which is why
+# withr (>= 3.0.3) is in Imports: in withr 3.0.2 and earlier, local_seed()
+# called from inside a function did not restore anything. BUCSS itself never
+# reads or writes the random number state. Call this from the body of the
+# function whose exit should restore the state (the default 'envir').
+.bucss_local_seed <- function(seed, envir = parent.frame()) {
+  if (is.null(seed)) return(invisible(NULL))
+  .check_count(seed, "seed")
+  withr::local_seed(seed, .local_envir = envir)
+  invisible(seed)
+}
+
 # Validate the planning inputs shared by every ss_buc_* function and apply the
 # documented coercions, so the checks stay identical across all planners. The
 # three coercions are load-bearing: 'alpha_prior == 1' becomes .999 to model
@@ -209,10 +228,30 @@
   # is symmetric in the sign of t, so the magnitude is the statistic.
   stat <- abs(stat)
   function(ncp) {
-    power <- (1 - pt(crit, df = df, ncp = ncp)) + pt(-crit, df = df, ncp = ncp)
-    area_above <- (1 - pt(stat, df = df, ncp = ncp)) + pt(-stat, df = df, ncp = ncp)
+    .quiet_pnt({
+      power <- (1 - pt(crit, df = df, ncp = ncp)) + pt(-crit, df = df, ncp = ncp)
+      area_above <- (1 - pt(stat, df = df, ncp = ncp)) + pt(-stat, df = df, ncp = ncp)
+    })
     (power - area_above) / power
   }
+}
+
+# Evaluate 'expr' with R's "full precision may not have been achieved in
+# 'pnt{final}'" warning muffled. stats::pt() raises it while the root finder
+# probes a small noncentrality parameter against a large observed t (t of 12
+# or more with a few dozen per group), a region whose tail mass is far below
+# anything TM depends on; the solved parameter agrees with independent
+# quadrature to about 1e-11 in every case examined (2026-09-28). Only that
+# message is muffled, so any other warning still reaches the user.
+.quiet_pnt <- function(expr) {
+  withCallingHandlers(expr, warning = function(w) {
+    # Matched on the call (a warning from pt()) and on the routine's name,
+    # which R's translations keep, so it works in any language.
+    cl <- conditionCall(w)
+    if (is.call(cl) && identical(cl[[1L]], as.name("pt")) &&
+        grepl("pnt", conditionMessage(w), fixed = TRUE))
+      invokeRestart("muffleWarning")
+  })
 }
 
 .tm_chisq <- function(stat, crit, df) {
@@ -229,8 +268,8 @@
 #
 # Conditional on the sampled X, the statistic F = t^2 for testing rho = 0 is
 # noncentral F(1, n - 2) with noncentrality lambda = c * SS_x/sigma_x^2, where
-# c = rho^2/(1 - rho^2); and SS_x/sigma_x^2 is chi-square on n - 1 df. So the
-# marginal distribution is a chi-square mixture of noncentral F's, NOT the
+# c = rho^2/(1 - rho^2); and SS_x/sigma_x^2 is chi square on n - 1 df. So the
+# marginal distribution is a chi square mixture of noncentral F's, not the
 # noncentral F itself. Treating it as noncentral F (which is exact only when
 # the predictor is fixed by design) overstates the power, because it drops the
 # extra dispersion the sampled predictor contributes.
@@ -247,21 +286,33 @@
 # This is exact rather than approximate, needs nothing beyond stats, and
 # converges geometrically at rate rho^2. Numerical quadrature was the obvious
 # alternative and is a trap: integrate() over (0, Inf) silently returns 0 once
-# n is a few hundred, because the adaptive rule samples where a chi-square on
+# n is a few hundred, because the adaptive rule samples where a chi square on
 # n - 1 df has no mass.
 #
 # The series is truncated where the remaining negative binomial mass is below
 # 1e-14; the omitted terms carry pbeta values smaller than the last retained
-# one, so the truncation error is far below that mass. The term cap is pure
-# defense: the count is governed by the noncentrality parameter, not by n, and
-# a planned study near the target power carries lambda near 8 whatever its
-# sample size.
+# one, so the truncation error is far below that mass. The number of terms is
+# governed by the noncentrality parameter, lambda/2 on average. A planned study
+# near its target power carries lambda near 8, but the prior study's side
+# carries lambda = c * N, which reaches the millions for a strong correlation
+# in a very large sample (r = .9 with N near half a million). There the mass
+# sits far from k = 0, so the sum runs over a window around the mode, from the
+# 1e-15 quantile to the 1 - 1e-14 quantile, whose width grows only with the
+# square root of lambda. An earlier fixed cap of 1e6 terms instead dropped
+# nearly all of the mass there and returned a wrong plan with no warning. Below
+# a million terms the window starts at 0, exactly as the full sum does.
 .p_correlation_f <- function(q, n, rho2) {
   prob <- 1 - rho2
   if (prob <= 0) return(0)
   df2 <- n - 2
   size <- (n - 1) / 2
-  k <- 0:min(qnbinom(1 - 1e-14, size = size, prob = prob), 1e6)
+  k_hi <- qnbinom(1 - 1e-14, size = size, prob = prob)
+  k_lo <- if (k_hi > 1e6) qnbinom(1e-15, size = size, prob = prob) else 0
+  if (k_hi - k_lo > 5e7)
+    stop("The prior study's correlation and sample size imply a noncentrality ",
+         "parameter too large to evaluate. Please check 'r_observed' (or ",
+         "'t_observed') and 'N'.", call. = FALSE)
+  k <- k_lo:k_hi
   sum(dnbinom(k, size = size, prob = prob) *
         pbeta(q / (q + df2), 0.5 + k, df2 / 2))
 }
@@ -339,20 +390,83 @@
 # linear (a plan near the assurance ceiling can need a sample size in the
 # millions); monotonicity guarantees the same integer the incremental search
 # returned. Arithmetic is in doubles so a huge answer cannot overflow the
-# integer counter.
+# integer counter. Doubles hold every whole number exactly only up to 2^53;
+# beyond it adjacent doubles are 2 apart, so a midpoint can equal an end point
+# and the bisection would never finish. The bracket therefore stops doubling
+# once it has passed 2^52 without reaching the target, so it never extends past
+# 2^53, and the search stops with a message instead: the answer then exceeds
+# 2^52 (about 4.5e15). Answers below that are always found exactly. Such a plan
+# only arises with an assurance a hair's breadth below the ceiling.
 .smallest_n_for_power <- function(power_at, target, start = 2L) {
   lo <- as.numeric(start)
   if (power_at(lo) >= target) return(lo)
   hi <- lo * 2                       # invariant: power_at(lo) < target
   while (power_at(hi) < target) {
+    if (hi > 2^52)
+      stop("The planned sample size would exceed about 4.5e15 (2^52), because ",
+           "the requested 'assurance' is essentially at the largest value the ",
+           "prior result can support. Please lower 'assurance' a little.",
+           call. = FALSE)
     lo <- hi
     hi <- hi * 2
   }
   while (hi - lo > 1) {              # invariant: power_at(hi) >= target
     mid <- floor((lo + hi) / 2)
+    if (mid <= lo || mid >= hi) break
     if (power_at(mid) < target) lo <- mid else hi <- mid
   }
   hi
+}
+
+# Stop because the prior study's statistic is not significant at 'alpha_prior',
+# so the truncated likelihood the correction is built on does not include it.
+# 'what' names the statistic ("t statistic", "F statistic", ...) and 'arg' the
+# argument that carries it. 'p_own' is the prior study's p value at its own
+# degrees of freedom and 'p_balanced' its p value at the balanced design the
+# planner substitutes (the rounded-down one, which has the fewest degrees of
+# freedom), both supplied only by the planners that reduce an unbalanced prior
+# study to a balanced one: a statistic can be significant at the prior study's
+# own degrees of freedom and not at the balanced design's, and the message then
+# says so rather than calling the prior study nonsignificant, which it is not.
+# It reports the 'alpha_prior' that planning at the requested 'assurance'
+# would need, p_balanced/(1 - assurance) (the balanced design's ceiling is
+# 1 - p_balanced/alpha_prior), and it mentions the recommended floor of .5
+# only when the own-df ceiling is below it. The condition carries the class
+# 'bucss_nonsignificant' so code that loops over plans can catch it alone.
+.stop_nonsignificant <- function(what, arg, p_own = NULL, alpha_prior = NULL,
+                                 p_balanced = NULL, assurance = NULL) {
+  fmt2 <- function(p) sub("^0", "", sprintf("%.2f", p))
+  fmtp <- function(p) sub("^0", "", format(signif(p, 3), scientific = FALSE))
+  # The rounding explanation applies only when the prior study is significant
+  # at its own degrees of freedom and less so at the balanced design.
+  if (!is.null(p_own) && !is.null(alpha_prior) && !is.null(p_balanced) &&
+      p_own < alpha_prior && p_balanced > p_own) {
+    ceiling_own <- floor((1 - p_own / alpha_prior) * 100 + 1e-9) / 100
+    needed <- if (!is.null(assurance)) p_balanced / (1 - assurance)
+    msg <- paste0(
+      "Your observed ", what, " is significant at the prior study's own degrees ",
+      "of freedom (p = ", fmtp(p_own), "), but this planner reduces a prior ",
+      "study with unequal group sizes to a balanced design with fewer error ",
+      "degrees of freedom, and there its p value is ", fmtp(p_balanced),
+      ", above 'alpha_prior'. ",
+      if (!is.null(needed) && needed < 1)
+        paste0("Planning from it at an 'assurance' of ", fmt2(assurance),
+               " would need an 'alpha_prior' of at least about ", fmtp(needed),
+               ", which assumes a more lenient publication threshold. ")
+      else if (!is.null(needed))
+        paste0("No 'alpha_prior' below 1 allows planning from it at an ",
+               "'assurance' of ", fmt2(assurance), ". "),
+      if (ceiling_own < .5)
+        paste0("Even at its own degrees of freedom the result supports an ",
+               "assurance of at most about ", fmt2(ceiling_own), ", below the ",
+               "recommended floor of .5."))
+  } else {
+    msg <- paste0(
+      "Your observed ", what, " is nonsignificant based on your specified ",
+      "'alpha_prior' of the prior study. Please increase 'alpha_prior' so ",
+      arg, " exceeds the critical value.")
+  }
+  stop(errorCondition(msg, class = "bucss_nonsignificant", call = NULL))
 }
 
 # Stop with a single, informative error when the bias and uncertainty
@@ -365,8 +479,11 @@
 # noncentrality parameter, max(TM) = 1 - p_prior / alpha_prior, where p_prior is
 # the prior study's p-value. The message uses it to tell the user whether
 # lowering 'assurance' can help (and how far) or whether 'alpha_prior' is the
-# only remaining lever. call. = FALSE keeps the (uninformative) calling
-# expression out of the message.
+# only remaining lever. The two-sided rounding planners pass the smaller of
+# their two branches' ceilings, so the value the message names is itself a
+# feasible assurance. The condition carries the class 'bucss_zero_ncp', so
+# ss_buc_sensitivity() and plot() can catch this refusal and nothing else;
+# call = NULL keeps the (uninformative) calling expression out of the message.
 .stop_zero_ncp <- function(max_assurance) {
   # Floor to two decimals (with a tiny tolerance against floating-point
   # underflow) so the reported ceiling is itself a feasible value; rounding up
@@ -394,7 +511,7 @@
     )
   }
 
-  stop(
+  msg <- paste0(
     "Sample size planning is not possible with these settings. After correcting ",
     "the prior study's effect for publication bias and uncertainty at the ",
     "requested level of assurance, the corrected noncentrality parameter is ",
@@ -407,9 +524,39 @@
     "example, 'alpha_prior = .10' assumes the literature's journals would have ",
     "published a result significant at the .10 level, a more lenient policy than ",
     ".05, and 'alpha_prior = 1' assumes no publication bias at all). See ",
-    "Anderson, Kelley, and Maxwell (2017) and Anderson and Kelley (2024).",
-    call. = FALSE
+    "Anderson, Kelley, and Maxwell (2017) and Anderson and Kelley (2024)."
   )
+  stop(errorCondition(msg, class = "bucss_zero_ncp", call = NULL))
+}
+
+# Check that an object still has the shape of one planner's answer before a
+# method reads "the" sample size, power, or assurance from it: exactly one size
+# row and one row each of the quantities the methods report. Base R's rbind()
+# and subsetting already drop the class from a stacked or modified result, but
+# vctrs-based tools (dplyr::bind_rows(), dplyr::filter(), and the like) keep
+# it, and a stack of two plans would otherwise be tidied and narrated as though
+# every row belonged to the first. Stopping names the problem instead.
+.is_plan_shape <- function(x, needed = c("actual_power", "ncp_adjusted",
+                                         "assurance", "desired_power")) {
+  # Exactly the two columns a plan has; an added column (dplyr::bind_cols(),
+  # say) would otherwise be hidden by the print method.
+  if (!is.data.frame(x) || !identical(names(x), c("term", "value"))) return(FALSE)
+  terms <- x[["term"]]
+  if (is.null(terms) || !is.character(terms)) return(FALSE)
+  counts <- vapply(c("size", needed), function(nm) {
+    if (nm == "size") sum(terms %in% .BUCSS_SIZE_TERMS) else sum(terms == nm)
+  }, numeric(1))
+  all(counts == 1)
+}
+
+.check_plan_shape <- function(x) {
+  if (!.is_plan_shape(x))
+    stop("This object no longer has the shape of a single plan (one sample ",
+         "size row and one row each of 'actual_power', 'ncp_adjusted', ",
+         "'assurance', and 'desired_power'); it may be several plans stacked ",
+         "together or a plan with rows removed. Apply this function to each ",
+         "plan separately.", call. = FALSE)
+  invisible(x)
 }
 
 # Format a value column for display the way DMAR's dmar_tbl print does: whole
@@ -426,7 +573,7 @@
   }, character(1))
 }
 
-#' Print a bias and uncertainty corrected sample size result
+#' Print a Bias and Uncertainty Corrected Sample Size Result
 #'
 #' Prints the aligned \code{term}/\code{value} table (the planned-study
 #' results followed by the rows echoing the planning inputs), then factual
@@ -456,6 +603,16 @@
 #' @export
 #' @keywords internal
 print.bucss_plan <- function(x, digits = getOption("bucss.digits", 3L), ...) {
+  if (!is.numeric(digits) || length(digits) != 1L || is.na(digits) || digits < 1)
+    stop("'digits' must be a single positive number.", call. = FALSE)
+  # An object that no longer has one plan's shape (a stack of plans kept in
+  # the class by a vctrs-based tool, or a plan with columns renamed) prints as
+  # the plain data frame it is, without footers that would describe only one
+  # of the plans in it.
+  if (!.is_plan_shape(x) || !is.numeric(x[["value"]])) {
+    print(structure(x, class = "data.frame"))
+    return(invisible(x))
+  }
   shown <- data.frame(term = x$term,
                       value = .format_bucss_value(x$value, digits),
                       stringsAsFactors = FALSE)

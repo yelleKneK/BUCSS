@@ -36,7 +36,7 @@ test_that("the correlation planner matches its own t form", {
 
 test_that("the correlation planner uses the random-predictor distribution", {
   # A correlation samples both variables, so its statistic follows a
-  # chi-square mixture of noncentral F distributions rather than a noncentral
+  # chi square mixture of noncentral F distributions rather than a noncentral
   # F. The mixture is more dispersed, so it calls for a slightly larger plan
   # than the fixed-predictor (regression slope) calculation does.
   t_obs <- .35 * sqrt(98 / (1 - .35^2))
@@ -52,7 +52,7 @@ test_that("the correlation planner uses the random-predictor distribution", {
                attr(reg_plan, "assurance_ceiling"))
 
   # The exact mixture distribution, against an independent computation: the
-  # chi-square mixture written out as a quadrature over equal-probability
+  # chi square mixture written out as a quadrature over equal-probability
   # strata of the sampled predictor's spread.
   by_quadrature <- function(q, n, rho2, M = 200000L) {
     cc <- rho2 / (1 - rho2)
@@ -128,7 +128,7 @@ test_that("the multivariate planner agrees with itself through T squared", {
                "degrees of freedom", fixed = TRUE)
 })
 
-test_that("the chi-square difference planner matches a hand computation", {
+test_that("the chi square difference planner matches a hand computation", {
   res <- ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42,
                            df_restricted = 43)
   ncp <- res$value[res$term == "ncp_adjusted"]
@@ -214,8 +214,8 @@ test_that("the new planners reject an assurance above their ceiling", {
                "noncentrality parameter is zero", fixed = TRUE)
 })
 
-test_that("the chi-square planner refuses an omnibus model fit test", {
-  # An omnibus fit chi-square compares a model against the saturated model,
+test_that("the chi square planner refuses an omnibus model fit test", {
+  # An omnibus fit chi square compares a model against the saturated model,
   # which has zero degrees of freedom. Requiring both models' degrees of
   # freedom rather than only their difference is what makes that detectable,
   # and the function refuses rather than planning from an inverted selection
@@ -290,7 +290,7 @@ test_that("the Welch planner takes the spread three equivalent ways", {
                "must be positive numbers", fixed = TRUE)
 })
 
-test_that("the chi-square planner will not plan fewer cases than constraints", {
+test_that("the chi square planner will not plan fewer cases than constraints", {
   # A very strong prior used to drive the search to N = 3 for a test releasing
   # 8 constraints, which cannot fit the models. The search floor is now the
   # number of constraints plus two.

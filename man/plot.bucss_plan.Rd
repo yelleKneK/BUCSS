@@ -2,7 +2,7 @@
 % Please edit documentation in R/bucss-plot.R
 \name{plot.bucss_plan}
 \alias{plot.bucss_plan}
-\title{Plot the assurance ceiling of a plan}
+\title{Plot the Assurance Ceiling of a Plan}
 \usage{
 \method{plot}{bucss_plan}(
   x,
@@ -108,10 +108,10 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   for publication bias and uncertainty. \emph{Psychological Science, 28,}
   1547--1562. \doi{10.1177/0956797617723724}
 
-  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the 'replication
-  crisis': Using original studies to design replication studies with
+  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the "replication
+  crisis": Using original studies to design replication studies with
   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
-  305--324.
+  305--324. \doi{10.1080/00273171.2017.1289361}
 
   Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
   experiments and analyzing data: A model comparison perspective} (4th ed.).
@@ -120,6 +120,7 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
   sample size calculation due to estimating noncentrality. \emph{Communications
   in Statistics: Theory and Methods, 25,} 1595--1610.
+  \doi{10.1080/03610929608831787}
 }
 \seealso{
 \code{\link{ss_buc_sensitivity}} to audit a plan by simulation, and

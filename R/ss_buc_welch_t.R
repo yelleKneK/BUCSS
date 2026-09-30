@@ -1,5 +1,5 @@
-#' Necessary sample size to reach desired power for a Welch (unequal variance) t
-#' test using a publication bias and uncertainty correction procedure
+#' Necessary Sample Size to Reach Desired Power for a Welch (Unequal Variance) t
+#' Test Using a Publication Bias and Uncertainty Correction Procedure
 #'
 #' @description \code{ss_buc_welch_t} returns the necessary per-group sample
 #'   size to achieve a desired level of statistical power for a planned study
@@ -26,24 +26,48 @@
 #'   statistic as noncentral \emph{t} on the Welch-Satterthwaite degrees of
 #'   freedom implied by the prior study's group sizes and the standard deviation
 #'   ratio you supply, which is the usual approximation in power analysis for
-#'   this test. In simulation that treatment is accurate: across ratios from 1
-#'   to 3 the Type I error of the real Welch test stays between .047 and .054
-#'   against a nominal .05, and the planned study's power is within about .006
-#'   of what this function predicts, with the agreement no worse at the
-#'   extreme ratios.
+#'   this test, and computes the planned study's power the same way. Once each
+#'   group has about ten participants that treatment is accurate: across ratios
+#'   from 1 to 5, the power of the real Welch test is within .006 of what this
+#'   function reports for every plan it returns (10 per group or more), and
+#'   within .003 from about 12 per group at a target power of .80, and its
+#'   Type I error stays between .047 and .054 against a nominal .05 across
+#'   ratios from 1 to 3. With smaller groups the approximation
+#'   overstates the power of the real test, badly so for the smallest (a plan
+#'   of 2 per group that it puts at .82 has real power near .50), because the
+#'   real test estimates its degrees of freedom from very few observations.
+#'   \strong{The planner therefore never returns fewer than 10 per group}: when
+#'   the target power is reached with fewer, it returns 10, whose power exceeds
+#'   the target. The correction of the prior study's statistic uses the same
+#'   approximation and holds up well: simulating prior studies of 5 to 20 per
+#'   group as raw data, published by the real Welch test, the corrected
+#'   parameter fell at or below the truth in about .79 to .82 of them at an
+#'   \code{assurance} of .80 (a refusal counted as at or below). One
+#'   consequence of reading the prior study on the Welch-Satterthwaite degrees
+#'   of freedom the supplied ratio implies, rather than on those its data
+#'   produced: with very small groups and a large ratio, a prior result its
+#'   paper reported as significant can fall short of the critical value here
+#'   and be refused as nonsignificant.
 #'
-#'   \strong{The assumption that matters is the ratio itself.} Planning assumes
-#'   the ratio you supply is the ratio the planned study will have, and getting
-#'   that wrong costs far more than the distributional approximation does. For
-#'   the example below, a plan built assuming equal variances delivers about
-#'   .43 power rather than .80 if the true ratio turns out to be 2. Re-run
-#'   across a range of plausible ratios and plan for the least favorable one
-#'   you find credible. The required sample size does not always rise with the
-#'   ratio: it falls when the group assumed to be more variable is the smaller
-#'   one.
+#'   \strong{The assumption that matters is the ratio itself.} One
+#'   \code{sd_ratio} describes both studies: the prior study, whose statistic
+#'   is read under it, and the planned study. Getting it wrong costs far more
+#'   than the distributional approximation does. For the example below, the
+#'   plan built assuming equal variances (213 per group) delivers about .76
+#'   power rather than .80 if the ratio is in fact 2 in both studies, and
+#'   about .43 if the prior study's groups were equally variable but the
+#'   planned study's ratio is 2, with the mean difference held fixed in units
+#'   of the first group's standard deviation. Re-running across a range of
+#'   plausible ratios, and planning for the least favorable one you find
+#'   credible, guards against the first kind of error. The second, a planned
+#'   study more unequal than the prior one, is not something the prior result
+#'   can speak to, and needs its own allowance. The required sample size does
+#'   not always rise with the ratio: it falls when the group assumed to be
+#'   more variable is the smaller one.
 #'
 #'   When the ratio is 1 and the prior groups were the same size, this planner
-#'   returns exactly what \code{\link{ss_buc_independent_t}} returns. With
+#'   returns what \code{\link{ss_buc_independent_t}} returns, except that it
+#'   never returns fewer than 10 per group. With
 #'   unequal prior group sizes the two differ, and should: the equal-variance
 #'   planner reduces the prior study to an equivalent equal-\emph{n} design at
 #'   the harmonic mean, while this one uses the actual Welch-Satterthwaite
@@ -116,8 +140,8 @@
 #'   which is the allocation that maximizes power when the variances are equal
 #'   and is a reasonable default otherwise. It is not the optimal allocation
 #'   when they are not: sampling in proportion to the standard deviations would
-#'   need about 11 percent fewer participants in total at a ratio of 2, and
-#'   about 25 percent fewer at a ratio of 3.
+#'   need about 10 percent fewer participants in total at a ratio of 2, and
+#'   about 20 percent fewer at a ratio of 3.
 #'
 #' @param t_observed Observed Welch \emph{t} value from a previous study used to
 #'   plan sample size for a planned study. Either sign is accepted.
@@ -135,6 +159,7 @@
 #' @template planning-params
 #'
 #' @templateVar size_phrase per-group sample size
+#' @templateVar ncp_scale on the scale of the \emph{t} statistic (the noncentrality parameter of the prior study's noncentral \emph{t})
 #' @template return
 #'
 #' @export
@@ -221,7 +246,7 @@ ss_buc_welch_t <- function(t_observed, n_1, n_2, sd_ratio = 1,
 
   value_critical <- qt(1 - alpha_prior / 2, df = df_prior)
 
-  if (t_stat <= value_critical) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.", call. = FALSE)
+  if (t_stat <= value_critical) .stop_nonsignificant("t statistic", "'t_observed'")
 
   ncp_solution <- .solve_ncp_assurance(
     .tm_t(t_stat, value_critical, df_prior), assurance)
@@ -242,7 +267,14 @@ ss_buc_welch_t <- function(t_observed, n_1, n_2, sd_ratio = 1,
     (1 - pt(critical_t, df = denom_df, ncp = scaled)) +
       pt(-1 * critical_t, df = denom_df, ncp = scaled)
   }
-  output_n <- .smallest_n_for_power(power_at, desired_power, start = 2)
+  # The search starts at 10 per group. Below that the noncentral t on the
+  # population Welch-Satterthwaite df overstates the power of the real Welch
+  # test, whose degrees of freedom are estimated from the planned study's data:
+  # by up to about .33 at 2 per group, and by more than .006 below 10 per group
+  # (exact power of the real test, checked against 400,000-replicate
+  # simulation, 2026-09-28). From 10 per group the two agree within .006, so a
+  # plan that reaches its target sooner is raised to 10.
+  output_n <- .smallest_n_for_power(power_at, desired_power, start = .welch_min_n)
 
   actual_power <- power_at(output_n)
   .bucss_plan_result(
@@ -267,3 +299,7 @@ ss_buc_welch_t <- function(t_observed, n_1, n_2, sd_ratio = 1,
                     desired_power = desired_power))
   )
 }
+
+# The smallest per-group size ss_buc_welch_t() returns (see the comment at its
+# planned-n search).
+.welch_min_n <- 10

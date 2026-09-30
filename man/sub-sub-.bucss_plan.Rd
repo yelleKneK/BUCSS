@@ -2,21 +2,24 @@
 % Please edit documentation in R/legacy.R
 \name{[[.bucss_plan}
 \alias{[[.bucss_plan}
-\title{Positional extraction from a bias and uncertainty corrected sample size result}
+\title{Positional Extraction From a Bias and Uncertainty Corrected Sample Size Result}
 \usage{
 \method{[[}{bucss_plan}(x, i, ...)
 }
 \arguments{
 \item{x}{A \code{bucss_plan} object.}
 
-\item{i}{A subscript. A single \code{1} or \code{2} selects the legacy scalar;
-anything else is passed to the \code{data.frame} method.}
+\item{i}{A subscript. A single double \code{1} or \code{2}, as 1.x code
+writes it, selects the legacy scalar; anything else, including the
+integers \code{1L} and \code{2L}, is passed to the \code{data.frame}
+method as a column index.}
 
 \item{...}{Passed to the \code{data.frame} method.}
 }
 \value{
-For \code{i} equal to \code{1} or \code{2}, a single numeric value;
-  otherwise whatever the \code{data.frame} \code{[[} method returns.
+For \code{i} equal to the double \code{1} or \code{2}, a single
+  numeric value; otherwise whatever the \code{data.frame} \code{[[} method
+  returns.
 }
 \description{
 Backward-compatible positional extraction for

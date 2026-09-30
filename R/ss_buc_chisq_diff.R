@@ -1,9 +1,9 @@
-#' Necessary sample size to reach desired power for a nested model chi-square
-#' difference test using a publication bias and uncertainty correction procedure
+#' Necessary Sample Size to Reach Desired Power for a Nested Model Chi Square
+#' Difference Test Using a Publication Bias and Uncertainty Correction Procedure
 #'
 #' @description \code{ss_buc_chisq_diff} returns the necessary total sample size
 #'   to achieve a desired level of statistical power for a planned study whose
-#'   effect of interest is tested by the chi-square difference between two
+#'   effect of interest is tested by the chi square difference between two
 #'   nested models (the likelihood ratio test used, for example, to test a
 #'   constrained path in a structural equation model), based on information
 #'   obtained from a previous study. The effect from the previous study can be
@@ -21,31 +21,37 @@
 #'
 #'   \strong{Scope, and one thing this function is not for.} The correction
 #'   applies to a test whose statistic is large when the effect is present, so
-#'   that publication selects large values. A chi-square difference test
+#'   that publication selects large values. A chi square difference test
 #'   between nested models is such a test: under the alternative it is
-#'   approximately noncentral chi-square with degrees of freedom equal to the
+#'   approximately noncentral chi square with degrees of freedom equal to the
 #'   number of constraints released and a noncentrality parameter proportional
 #'   to sample size, and a paper reports the constrained path as supported when
 #'   the difference test is significant. The correction is therefore built for
 #'   the difference test.
 #'
-#'   It is \emph{not} appropriate for an omnibus model fit chi-square, where a
+#'   It is \emph{not} appropriate for an omnibus model fit chi square, where a
 #'   publishable result is a \emph{small} statistic (a model that fits). The
 #'   selection region is inverted there, so the truncated likelihood this
 #'   function builds does not describe it.
 #'
 #'   \strong{The function refuses that case rather than only warning about it.}
 #'   This is why both models' degrees of freedom are required rather than only
-#'   their difference. An omnibus fit chi-square is the comparison of a model
+#'   their difference. An omnibus fit chi square is the comparison of a model
 #'   against the \emph{saturated} model, and a saturated model has zero degrees
-#'   of freedom, so \code{df_full = 0} identifies the misuse exactly. Given
-#'   only the difference, nothing distinguishes a fit test from a genuine
-#'   comparison of two substantive models, and the mistake would pass silently.
-#'   Supplying both is also a more faithful description of what was tested, and
-#'   the two values are what a paper reports for each model.
+#'   of freedom, so \code{df_full = 0} is its signature. Given only the
+#'   difference, nothing distinguishes a fit test from a genuine comparison of
+#'   two substantive models, and the mistake would pass silently. Supplying
+#'   both is also a more faithful description of what was tested, and the two
+#'   values are what a paper reports for each model. A just-identified full
+#'   model (every parameter free, as in a path model compared with the same
+#'   model with one path fixed at zero) also has zero degrees of freedom, and
+#'   there the difference test is a genuine one. The plan depends only on the
+#'   number of constraints, so for that case the call with \code{df_full = 1}
+#'   and \code{df_restricted} one more than the number of constraints gives
+#'   the plan.
 #'
 #'   The correction uses a likelihood function of a truncated noncentral
-#'   chi-square distribution, the same construction the rest of the package uses
+#'   chi square distribution, the same construction the rest of the package uses
 #'   for the noncentral \emph{F} (see Taylor & Muller, 1996, Equation 2.1, and
 #'   Anderson & Maxwell, 2017): the truncated area between the critical value
 #'   and the observed statistic, divided by the power of the test. Because the
@@ -104,27 +110,33 @@
 #'   \code{actual_power} is never below the \code{desired_power} that was
 #'   requested and is usually a little above it.
 #'
-#'   The chi-square difference test is asymptotic, so both the correction and
-#'   the planned-study power inherit that approximation. The test is liberal in
-#'   small samples: in simulation its actual Type I error is nearer .06 than
-#'   .05 at a total sample size of 50, and it reaches the nominal rate only
-#'   around 200. Treat a planned sample size under a hundred or so with
-#'   caution, and read a very small one as a signal that the prior effect was
-#'   large rather than as a serious recommendation.
+#'   The chi square difference test is asymptotic, so both the correction and
+#'   the planned-study power inherit that approximation. The likelihood ratio
+#'   test is liberal in small samples, and more so the more parameters a model
+#'   estimates. For a test that drops 2 of 6 parameters of a normal linear
+#'   model, its actual Type I error is about .07 at a total sample size of 50,
+#'   .055 at 200, and .052 at 400; dropping 5 of 21 parameters, it is about
+#'   .08 at 200. At such sample sizes the real test's power can also sit above
+#'   or below \code{actual_power}. Treat a planned sample size that is small
+#'   relative to the number of parameters estimated with caution, and read a
+#'   very small one as a signal that the prior effect was large rather than as
+#'   a serious recommendation.
 #'
-#' @param chisq_observed Observed chi-square difference between the two nested
+#' @param chisq_observed Observed chi square difference between the two nested
 #'   models in the previous study.
 #' @param N Total sample size of the previous study.
 #' @param df_full Degrees of freedom of the full (less constrained) model. A
-#'   saturated full model has zero, which identifies the comparison as an
-#'   omnibus test of model fit rather than a difference test between two
-#'   substantive models; the function refuses that case (see Details).
+#'   saturated full model has zero, the signature of an omnibus test of model
+#'   fit rather than a difference test between two substantive models; the
+#'   function refuses that case (see Details, which also covers a
+#'   just-identified full model).
 #' @param df_restricted Degrees of freedom of the restricted (more
 #'   constrained) model. It exceeds \code{df_full} by the number of
 #'   constraints imposed, which is the difference test's degrees of freedom.
 #' @template planning-params
 #'
 #' @templateVar size_phrase total sample size
+#' @templateVar ncp_scale on the scale of the chi square statistic, at the prior study's sample size
 #' @template return
 #'
 #' @export
@@ -171,11 +183,11 @@ ss_buc_chisq_diff <- function(chisq_observed, N, df_full, df_restricted,
   # zero degrees of freedom, so 'df_full = 0' means the comparison is the
   # restricted model's own test of fit against the saturated model, not a
   # difference test between two substantive models. The correction does not
-  # describe that test: a publishable fit chi-square is a SMALL one, so the
+  # describe that test: a publishable fit chi square is a small one, so the
   # selection region is inverted and the truncated likelihood this method
   # builds is the wrong one. Requiring both models' degrees of freedom, rather
   # than only their difference, is what makes this detectable at all.
-  if (df_full == 0) stop("'df_full' is 0, so the full model is saturated and this comparison is the restricted model's omnibus test of model fit, not a difference test between two substantive models. This function does not apply to an omnibus fit chi-square: the correction assumes a literature publishes significant results, whereas a publishable fit chi-square is a small (nonsignificant) one, which inverts the selection region the method is built on. If you meant to compare two substantive nested models, give the full model's own degrees of freedom.", call. = FALSE)
+  if (df_full == 0) stop("'df_full' is 0, so the full model is saturated and this comparison is the restricted model's omnibus test of model fit, not a difference test between two substantive models. This function does not apply to an omnibus fit chi square: the correction assumes a literature publishes significant results, whereas a publishable fit chi square is a small (nonsignificant) one, which inverts the selection region the method is built on. A just-identified full model also has 0 degrees of freedom; if that is your case and the comparison is a genuine difference test, the plan depends only on the number of constraints, so call with 'df_full = 1' and 'df_restricted' equal to 1 plus the number of constraints.", call. = FALSE)
 
   if (df_restricted <= df_full) stop("'df_restricted' must be greater than 'df_full': the restricted model imposes constraints, so it has more degrees of freedom than the full model. If the two are reversed, swap them.", call. = FALSE)
 
@@ -183,7 +195,7 @@ ss_buc_chisq_diff <- function(chisq_observed, N, df_full, df_restricted,
 
   value_critical <- qchisq(1 - alpha_prior, df = df_difference)
 
-  if (chisq_observed <= value_critical) stop("Your observed chi-square difference is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so the prior result exceeds the critical value.", call. = FALSE)
+  if (chisq_observed <= value_critical) .stop_nonsignificant("chi square difference", "the prior result")
 
   ncp_solution <- .solve_ncp_assurance(
     .tm_chisq(chisq_observed, value_critical, df_difference), assurance)
@@ -213,7 +225,7 @@ ss_buc_chisq_diff <- function(chisq_observed, N, df_full, df_restricted,
     df_effect = df_difference,
     df_error = NULL,
     ncp = ncp,
-    design = "Nested model chi-square difference test",
+    design = "Nested model chi square difference test",
     sample_size_unit = "total",
     assurance_ceiling = ncp_solution$ceiling,
     inputs = list(chisq_observed = chisq_observed, N = N,

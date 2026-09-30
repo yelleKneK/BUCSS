@@ -1,5 +1,5 @@
-#' Necessary sample size to reach desired power for an analysis of covariance
-#' using a publication bias and uncertainty correction procedure
+#' Necessary Sample Size to Reach Desired Power for an Analysis of Covariance
+#' Using a Publication Bias and Uncertainty Correction Procedure
 #'
 #' @description \code{ss_buc_ancova} returns the necessary per-cell sample size
 #'   to achieve a desired level of statistical power for a planned study testing
@@ -118,6 +118,7 @@
 #' @template planning-params
 #'
 #' @templateVar size_phrase per-cell sample size
+#' @templateVar ncp_scale on the scale of the \emph{F} statistic, at the prior study's sample size
 #' @template return
 #'
 #' @export
@@ -157,6 +158,14 @@ ss_buc_ancova <- function(F_observed, N, cells, n_covariates,
   .check_count(N, "N", min = 2)
   if (N - cells - n_covariates < 1) {
     stop("The combination of 'N', 'cells', and 'n_covariates' leaves no error degrees of freedom in the prior study. Check the design.", call. = FALSE)
+  }
+  if (!missing(df_numerator)) .check_count(df_numerator, "df_numerator", min = 1)
+  if (df_numerator > cells - 1) stop("'df_numerator' cannot exceed 'cells' - 1, the degrees of freedom available among the cell means; the omnibus test uses 'cells' - 1 and a contrast uses 1.", call. = FALSE)
+  # Checked here in this function's own terms; the general planner would
+  # otherwise report it in terms of a 'df_denominator' this function does not
+  # take.
+  if ((floor(N / cells) - 1) * cells - n_covariates < 1) {
+    stop("Your prior study 'N' is too small for this design: after rounding the per-cell sample size down, no error degrees of freedom remain once the covariates are estimated. Increase 'N' or reduce 'n_covariates'.", call. = FALSE)
   }
 
   # The covariates are the nuisance parameters the general between-subjects

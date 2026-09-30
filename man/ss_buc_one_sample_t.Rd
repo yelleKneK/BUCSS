@@ -2,8 +2,8 @@
 % Please edit documentation in R/ss_buc_one_sample_t.R
 \name{ss_buc_one_sample_t}
 \alias{ss_buc_one_sample_t}
-\title{Necessary sample size to reach desired power for a one-sample t test using a
-publication bias and uncertainty correction procedure}
+\title{Necessary Sample Size to Reach Desired Power for a One-Sample t Test Using a
+Publication Bias and Uncertainty Correction Procedure}
 \usage{
 ss_buc_one_sample_t(
   t_observed,
@@ -48,15 +48,18 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   study, named for its unit (\code{necessary_n_per_group},
   \code{necessary_n_per_cell}, or \code{necessary_N}); for the per-group
   and per-cell designs, \code{total_N}, the implied total sample size;
-  \code{actual_power}, the conservative achieved power at the returned
-  sample size (see Details); and \code{ncp_adjusted}, the publication bias
-  and uncertainty adjusted prior study noncentrality parameter. Rows
+  \code{actual_power}, the power of the plan returned, that is, of the
+  returned sample size at the returned noncentrality parameter (see
+  Details); and \code{ncp_adjusted}, the publication bias and uncertainty
+  adjusted prior study noncentrality parameter, on the scale of the \emph{t} statistic (the noncentrality parameter of the prior study's noncentral \emph{t}). Rows
   echoing the planning inputs follow, so the assumptions travel with the
   result. The design, the unit the sample size is counted in, the largest
   assurance this prior can support (the assurance ceiling), and the
-  planned test's degrees of freedom (\code{df_effect} and \code{df_error})
-  travel on attributes; they are shown by \code{print.bucss_plan}, and
-  \code{tidy()} and \code{glance()} give the compact and wide views.
+  planned test's degrees of freedom (\code{df_effect}, and \code{df_error}
+  where the test has a denominator) travel on attributes.
+  \code{print.bucss_plan} shows the design, the unit, and the ceiling
+  beneath the table; \code{tidy()} and \code{glance()} give the compact and
+  wide views, the latter with every attribute as a column.
 }
 \description{
 \code{ss_buc_one_sample_t} returns the necessary total sample
@@ -74,8 +77,9 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
 The one-sample \emph{t} test and the dependent (paired) \emph{t}
   test are the same test applied to a single column of scores: the statistic
   has \emph{N} - 1 degrees of freedom and a noncentrality parameter of
-  \eqn{d\sqrt{N}}. \code{ss_buc_one_sample_t} therefore performs exactly the
-  computation \code{\link{ss_buc_paired_t}} performs, and reports it with a
+  \eqn{d\sqrt{N}}{d*sqrt(N)}. \code{ss_buc_one_sample_t} therefore performs
+  exactly the computation \code{\link{ss_buc_paired_t}} performs, and
+  reports it with a
   one-sample design label and a total sample size rather than a number of
   pairs. See \code{\link{ss_buc_paired_t}} for the full description of the
   method, the meaning of \code{assurance}, the role of \code{alpha_prior},
@@ -93,7 +97,8 @@ The one-sample \emph{t} test and the dependent (paired) \emph{t}
   the computation.
 
   If you are working from a standardized mean (Cohen's \eqn{d}) rather than
-  a \emph{t} statistic, convert it before calling: \eqn{t = d\sqrt{N}}.
+  a \emph{t} statistic, convert it before calling:
+  \eqn{t = d\sqrt{N}}{t = d*sqrt(N)}.
 }
 \examples{
 result <- ss_buc_one_sample_t(t_observed = 3, N = 40, alpha_prior = .05,
@@ -115,10 +120,10 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   for publication bias and uncertainty. \emph{Psychological Science, 28,}
   1547--1562. \doi{10.1177/0956797617723724}
 
-  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the 'replication
-  crisis': Using original studies to design replication studies with
+  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the "replication
+  crisis": Using original studies to design replication studies with
   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
-  305--324.
+  305--324. \doi{10.1080/00273171.2017.1289361}
 
   Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
   experiments and analyzing data: A model comparison perspective} (4th ed.).
@@ -127,6 +132,7 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
   sample size calculation due to estimating noncentrality. \emph{Communications
   in Statistics: Theory and Methods, 25,} 1595--1610.
+  \doi{10.1080/03610929608831787}
 }
 \seealso{
 \code{\link{ss_buc_paired_t}}, which performs the identical

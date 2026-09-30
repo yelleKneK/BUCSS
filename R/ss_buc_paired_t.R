@@ -1,6 +1,6 @@
-#' Necessary sample size to reach desired power for a dependent (paired) t test
-#' (or standardized mean difference) using a publication bias and uncertainty
-#' correction procedure
+#' Necessary Sample Size to Reach Desired Power for a Dependent (Paired) t Test
+#' (or Standardized Mean Difference) Using a Publication Bias and Uncertainty
+#' Correction Procedure
 #'
 #' @description \code{ss_buc_paired_t} returns the necessary sample size (the
 #'   number of pairs) to achieve a desired level of statistical power for a
@@ -107,8 +107,8 @@
 #'
 #'   If you are working from a standardized mean difference (Cohen's \eqn{d_z})
 #'   of the difference scores rather than a \emph{t} statistic, convert it before
-#'   calling: for a paired design \eqn{t = d_z\sqrt{N}}, where \emph{N} is the
-#'   number of pairs.
+#'   calling: for a paired design \eqn{t = d_z\sqrt{N}}{t = d_z*sqrt(N)}, where
+#'   \emph{N} is the number of pairs.
 #'
 #' @param t_observed Observed \emph{t} value from a previous study used to plan
 #'   sample size for a planned study. Either sign is accepted: the
@@ -118,6 +118,7 @@
 #' @template planning-params
 #'
 #' @templateVar size_phrase number of pairs
+#' @templateVar ncp_scale on the scale of the \emph{t} statistic (the noncentrality parameter of the prior study's noncentral \emph{t})
 #' @template return
 #'
 #' @export
@@ -160,7 +161,7 @@ ss_buc_paired_t <- function(t_observed, N, alpha_prior = .05, alpha_planned = .0
   DF <- N - 1
 
   value_critical <- qt(1 - alpha_prior / 2, df = DF)
-  if (t_stat <= value_critical) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.", call. = FALSE)
+  if (t_stat <= value_critical) .stop_nonsignificant("t statistic", "'t_observed'")
 
   ncp_solution <- .solve_ncp_assurance(
     .tm_t(t_stat, value_critical, DF), assurance)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/bucss-sensitivity.R
 \name{ss_buc_sensitivity}
 \alias{ss_buc_sensitivity}
-\title{Simulate the literature a plan came from and audit how often it works}
+\title{Simulate the Literature a Plan Came From and Audit How Often It Works}
 \usage{
 ss_buc_sensitivity(object, true_ncp, replications = 1000L, seed = NULL)
 }
@@ -13,24 +13,31 @@ ss_buc_sensitivity(object, true_ncp, replications = 1000L, seed = NULL)
 study's design, on the same scale as the \code{ncp_adjusted} row of
 \code{object}. Required; there is deliberately no default.}
 
-\item{replications}{Number of published prior studies to simulate. The
-default of 1000 gives a Monte Carlo standard error near .013 on the
-attainment rate; 10000 gives about .004.}
+\item{replications}{Number of published prior studies to simulate. At an
+assurance of .80 the default of 1000 gives
+\code{attainment_with_refusals} a Monte Carlo standard error near .013,
+and 10000 about .004; both are reported. The standard error of
+\code{attainment}, which counts only the issued plans, is larger when many
+prior studies are refused.}
 
-\item{seed}{Optional random number seed. \code{NULL} (the default) leaves
-the random number stream alone. When supplied, the caller's random number
-state is restored on exit.}
+\item{seed}{Optional random number seed. \code{NULL} (the default) draws
+from the caller's own random number stream, advancing it as any
+simulation does. When a seed is supplied, the caller's random number state
+and generator are restored on exit (and no state is left behind if the
+caller had none).}
 }
 \value{
 An object of class \code{bucss_sensitivity}, a \code{data.frame}
   with columns \code{term} and \code{value} carrying the assumed true
   parameter and the plan's own \code{ncp_adjusted} for comparison, the
   number of replications, the publication and refusal rates, the two
-  attainment rates and the Monte Carlo standard error of the first, the
-  sample size the true effect requires, and the quartiles of the sample
-  sizes the simulated plans called for. The design, the sample size unit,
-  the requested \code{assurance}, and the requested \code{desired_power}
-  travel as attributes.
+  attainment rates each with its Monte Carlo standard error, the sample size
+  the true effect requires, and the quartiles of the sample sizes the
+  simulated plans called for. The design, the effect tested (for designs
+  with one), the sample size unit, the requested \code{assurance}, and the
+  requested \code{desired_power} travel as attributes. If every simulated
+  prior study is refused, \code{attainment}, its standard error, and the
+  quartiles are \code{NA}, with a warning.
 }
 \description{
 \code{ss_buc_sensitivity} takes a plan returned by any
@@ -69,8 +76,11 @@ The bias and uncertainty correction rests on a claim about the long
   \itemize{
     \item \code{attainment} counts only the prior studies for which the
       method issued a plan. This is what a user experiences.
-    \item \code{attainment_with_refusals} counts a refusal (the zero
-      noncentrality parameter stop) as attaining, because declining to plan
+    \item \code{attainment_with_refusals} counts a refusal (the planner's
+      stop when the corrected noncentrality parameter is zero, or, for a
+      design the planner reduces to a balanced one, its stop when a
+      published statistic is not significant at the balanced design's
+      degrees of freedom) as attaining, because declining to plan
       is the limiting case of an arbitrarily conservative plan. This is the
       quantity the assurance guarantee is about, and it should land on
       \code{assurance}.
@@ -94,19 +104,22 @@ The bias and uncertainty correction rests on a claim about the long
   themselves, including checks against raw simulated data that do not share
   the method's distributional assumptions (bivariate normal samples for the
   correlation planner, two-group normal samples for the Welch planner), is
-  installed with \code{BUCSS} and can be rerun in a few minutes with
+  installed with \code{BUCSS} and can be rerun in a few seconds with
   \code{source(system.file("tools", "verify_by_simulation.R", package =
   "BUCSS"))}.
 }
 \examples{
 plan <- ss_buc_independent_t(t_observed = 3, n = c(50, 55), assurance = .80)
-plan$value[plan$term == "ncp_adjusted"]
+ncp <- plan$value[plan$term == "ncp_adjusted"]
+ncp
 
-# Take the corrected estimate at face value as the truth.
-ss_buc_sensitivity(plan, true_ncp = 1.9, replications = 200, seed = 2017)
+# Take the corrected estimate at face value as the truth. (200 replications
+# keep the example quick; the rates are good to about .03. A reported audit
+# deserves 10000.)
+ss_buc_sensitivity(plan, true_ncp = ncp, replications = 200, seed = 113)
 
 # And ask what happens if the truth is smaller than the correction assumed.
-ss_buc_sensitivity(plan, true_ncp = 1.2, replications = 200, seed = 2017)
+ss_buc_sensitivity(plan, true_ncp = .6 * ncp, replications = 200, seed = 113)
 
 }
 \references{
@@ -119,10 +132,10 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   for publication bias and uncertainty. \emph{Psychological Science, 28,}
   1547--1562. \doi{10.1177/0956797617723724}
 
-  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the 'replication
-  crisis': Using original studies to design replication studies with
+  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the "replication
+  crisis": Using original studies to design replication studies with
   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
-  305--324.
+  305--324. \doi{10.1080/00273171.2017.1289361}
 
   Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
   experiments and analyzing data: A model comparison perspective} (4th ed.).
@@ -131,6 +144,7 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
   sample size calculation due to estimating noncentrality. \emph{Communications
   in Statistics: Theory and Methods, 25,} 1595--1610.
+  \doi{10.1080/03610929608831787}
 }
 \seealso{
 \code{\link{ss_buc_independent_t}} and the other \code{ss_buc_*}

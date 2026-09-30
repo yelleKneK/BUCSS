@@ -1,6 +1,6 @@
-#' Necessary sample size to reach desired power for a test of model
-#' \eqn{R^2} in a multiple regression using a publication bias and uncertainty
-#' correction procedure
+#' Necessary Sample Size to Reach Desired Power for a Test of the Squared
+#' Multiple Correlation in a Multiple Regression Using a Publication Bias and
+#' Uncertainty Correction Procedure
 #'
 #' @description \code{ss_buc_R2} returns the necessary total sample size
 #'   to achieve a desired level of statistical power for a test of model
@@ -25,6 +25,21 @@
 #'   publication bias and/or uncertainty. This new estimated noncentrality
 #'   parameter is then used to calculate the necessary total sample size to
 #'   achieve the desired level of power in the planned study.
+#'
+#'   \strong{The predictors are treated as fixed.} As in most power analysis
+#'   for regression, the prior study's statistic and the planned study's power
+#'   are computed from the noncentral \emph{F} distribution, which is exact
+#'   when the values of the predictors are fixed by design. When the predictors
+#'   are sampled along with the outcome, as in most observational research, the
+#'   statistic follows a more dispersed mixture of noncentral \emph{F}
+#'   distributions. \code{actual_power} then overstates the planned study's
+#'   power by roughly 1/\emph{n} to 1.4/\emph{n} for a plan of \emph{n}
+#'   participants (about .010 to .014 at \emph{n} = 100 and .05 to .07 at 20),
+#'   and the correction delivers a little less than its \code{assurance}
+#'   (about .78 to .80 at an \code{assurance} of .80 for prior studies of 60
+#'   to 200, lower for smaller ones). The sibling package \code{DMAR}'s
+#'   \code{ss_power_R2(random_predictors = TRUE)} gives the power of a proposed
+#'   sample size for this test under sampled predictors.
 #'
 #'   The approach uses a likelihood function of a truncated noncentral
 #'   \emph{F} distribution, where the truncation occurs due to small effect
@@ -94,6 +109,7 @@
 #' @template planning-params
 #'
 #' @templateVar size_phrase total sample size
+#' @templateVar ncp_scale on the scale of the \emph{F} statistic, at the prior study's sample size
 #' @template return
 #'
 #' @export
@@ -134,7 +150,7 @@ ss_buc_R2 <- function(F_observed, N, p, alpha_prior = .05,
 
   value_critical <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator)
 
-  if (F_observed <= value_critical) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.", call. = FALSE)
+  if (F_observed <= value_critical) .stop_nonsignificant("F statistic", "'F_observed'")
 
   ncp_solution <- .solve_ncp_assurance(
     .tm_f(F_observed, value_critical, df_numerator, df_denominator), assurance)

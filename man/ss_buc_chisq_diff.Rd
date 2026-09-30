@@ -2,8 +2,8 @@
 % Please edit documentation in R/ss_buc_chisq_diff.R
 \name{ss_buc_chisq_diff}
 \alias{ss_buc_chisq_diff}
-\title{Necessary sample size to reach desired power for a nested model chi-square
-difference test using a publication bias and uncertainty correction procedure}
+\title{Necessary Sample Size to Reach Desired Power for a Nested Model Chi Square
+Difference Test Using a Publication Bias and Uncertainty Correction Procedure}
 \usage{
 ss_buc_chisq_diff(
   chisq_observed,
@@ -17,15 +17,16 @@ ss_buc_chisq_diff(
 )
 }
 \arguments{
-\item{chisq_observed}{Observed chi-square difference between the two nested
+\item{chisq_observed}{Observed chi square difference between the two nested
 models in the previous study.}
 
 \item{N}{Total sample size of the previous study.}
 
 \item{df_full}{Degrees of freedom of the full (less constrained) model. A
-saturated full model has zero, which identifies the comparison as an
-omnibus test of model fit rather than a difference test between two
-substantive models; the function refuses that case (see Details).}
+saturated full model has zero, the signature of an omnibus test of model
+fit rather than a difference test between two substantive models; the
+function refuses that case (see Details, which also covers a
+just-identified full model).}
 
 \item{df_restricted}{Degrees of freedom of the restricted (more
 constrained) model. It exceeds \code{df_full} by the number of
@@ -58,20 +59,23 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   study, named for its unit (\code{necessary_n_per_group},
   \code{necessary_n_per_cell}, or \code{necessary_N}); for the per-group
   and per-cell designs, \code{total_N}, the implied total sample size;
-  \code{actual_power}, the conservative achieved power at the returned
-  sample size (see Details); and \code{ncp_adjusted}, the publication bias
-  and uncertainty adjusted prior study noncentrality parameter. Rows
+  \code{actual_power}, the power of the plan returned, that is, of the
+  returned sample size at the returned noncentrality parameter (see
+  Details); and \code{ncp_adjusted}, the publication bias and uncertainty
+  adjusted prior study noncentrality parameter, on the scale of the chi square statistic, at the prior study's sample size. Rows
   echoing the planning inputs follow, so the assumptions travel with the
   result. The design, the unit the sample size is counted in, the largest
   assurance this prior can support (the assurance ceiling), and the
-  planned test's degrees of freedom (\code{df_effect} and \code{df_error})
-  travel on attributes; they are shown by \code{print.bucss_plan}, and
-  \code{tidy()} and \code{glance()} give the compact and wide views.
+  planned test's degrees of freedom (\code{df_effect}, and \code{df_error}
+  where the test has a denominator) travel on attributes.
+  \code{print.bucss_plan} shows the design, the unit, and the ceiling
+  beneath the table; \code{tidy()} and \code{glance()} give the compact and
+  wide views, the latter with every attribute as a column.
 }
 \description{
 \code{ss_buc_chisq_diff} returns the necessary total sample size
   to achieve a desired level of statistical power for a planned study whose
-  effect of interest is tested by the chi-square difference between two
+  effect of interest is tested by the chi square difference between two
   nested models (the likelihood ratio test used, for example, to test a
   constrained path in a structural equation model), based on information
   obtained from a previous study. The effect from the previous study can be
@@ -90,31 +94,37 @@ Researchers often use the sample effect size from a prior study as
 
   \strong{Scope, and one thing this function is not for.} The correction
   applies to a test whose statistic is large when the effect is present, so
-  that publication selects large values. A chi-square difference test
+  that publication selects large values. A chi square difference test
   between nested models is such a test: under the alternative it is
-  approximately noncentral chi-square with degrees of freedom equal to the
+  approximately noncentral chi square with degrees of freedom equal to the
   number of constraints released and a noncentrality parameter proportional
   to sample size, and a paper reports the constrained path as supported when
   the difference test is significant. The correction is therefore built for
   the difference test.
 
-  It is \emph{not} appropriate for an omnibus model fit chi-square, where a
+  It is \emph{not} appropriate for an omnibus model fit chi square, where a
   publishable result is a \emph{small} statistic (a model that fits). The
   selection region is inverted there, so the truncated likelihood this
   function builds does not describe it.
 
   \strong{The function refuses that case rather than only warning about it.}
   This is why both models' degrees of freedom are required rather than only
-  their difference. An omnibus fit chi-square is the comparison of a model
+  their difference. An omnibus fit chi square is the comparison of a model
   against the \emph{saturated} model, and a saturated model has zero degrees
-  of freedom, so \code{df_full = 0} identifies the misuse exactly. Given
-  only the difference, nothing distinguishes a fit test from a genuine
-  comparison of two substantive models, and the mistake would pass silently.
-  Supplying both is also a more faithful description of what was tested, and
-  the two values are what a paper reports for each model.
+  of freedom, so \code{df_full = 0} is its signature. Given only the
+  difference, nothing distinguishes a fit test from a genuine comparison of
+  two substantive models, and the mistake would pass silently. Supplying
+  both is also a more faithful description of what was tested, and the two
+  values are what a paper reports for each model. A just-identified full
+  model (every parameter free, as in a path model compared with the same
+  model with one path fixed at zero) also has zero degrees of freedom, and
+  there the difference test is a genuine one. The plan depends only on the
+  number of constraints, so for that case the call with \code{df_full = 1}
+  and \code{df_restricted} one more than the number of constraints gives
+  the plan.
 
   The correction uses a likelihood function of a truncated noncentral
-  chi-square distribution, the same construction the rest of the package uses
+  chi square distribution, the same construction the rest of the package uses
   for the noncentral \emph{F} (see Taylor & Muller, 1996, Equation 2.1, and
   Anderson & Maxwell, 2017): the truncated area between the critical value
   and the observed statistic, divided by the power of the test. Because the
@@ -173,13 +183,17 @@ Researchers often use the sample effect size from a prior study as
   \code{actual_power} is never below the \code{desired_power} that was
   requested and is usually a little above it.
 
-  The chi-square difference test is asymptotic, so both the correction and
-  the planned-study power inherit that approximation. The test is liberal in
-  small samples: in simulation its actual Type I error is nearer .06 than
-  .05 at a total sample size of 50, and it reaches the nominal rate only
-  around 200. Treat a planned sample size under a hundred or so with
-  caution, and read a very small one as a signal that the prior effect was
-  large rather than as a serious recommendation.
+  The chi square difference test is asymptotic, so both the correction and
+  the planned-study power inherit that approximation. The likelihood ratio
+  test is liberal in small samples, and more so the more parameters a model
+  estimates. For a test that drops 2 of 6 parameters of a normal linear
+  model, its actual Type I error is about .07 at a total sample size of 50,
+  .055 at 200, and .052 at 400; dropping 5 of 21 parameters, it is about
+  .08 at 200. At such sample sizes the real test's power can also sit above
+  or below \code{actual_power}. Treat a planned sample size that is small
+  relative to the number of parameters estimated with caution, and read a
+  very small one as a signal that the prior effect was large rather than as
+  a serious recommendation.
 }
 \examples{
 # A path constrained to zero: the full model has 42 degrees of freedom and
@@ -210,10 +224,10 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   for publication bias and uncertainty. \emph{Psychological Science, 28,}
   1547--1562. \doi{10.1177/0956797617723724}
 
-  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the 'replication
-  crisis': Using original studies to design replication studies with
+  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the "replication
+  crisis": Using original studies to design replication studies with
   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
-  305--324.
+  305--324. \doi{10.1080/00273171.2017.1289361}
 
   Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
   experiments and analyzing data: A model comparison perspective} (4th ed.).
@@ -222,6 +236,7 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
   sample size calculation due to estimating noncentrality. \emph{Communications
   in Statistics: Theory and Methods, 25,} 1595--1610.
+  \doi{10.1080/03610929608831787}
 }
 \author{
 Ken Kelley (\email{kkelley@nd.edu})

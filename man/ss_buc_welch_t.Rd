@@ -2,8 +2,8 @@
 % Please edit documentation in R/ss_buc_welch_t.R
 \name{ss_buc_welch_t}
 \alias{ss_buc_welch_t}
-\title{Necessary sample size to reach desired power for a Welch (unequal variance) t
-test using a publication bias and uncertainty correction procedure}
+\title{Necessary Sample Size to Reach Desired Power for a Welch (Unequal Variance) t
+Test Using a Publication Bias and Uncertainty Correction Procedure}
 \usage{
 ss_buc_welch_t(
   t_observed,
@@ -66,15 +66,18 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   study, named for its unit (\code{necessary_n_per_group},
   \code{necessary_n_per_cell}, or \code{necessary_N}); for the per-group
   and per-cell designs, \code{total_N}, the implied total sample size;
-  \code{actual_power}, the conservative achieved power at the returned
-  sample size (see Details); and \code{ncp_adjusted}, the publication bias
-  and uncertainty adjusted prior study noncentrality parameter. Rows
+  \code{actual_power}, the power of the plan returned, that is, of the
+  returned sample size at the returned noncentrality parameter (see
+  Details); and \code{ncp_adjusted}, the publication bias and uncertainty
+  adjusted prior study noncentrality parameter, on the scale of the \emph{t} statistic (the noncentrality parameter of the prior study's noncentral \emph{t}). Rows
   echoing the planning inputs follow, so the assumptions travel with the
   result. The design, the unit the sample size is counted in, the largest
   assurance this prior can support (the assurance ceiling), and the
-  planned test's degrees of freedom (\code{df_effect} and \code{df_error})
-  travel on attributes; they are shown by \code{print.bucss_plan}, and
-  \code{tidy()} and \code{glance()} give the compact and wide views.
+  planned test's degrees of freedom (\code{df_effect}, and \code{df_error}
+  where the test has a denominator) travel on attributes.
+  \code{print.bucss_plan} shows the design, the unit, and the ceiling
+  beneath the table; \code{tidy()} and \code{glance()} give the compact and
+  wide views, the latter with every attribute as a column.
 }
 \description{
 \code{ss_buc_welch_t} returns the necessary per-group sample
@@ -103,24 +106,48 @@ Researchers often use the sample effect size from a prior study as
   statistic as noncentral \emph{t} on the Welch-Satterthwaite degrees of
   freedom implied by the prior study's group sizes and the standard deviation
   ratio you supply, which is the usual approximation in power analysis for
-  this test. In simulation that treatment is accurate: across ratios from 1
-  to 3 the Type I error of the real Welch test stays between .047 and .054
-  against a nominal .05, and the planned study's power is within about .006
-  of what this function predicts, with the agreement no worse at the
-  extreme ratios.
+  this test, and computes the planned study's power the same way. Once each
+  group has about ten participants that treatment is accurate: across ratios
+  from 1 to 5, the power of the real Welch test is within .006 of what this
+  function reports for every plan it returns (10 per group or more), and
+  within .003 from about 12 per group at a target power of .80, and its
+  Type I error stays between .047 and .054 against a nominal .05 across
+  ratios from 1 to 3. With smaller groups the approximation
+  overstates the power of the real test, badly so for the smallest (a plan
+  of 2 per group that it puts at .82 has real power near .50), because the
+  real test estimates its degrees of freedom from very few observations.
+  \strong{The planner therefore never returns fewer than 10 per group}: when
+  the target power is reached with fewer, it returns 10, whose power exceeds
+  the target. The correction of the prior study's statistic uses the same
+  approximation and holds up well: simulating prior studies of 5 to 20 per
+  group as raw data, published by the real Welch test, the corrected
+  parameter fell at or below the truth in about .79 to .82 of them at an
+  \code{assurance} of .80 (a refusal counted as at or below). One
+  consequence of reading the prior study on the Welch-Satterthwaite degrees
+  of freedom the supplied ratio implies, rather than on those its data
+  produced: with very small groups and a large ratio, a prior result its
+  paper reported as significant can fall short of the critical value here
+  and be refused as nonsignificant.
 
-  \strong{The assumption that matters is the ratio itself.} Planning assumes
-  the ratio you supply is the ratio the planned study will have, and getting
-  that wrong costs far more than the distributional approximation does. For
-  the example below, a plan built assuming equal variances delivers about
-  .43 power rather than .80 if the true ratio turns out to be 2. Re-run
-  across a range of plausible ratios and plan for the least favorable one
-  you find credible. The required sample size does not always rise with the
-  ratio: it falls when the group assumed to be more variable is the smaller
-  one.
+  \strong{The assumption that matters is the ratio itself.} One
+  \code{sd_ratio} describes both studies: the prior study, whose statistic
+  is read under it, and the planned study. Getting it wrong costs far more
+  than the distributional approximation does. For the example below, the
+  plan built assuming equal variances (213 per group) delivers about .76
+  power rather than .80 if the ratio is in fact 2 in both studies, and
+  about .43 if the prior study's groups were equally variable but the
+  planned study's ratio is 2, with the mean difference held fixed in units
+  of the first group's standard deviation. Re-running across a range of
+  plausible ratios, and planning for the least favorable one you find
+  credible, guards against the first kind of error. The second, a planned
+  study more unequal than the prior one, is not something the prior result
+  can speak to, and needs its own allowance. The required sample size does
+  not always rise with the ratio: it falls when the group assumed to be
+  more variable is the smaller one.
 
   When the ratio is 1 and the prior groups were the same size, this planner
-  returns exactly what \code{\link{ss_buc_independent_t}} returns. With
+  returns what \code{\link{ss_buc_independent_t}} returns, except that it
+  never returns fewer than 10 per group. With
   unequal prior group sizes the two differ, and should: the equal-variance
   planner reduces the prior study to an equivalent equal-\emph{n} design at
   the harmonic mean, while this one uses the actual Welch-Satterthwaite
@@ -193,8 +220,8 @@ Researchers often use the sample effect size from a prior study as
   which is the allocation that maximizes power when the variances are equal
   and is a reasonable default otherwise. It is not the optimal allocation
   when they are not: sampling in proportion to the standard deviations would
-  need about 11 percent fewer participants in total at a ratio of 2, and
-  about 25 percent fewer at a ratio of 3.
+  need about 10 percent fewer participants in total at a ratio of 2, and
+  about 20 percent fewer at a ratio of 3.
 }
 \examples{
 # A prior study with 40 and 55 participants whose second group was half
@@ -230,10 +257,10 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   for publication bias and uncertainty. \emph{Psychological Science, 28,}
   1547--1562. \doi{10.1177/0956797617723724}
 
-  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the 'replication
-  crisis': Using original studies to design replication studies with
+  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the "replication
+  crisis": Using original studies to design replication studies with
   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
-  305--324.
+  305--324. \doi{10.1080/00273171.2017.1289361}
 
   Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
   experiments and analyzing data: A model comparison perspective} (4th ed.).
@@ -242,6 +269,7 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
   sample size calculation due to estimating noncentrality. \emph{Communications
   in Statistics: Theory and Methods, 25,} 1595--1610.
+  \doi{10.1080/03610929608831787}
 }
 \seealso{
 \code{\link{ss_buc_independent_t}} for the equal-variance test.

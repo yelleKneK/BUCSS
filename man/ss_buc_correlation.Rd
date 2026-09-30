@@ -2,8 +2,8 @@
 % Please edit documentation in R/ss_buc_correlation.R
 \name{ss_buc_correlation}
 \alias{ss_buc_correlation}
-\title{Necessary sample size to reach desired power for a Pearson correlation using
-a publication bias and uncertainty correction procedure}
+\title{Necessary Sample Size to Reach Desired Power for a Pearson Correlation Using
+a Publication Bias and Uncertainty Correction Procedure}
 \usage{
 ss_buc_correlation(
   r_observed,
@@ -53,15 +53,18 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   study, named for its unit (\code{necessary_n_per_group},
   \code{necessary_n_per_cell}, or \code{necessary_N}); for the per-group
   and per-cell designs, \code{total_N}, the implied total sample size;
-  \code{actual_power}, the conservative achieved power at the returned
-  sample size (see Details); and \code{ncp_adjusted}, the publication bias
-  and uncertainty adjusted prior study noncentrality parameter. Rows
+  \code{actual_power}, the power of the plan returned, that is, of the
+  returned sample size at the returned noncentrality parameter (see
+  Details); and \code{ncp_adjusted}, the publication bias and uncertainty
+  adjusted prior study noncentrality parameter, on the scale of the \emph{F} statistic, \eqn{N\rho^2/(1 - \rho^2)}{N rho^2/(1 - rho^2)} at the prior study's sample size. Rows
   echoing the planning inputs follow, so the assumptions travel with the
   result. The design, the unit the sample size is counted in, the largest
   assurance this prior can support (the assurance ceiling), and the
-  planned test's degrees of freedom (\code{df_effect} and \code{df_error})
-  travel on attributes; they are shown by \code{print.bucss_plan}, and
-  \code{tidy()} and \code{glance()} give the compact and wide views.
+  planned test's degrees of freedom (\code{df_effect}, and \code{df_error}
+  where the test has a denominator) travel on attributes.
+  \code{print.bucss_plan} shows the design, the unit, and the ceiling
+  beneath the table; \code{tidy()} and \code{glance()} give the compact and
+  wide views, the latter with every attribute as a column.
 }
 \description{
 \code{ss_buc_correlation} returns the necessary total sample
@@ -90,7 +93,8 @@ Researchers often use the sample effect size from a prior study as
   achieve the desired level of power in the planned study.
 
   The observed correlation \emph{r} with sample size \emph{N} gives
-  \eqn{t = r\sqrt{(N - 2)/(1 - r^2)}} on \emph{N} - 2 degrees of freedom,
+  \eqn{t = r\sqrt{(N - 2)/(1 - r^2)}}{t = r*sqrt((N - 2)/(1 - r^2))} on
+  \emph{N} - 2 degrees of freedom,
   and the planner works from that \emph{t}. Supplying \code{t_observed}
   directly instead of \code{r_observed} is equivalent.
 
@@ -111,20 +115,22 @@ Researchers often use the sample effect size from a prior study as
   \emph{both} variables. Conditional on the sampled \emph{X}, the statistic
   is noncentral \emph{F}, but its noncentrality parameter is itself random:
   it is proportional to the sampled spread of \emph{X}, which follows a
-  chi-square distribution on \emph{N} - 1 degrees of freedom. The marginal
-  distribution is therefore a chi-square mixture of noncentral \emph{F}
+  chi square distribution on \emph{N} - 1 degrees of freedom. The marginal
+  distribution is therefore a chi square mixture of noncentral \emph{F}
   distributions, which is more dispersed than any single noncentral
   \emph{F}, and treating the statistic as noncentral \emph{F} overstates the
-  power of the planned study by up to about .04.
+  power of the planned study in every case, by roughly 1/\emph{n} for a plan
+  of \emph{n} participants: about .01 at \emph{n} = 100, .02 at 50, .05 at
+  20, .10 at 10, and up to about .2 for the smallest plans.
 
   \code{ss_buc_correlation} uses the mixture, which has an exact closed form
   (the Poisson weights of the noncentral \emph{F} become negative binomial
   weights), for both the correction and the planned study's power. The
   returned sample size is therefore exact for bivariate normal data rather
   than a few participants light, and it is typically 2 to 5 participants
-  larger than the fixed-predictor calculation, more when the plan is small.
-  Near the assurance ceiling the difference reverses and the mixture calls
-  for a slightly smaller sample. If your predictor really is fixed by design,
+  larger than the fixed-predictor calculation (1 to 3 for the smallest plans,
+  up to about 8 for plans in the hundreds). Near the assurance ceiling the
+  difference reverses and the mixture calls for a slightly smaller sample. If your predictor really is fixed by design,
   the analysis is a regression slope rather than a correlation, and
   \code{\link{ss_buc_reg_coef}} with \code{p = 1} is the planner for it.
 
@@ -188,9 +194,11 @@ Researchers often use the sample effect size from a prior study as
   magnitude enters the computation.
 
   The returned \code{ncp_adjusted} is the noncentrality parameter the
-  adjusted correlation implies at the prior study's sample size, the same
-  scale the other planners report it on. The adjusted correlation itself is
-  \code{sqrt(ncp_adjusted / (ncp_adjusted + N))}.
+  adjusted correlation implies at the prior study's sample size,
+  \eqn{N\rho^2/(1 - \rho^2)}{N rho^2/(1 - rho^2)}, on the scale of the
+  \emph{F} statistic, as in the regression planners (the \emph{t}-based
+  planners report theirs on the scale of \emph{t} instead). The adjusted
+  correlation itself is \code{sqrt(ncp_adjusted / (ncp_adjusted + N))}.
 }
 \examples{
 result <- ss_buc_correlation(r_observed = .35, N = 100, alpha_prior = .05,
@@ -217,10 +225,10 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   for publication bias and uncertainty. \emph{Psychological Science, 28,}
   1547--1562. \doi{10.1177/0956797617723724}
 
-  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the 'replication
-  crisis': Using original studies to design replication studies with
+  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the "replication
+  crisis": Using original studies to design replication studies with
   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
-  305--324.
+  305--324. \doi{10.1080/00273171.2017.1289361}
 
   Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
   experiments and analyzing data: A model comparison perspective} (4th ed.).
@@ -229,6 +237,7 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
   sample size calculation due to estimating noncentrality. \emph{Communications
   in Statistics: Theory and Methods, 25,} 1595--1610.
+  \doi{10.1080/03610929608831787}
 }
 \seealso{
 \code{\link{ss_buc_reg_coef}} for a coefficient in a model with

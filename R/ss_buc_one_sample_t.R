@@ -1,5 +1,5 @@
-#' Necessary sample size to reach desired power for a one-sample t test using a
-#' publication bias and uncertainty correction procedure
+#' Necessary Sample Size to Reach Desired Power for a One-Sample t Test Using a
+#' Publication Bias and Uncertainty Correction Procedure
 #'
 #' @description \code{ss_buc_one_sample_t} returns the necessary total sample
 #'   size to achieve a desired level of statistical power for a planned study
@@ -15,8 +15,9 @@
 #' @details The one-sample \emph{t} test and the dependent (paired) \emph{t}
 #'   test are the same test applied to a single column of scores: the statistic
 #'   has \emph{N} - 1 degrees of freedom and a noncentrality parameter of
-#'   \eqn{d\sqrt{N}}. \code{ss_buc_one_sample_t} therefore performs exactly the
-#'   computation \code{\link{ss_buc_paired_t}} performs, and reports it with a
+#'   \eqn{d\sqrt{N}}{d*sqrt(N)}. \code{ss_buc_one_sample_t} therefore performs
+#'   exactly the computation \code{\link{ss_buc_paired_t}} performs, and
+#'   reports it with a
 #'   one-sample design label and a total sample size rather than a number of
 #'   pairs. See \code{\link{ss_buc_paired_t}} for the full description of the
 #'   method, the meaning of \code{assurance}, the role of \code{alpha_prior},
@@ -34,7 +35,8 @@
 #'   the computation.
 #'
 #'   If you are working from a standardized mean (Cohen's \eqn{d}) rather than
-#'   a \emph{t} statistic, convert it before calling: \eqn{t = d\sqrt{N}}.
+#'   a \emph{t} statistic, convert it before calling:
+#'   \eqn{t = d\sqrt{N}}{t = d*sqrt(N)}.
 #'
 #' @param t_observed Observed \emph{t} value from a previous study used to plan
 #'   sample size for a planned study. Either sign is accepted: the publication
@@ -43,6 +45,7 @@
 #' @template planning-params
 #'
 #' @templateVar size_phrase total sample size
+#' @templateVar ncp_scale on the scale of the \emph{t} statistic (the noncentrality parameter of the prior study's noncentral \emph{t})
 #' @template return
 #'
 #' @export
@@ -67,7 +70,9 @@ ss_buc_one_sample_t <- function(t_observed, N, alpha_prior = .05,
                                 alpha_planned = .05, assurance = .80,
                                 desired_power = .80) {
   # The mathematics is the paired t planner's, so it lives in one place; only
-  # the design label and the unit differ.
+  # the design label and the unit differ. A missing N is caught here so the
+  # message speaks of participants, not the paired planner's pairs.
+  if (missing(N)) stop("You need to specify 'N', which is the total sample size (the number of participants) of the previous study.", call. = FALSE)
   res <- ss_buc_paired_t(t_observed = t_observed, N = N,
                          alpha_prior = alpha_prior,
                          alpha_planned = alpha_planned,

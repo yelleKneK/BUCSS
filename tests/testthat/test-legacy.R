@@ -32,7 +32,7 @@ legacy_pairs <- list(
     new = quote(ss_buc_mixed_anova(F_observed = 5, N = 60, levels_between = 2, levels_within = 3, effect = "within"))),
   spa_general = list(
     old = quote(ss.power.spa.general(F.observed = 5, N = 90, df.numerator = 2, num.groups = 3, effect = "between.only", df.num.within = 3)),
-    new = quote(ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2, num_groups = 3, effect = "between_only", df_num_within = 3))),
+    new = quote(ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2, num_groups = 3, effect = "between_only"))),
   reg1 = list(
     old = quote(ss.power.reg1(t.observed = 3, N = 150, p = 3)),
     new = quote(ss_buc_reg_coef(t_observed = 3, N = 150, p = 3))),
@@ -64,6 +64,41 @@ test_that("deprecation warning fires once per session and names the replacement"
   expect_match(w, "ss_buc_independent_t", all = FALSE)
   # A subsequent call in the same session is silent.
   expect_no_warning(ss.power.it(t.observed = 3, n = 20))
+})
+
+test_that("ss.power.spa.general takes df.num.within with any effect, warning only once", {
+  # 1.x accepted 'df.num.within' with every effect, and the web apps pass it
+  # on every call. The wrapper forwards it only for the between-within
+  # interaction, so a 1.x call with another effect raises the deprecation
+  # warning and nothing else (not the 2.x planner's "'df_num_within' is used
+  # only when" warning).
+  if (exists("ss.power.spa.general", envir = BUCSS:::.bucss_deprecated_warned,
+             inherits = FALSE))
+    rm("ss.power.spa.general", envir = BUCSS:::.bucss_deprecated_warned)
+  record <- new.env(parent = emptyenv())
+  record$classes <- list()
+  collect <- function(code) withCallingHandlers(code, warning = function(w) {
+    record$classes <- c(record$classes, list(class(w)))
+    invokeRestart("muffleWarning")
+  })
+  between <- collect(ss.power.spa.general(F.observed = 5, N = 90, df.numerator = 2,
+                                          num.groups = 3, effect = "between.only",
+                                          df.num.within = 3))
+  expect_length(record$classes, 1L)
+  expect_true("bucss_deprecatedWarning" %in% record$classes[[1]])
+  # After the once-per-session warning, the same calls are silent.
+  expect_no_warning(ss.power.spa.general(F.observed = 5, N = 90, df.numerator = 2,
+                                         num.groups = 3, effect = "between.only",
+                                         df.num.within = 3))
+  expect_no_warning(within <- ss.power.spa.general(F.observed = 5, N = 90,
+                                                   df.numerator = 2, num.groups = 3,
+                                                   effect = "within.only",
+                                                   df.num.within = 3))
+  # ...and the value it ignores does not change the plan.
+  expect_identical(between, ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2,
+                                                       num_groups = 3, effect = "between_only"))
+  expect_identical(within, ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2,
+                                                      num_groups = 3, effect = "within_only"))
 })
 
 test_that("ss.power.ba dispatches on levels.B", {

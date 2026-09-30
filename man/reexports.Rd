@@ -5,7 +5,7 @@
 \alias{reexports}
 \alias{tidy}
 \alias{glance}
-\title{Objects exported from other packages}
+\title{Objects Exported From Other Packages}
 \keyword{internal}
 \description{
 These objects are imported from other packages. Follow the links

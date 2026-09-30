@@ -2,9 +2,9 @@
 % Please edit documentation in R/ss_buc_R2.R
 \name{ss_buc_R2}
 \alias{ss_buc_R2}
-\title{Necessary sample size to reach desired power for a test of model
-\eqn{R^2} in a multiple regression using a publication bias and uncertainty
-correction procedure}
+\title{Necessary Sample Size to Reach Desired Power for a Test of the Squared
+Multiple Correlation in a Multiple Regression Using a Publication Bias and
+Uncertainty Correction Procedure}
 \usage{
 ss_buc_R2(
   F_observed,
@@ -52,15 +52,18 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   study, named for its unit (\code{necessary_n_per_group},
   \code{necessary_n_per_cell}, or \code{necessary_N}); for the per-group
   and per-cell designs, \code{total_N}, the implied total sample size;
-  \code{actual_power}, the conservative achieved power at the returned
-  sample size (see Details); and \code{ncp_adjusted}, the publication bias
-  and uncertainty adjusted prior study noncentrality parameter. Rows
+  \code{actual_power}, the power of the plan returned, that is, of the
+  returned sample size at the returned noncentrality parameter (see
+  Details); and \code{ncp_adjusted}, the publication bias and uncertainty
+  adjusted prior study noncentrality parameter, on the scale of the \emph{F} statistic, at the prior study's sample size. Rows
   echoing the planning inputs follow, so the assumptions travel with the
   result. The design, the unit the sample size is counted in, the largest
   assurance this prior can support (the assurance ceiling), and the
-  planned test's degrees of freedom (\code{df_effect} and \code{df_error})
-  travel on attributes; they are shown by \code{print.bucss_plan}, and
-  \code{tidy()} and \code{glance()} give the compact and wide views.
+  planned test's degrees of freedom (\code{df_effect}, and \code{df_error}
+  where the test has a denominator) travel on attributes.
+  \code{print.bucss_plan} shows the design, the unit, and the ceiling
+  beneath the table; \code{tidy()} and \code{glance()} give the compact and
+  wide views, the latter with every attribute as a column.
 }
 \description{
 \code{ss_buc_R2} returns the necessary total sample size
@@ -87,6 +90,21 @@ Researchers often use the sample effect size from a prior study as
   publication bias and/or uncertainty. This new estimated noncentrality
   parameter is then used to calculate the necessary total sample size to
   achieve the desired level of power in the planned study.
+
+  \strong{The predictors are treated as fixed.} As in most power analysis
+  for regression, the prior study's statistic and the planned study's power
+  are computed from the noncentral \emph{F} distribution, which is exact
+  when the values of the predictors are fixed by design. When the predictors
+  are sampled along with the outcome, as in most observational research, the
+  statistic follows a more dispersed mixture of noncentral \emph{F}
+  distributions. \code{actual_power} then overstates the planned study's
+  power by roughly 1/\emph{n} to 1.4/\emph{n} for a plan of \emph{n}
+  participants (about .010 to .014 at \emph{n} = 100 and .05 to .07 at 20),
+  and the correction delivers a little less than its \code{assurance}
+  (about .78 to .80 at an \code{assurance} of .80 for prior studies of 60
+  to 200, lower for smaller ones). The sibling package \code{DMAR}'s
+  \code{ss_power_R2(random_predictors = TRUE)} gives the power of a proposed
+  sample size for this test under sampled predictors.
 
   The approach uses a likelihood function of a truncated noncentral
   \emph{F} distribution, where the truncation occurs due to small effect
@@ -168,10 +186,10 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   for publication bias and uncertainty. \emph{Psychological Science, 28,}
   1547--1562. \doi{10.1177/0956797617723724}
 
-  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the 'replication
-  crisis': Using original studies to design replication studies with
+  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the "replication
+  crisis": Using original studies to design replication studies with
   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
-  305--324.
+  305--324. \doi{10.1080/00273171.2017.1289361}
 
   Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
   experiments and analyzing data: A model comparison perspective} (4th ed.).
@@ -180,6 +198,7 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
   sample size calculation due to estimating noncentrality. \emph{Communications
   in Statistics: Theory and Methods, 25,} 1595--1610.
+  \doi{10.1080/03610929608831787}
 
 Anderson, S. F. (2021). Using prior information to plan
   appropriately powered regression studies: A tutorial using BUCSS.

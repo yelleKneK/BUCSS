@@ -3,7 +3,7 @@
 # study's statistic follows. Two exported features read it, ss_buc_sensitivity()
 # and plot.bucss_plan(), so it lives here rather than inside either.
 #
-# The degrees of freedom recorded here are the prior study's OWN, which is what
+# The degrees of freedom recorded here are the prior study's own, which is what
 # a simulated prior study must be drawn from. They can differ from the degrees
 # of freedom a planner uses internally: the between-subjects and split-plot
 # planners round an unbalanced prior N to a balanced design in two directions
@@ -57,7 +57,7 @@
   "Analysis of covariance" = list(
     planner = "ss_buc_ancova", statistic = "F_observed", family = "f",
     df = function(i) c(i$df_numerator, i$N - i$cells - i$n_covariates)),
-  "One or two-way within-subjects ANOVA" = list(
+  "One- or two-way within-subjects ANOVA" = list(
     planner = "ss_buc_rm_anova", statistic = "F_observed", family = "f",
     df = function(i, effect) {
       df1 <- if (is.null(i$levels_B)) i$levels_A - 1 else
@@ -98,7 +98,7 @@
   "Two-group multivariate comparison (Hotelling's T squared)" = list(
     planner = "ss_buc_manova", statistic = "F_observed", family = "f",
     df = function(i) c(i$p_variables, i$N - i$p_variables - 1)),
-  "Nested model chi-square difference test" = list(
+  "Nested model chi square difference test" = list(
     planner = "ss_buc_chisq_diff", statistic = "chisq_observed",
     family = "chisq", df = function(i) i$df_restricted - i$df_full),
   "Pearson correlation" = list(
@@ -137,6 +137,27 @@
     args$t_observed <- r * sqrt((args$N - 2) / (1 - r^2))
     args$r_observed <- NULL
   }
+  # Likewise the MANOVA planner accepts Hotelling's T squared or its exact F;
+  # the simulation draws F, so a call stated in T squared is restated in F.
+  if (spec$planner == "ss_buc_manova" && !is.null(args$T2_observed)) {
+    args$F_observed <- args$T2_observed * (args$N - args$p_variables - 1) /
+      (args$p_variables * (args$N - 2))
+    args$T2_observed <- NULL
+  }
   args
 }
 
+# Does a replayed planner call reproduce the plan? Only the computed rows are
+# compared (a correlation stated in r is replayed in t, so the echoed input
+# rows legitimately carry a different label), and they are matched by term,
+# so a plan whose rows were reordered still replays.
+.replay_matches <- function(replay, object) {
+  computed <- c(.BUCSS_SIZE_TERMS, "total_N", "actual_power", "ncp_adjusted")
+  terms_object <- object$term[object$term %in% computed]
+  terms_replay <- replay$term[replay$term %in% computed]
+  if (!setequal(terms_object, terms_replay) ||
+      length(terms_object) != length(terms_replay)) return(FALSE)
+  got <- replay$value[match(terms_object, replay$term)]
+  want <- object$value[match(terms_object, object$term)]
+  isTRUE(all.equal(got, want, tolerance = 1e-10))
+}

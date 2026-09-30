@@ -25,7 +25,7 @@
   sort(ceiling_value - gaps)
 }
 
-#' Plot the assurance ceiling of a plan
+#' Plot the Assurance Ceiling of a Plan
 #'
 #' @description Re-runs the planner that produced \code{x} across a range of
 #'   \code{assurance} values and draws what happens as the requested assurance
@@ -113,6 +113,7 @@ plot.bucss_plan <- function(x, which = c("both", "ncp", "size"),
                              assurance = NULL, lower = NULL, n_points = 60L,
                              col = "#B03A2E", ...) {
   which <- match.arg(which)
+  .check_plan_shape(x)
   design <- attr(x, "design")
   spec <- .BUCSS_DESIGN_SPECS[[design]]
   if (is.null(spec))
@@ -129,10 +130,11 @@ plot.bucss_plan <- function(x, which = c("both", "ncp", "size"),
   # Replaying the rebuilt call must reproduce the plan, exactly as in
   # ss_buc_sensitivity(): every point drawn comes from that call with only
   # 'assurance' changed, so a wrong reconstruction would draw a wrong curve.
-  computed <- c(.BUCSS_SIZE_TERMS, "total_N", "actual_power", "ncp_adjusted")
-  replay <- do.call(planner, args)
-  if (!isTRUE(all.equal(replay$value[replay$term %in% computed],
-                        x$value[x$term %in% computed], tolerance = 1e-10)))
+  # The replay repeats any warning the plan raised when it was built, which
+  # the user has already seen.
+  replay <- withCallingHandlers(do.call(planner, args),
+                                warning = function(w) invokeRestart("muffleWarning"))
+  if (!.replay_matches(replay, x))
     stop("The planning inputs stored in 'x' do not reproduce it when replayed, so this plan cannot be plotted. Please report this, naming the design '", design, "'.", call. = FALSE)
 
   if (is.null(assurance)) {
@@ -154,11 +156,20 @@ plot.bucss_plan <- function(x, which = c("both", "ncp", "size"),
   }
 
   # An assurance at or above the ceiling is a refusal, not a failure: it is the
-  # wall the figure exists to show, and it is recorded as NA.
+  # wall the figure exists to show, and it is recorded as NA. Only that refusal
+  # is caught. The planners' warning for an assurance below .5 is expected on
+  # the lower part of a weak prior's grid and is muffled (the plotted values
+  # are still plans); any other error or warning reaches the user.
   at <- function(a) {
-    out <- tryCatch(do.call(planner, c(args[names(args) != "assurance"],
-                                       list(assurance = a))),
-                    error = function(e) NULL, warning = function(w) NULL)
+    out <- withCallingHandlers(
+      tryCatch(do.call(planner, c(args[names(args) != "assurance"],
+                                  list(assurance = a))),
+               bucss_zero_ncp = function(e) NULL),
+      warning = function(w) {
+        if (grepl("'assurance' you have entered is < .5", conditionMessage(w),
+                  fixed = TRUE))
+          invokeRestart("muffleWarning")
+      })
     if (is.null(out)) return(c(NA_real_, NA_real_, NA_real_))
     c(out$value[out$term %in% .BUCSS_SIZE_TERMS][1],
       out$value[out$term == "ncp_adjusted"],

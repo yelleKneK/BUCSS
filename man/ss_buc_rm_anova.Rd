@@ -2,9 +2,9 @@
 % Please edit documentation in R/ss_buc_rm_anova.R
 \name{ss_buc_rm_anova}
 \alias{ss_buc_rm_anova}
-\title{Necessary sample size to reach desired power for a one or two-way
-within-subjects ANOVA using a publication bias and uncertainty correction
-procedure}
+\title{Necessary Sample Size to Reach Desired Power for a One- or Two-Way
+Within-Subjects ANOVA Using a Publication Bias and Uncertainty Correction
+Procedure}
 \usage{
 ss_buc_rm_anova(
   F_observed,
@@ -26,8 +26,8 @@ sample size for a planned study.}
 
 \item{levels_A}{Number of levels for Factor A.}
 
-\item{levels_B}{Number of levels for Factor B, which is NULL if a single
-factor design.}
+\item{levels_B}{Number of levels for Factor B, which is \code{NULL} for a
+single-factor design.}
 
 \item{effect}{Effect of most interest to the planned study: main effect of A
 (\code{factor_A}), main effect of B (\code{factor_B}), or interaction
@@ -63,21 +63,23 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   study, named for its unit (\code{necessary_n_per_group},
   \code{necessary_n_per_cell}, or \code{necessary_N}); for the per-group
   and per-cell designs, \code{total_N}, the implied total sample size;
-  \code{actual_power}, the conservative achieved power at the returned
-  sample size (see Details); and \code{ncp_adjusted}, the publication bias
-  and uncertainty adjusted prior study noncentrality parameter. Rows
+  \code{actual_power}, the power of the plan returned, that is, of the
+  returned sample size at the returned noncentrality parameter (see
+  Details); and \code{ncp_adjusted}, the publication bias and uncertainty
+  adjusted prior study noncentrality parameter, on the scale of the \emph{F} statistic, at the prior study's sample size. Rows
   echoing the planning inputs follow, so the assumptions travel with the
   result. The design, the effect tested, the unit the sample size is
   counted in, the largest assurance this prior can support (the assurance
   ceiling), and the planned test's degrees of freedom (\code{df_effect}
-  and \code{df_error}) travel on attributes; they are shown by
-  \code{print.bucss_plan}, and \code{tidy()} and \code{glance()} give the
-  compact and wide views.
+  and \code{df_error}) travel on attributes. \code{print.bucss_plan} shows
+  the design, the effect, the unit, and the ceiling beneath the table;
+  \code{tidy()} and \code{glance()} give the compact and wide views, the
+  latter with every attribute as a column.
 }
 \description{
 \code{ss_buc_rm_anova} returns the necessary total sample size to
   achieve a desired level of statistical power for a planned study testing an
-  omnibus effect using a one or two-way fully within-subjects ANOVA, based on
+  omnibus effect using a one- or two-way fully within-subjects ANOVA, based on
   information obtained from a previous study. The effect from the previous
   study can be corrected for publication bias and/or uncertainty to provide a
   sample size that will achieve more accurate statistical power for a planned
@@ -184,10 +186,10 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   for publication bias and uncertainty. \emph{Psychological Science, 28,}
   1547--1562. \doi{10.1177/0956797617723724}
 
-  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the 'replication
-  crisis': Using original studies to design replication studies with
+  Anderson, S. F., & Maxwell, S. E. (2017). Addressing the "replication
+  crisis": Using original studies to design replication studies with
   appropriate statistical power. \emph{Multivariate Behavioral Research, 52,}
-  305--324.
+  305--324. \doi{10.1080/00273171.2017.1289361}
 
   Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). \emph{Designing
   experiments and analyzing data: A model comparison perspective} (4th ed.).
@@ -196,6 +198,7 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
   sample size calculation due to estimating noncentrality. \emph{Communications
   in Statistics: Theory and Methods, 25,} 1595--1610.
+  \doi{10.1080/03610929608831787}
 }
 \author{
 Ken Kelley (\email{kkelley@nd.edu}) and

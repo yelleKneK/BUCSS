@@ -1,6 +1,6 @@
-#' Necessary sample size to reach desired power for a within-subjects ANOVA with
-#' any number of factors using a publication bias and uncertainty correction
-#' procedure
+#' Necessary Sample Size to Reach Desired Power for a Within-Subjects ANOVA With
+#' Any Number of Factors Using a Publication Bias and Uncertainty Correction
+#' Procedure
 #'
 #' @description \code{ss_buc_rm_anova_general} returns the necessary total sample
 #'   size to achieve a desired level of statistical power for a planned study
@@ -97,6 +97,7 @@
 #' @template planning-params
 #'
 #' @templateVar size_phrase total sample size
+#' @templateVar ncp_scale on the scale of the \emph{F} statistic, at the prior study's sample size
 #' @template return
 #'
 #' @export
@@ -135,7 +136,7 @@ ss_buc_rm_anova_general <- function(F_observed, N, df_numerator, alpha_prior = .
   df_denominator <- df_numerator * (n - 1)
 
   crit_F <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator)
-  if (F_observed <= crit_F) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.", call. = FALSE)
+  if (F_observed <= crit_F) .stop_nonsignificant("F statistic", "'F_observed'")
 
   ncp_solution <- .solve_ncp_assurance(
     .tm_f(F_observed, crit_F, df_numerator, df_denominator), assurance)

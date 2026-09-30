@@ -1,5 +1,5 @@
-#' Necessary sample size to reach desired power for a two-way between-subjects
-#' ANOVA using a publication bias and uncertainty correction procedure
+#' Necessary Sample Size to Reach Desired Power for a Two-Way Between-Subjects
+#' ANOVA Using a Publication Bias and Uncertainty Correction Procedure
 #'
 #' @description \code{ss_buc_factorial_anova} returns the necessary per-cell
 #'   sample size to achieve a desired level of statistical power for a planned
@@ -100,7 +100,8 @@
 #'   using both of these values of \emph{n}, and the function returns the larger
 #'   of these two suggestions, to be conservative. The adjusted noncentrality
 #'   parameter that is output is the lower of the two possibilities, again, to
-#'   be conservative. Although equal-n previous studies are preferable, this
+#'   be conservative. Although equal-\emph{n} previous studies are preferable,
+#'   this
 #'   approach will work well as long as the cell sizes are only slightly
 #'   discrepant.
 #'
@@ -118,6 +119,7 @@
 #' @template planning-params
 #'
 #' @templateVar size_phrase per-cell sample size
+#' @templateVar ncp_scale on the scale of the \emph{F} statistic, at the prior study's sample size
 #' @template return-effect
 #'
 #' @export
@@ -171,26 +173,25 @@ ss_buc_factorial_anova <- function(F_observed, N, levels_A, levels_B,
                          factor_B = levels_B - 1,
                          interaction = (levels_A - 1) * (levels_B - 1))
 
+  # The prior study's own p value, at its own degrees of freedom, so that a
+  # statistic significant there but not at the rounded-down design is not
+  # called nonsignificant (see .stop_nonsignificant()).
+  p_own <- pf(F_observed, df1 = df_numerator, df2 = N - cells, lower.tail = FALSE)
+
   ## Rounding up
   n_ru <- ceiling(N / cells)
   N_ru <- n_ru * cells
   df_denominator_ru <- N_ru - cells
 
   crit_F_ru <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator_ru)
-  if (F_observed <= crit_F_ru) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.", call. = FALSE)
+  if (F_observed <= crit_F_ru)
+    .stop_nonsignificant("F statistic", "'F_observed'", p_own, alpha_prior,
+                         pf(F_observed, df_numerator, floor(N / cells) * cells - cells,
+                            lower.tail = FALSE), assurance)
 
   solution_ru <- .solve_ncp_assurance(
     .tm_f(F_observed, crit_F_ru, df_numerator, df_denominator_ru), assurance)
   ncp_ru <- solution_ru$ncp
-
-  if (ncp_ru == 0) .stop_zero_ncp(solution_ru$ceiling)
-
-  power_at <- function(n_rep, n_prior, ncp_b) {
-    denom_df <- n_rep * cells - cells
-    critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
-    1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / n_prior) * ncp_b)
-  }
-  repn_ru <- .smallest_n_for_power(function(k) power_at(k, n_ru, ncp_ru), desired_power)
 
   ## Rounding down
   n_rd <- floor(N / cells)
@@ -198,14 +199,26 @@ ss_buc_factorial_anova <- function(F_observed, N, levels_A, levels_B,
   df_denominator_rd <- N_rd - cells
 
   crit_F_rd <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator_rd)
-  if (F_observed <= crit_F_rd) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.", call. = FALSE)
+  if (F_observed <= crit_F_rd)
+    .stop_nonsignificant("F statistic", "'F_observed'", p_own, alpha_prior,
+                         pf(F_observed, df_numerator, df_denominator_rd, lower.tail = FALSE),
+                         assurance)
 
   solution_rd <- .solve_ncp_assurance(
     .tm_f(F_observed, crit_F_rd, df_numerator, df_denominator_rd), assurance)
   ncp_rd <- solution_rd$ncp
 
-  if (ncp_rd == 0) .stop_zero_ncp(solution_rd$ceiling)
+  # Both branches are solved before either can refuse, so the refusal names
+  # the smaller of the two ceilings, which is a feasible assurance for both.
+  if (ncp_ru == 0 || ncp_rd == 0)
+    .stop_zero_ncp(min(solution_ru$ceiling, solution_rd$ceiling))
 
+  power_at <- function(n_rep, n_prior, ncp_b) {
+    denom_df <- n_rep * cells - cells
+    critical_F <- qf(1 - alpha_planned, df1 = df_numerator, df2 = denom_df)
+    1 - pf(critical_F, df1 = df_numerator, df2 = denom_df, ncp = (n_rep / n_prior) * ncp_b)
+  }
+  repn_ru <- .smallest_n_for_power(function(k) power_at(k, n_ru, ncp_ru), desired_power)
   repn_rd <- .smallest_n_for_power(function(k) power_at(k, n_rd, ncp_rd), desired_power)
 
   output_n <- max(repn_ru, repn_rd)

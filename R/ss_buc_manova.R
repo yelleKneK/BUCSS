@@ -1,5 +1,5 @@
-#' Necessary sample size to reach desired power for a two-group multivariate
-#' comparison using a publication bias and uncertainty correction procedure
+#' Necessary Sample Size to Reach Desired Power for a Two-Group Multivariate
+#' Comparison Using a Publication Bias and Uncertainty Correction Procedure
 #'
 #' @description \code{ss_buc_manova} returns the necessary per-group sample size
 #'   to achieve a desired level of statistical power for a planned study
@@ -28,9 +28,9 @@
 #'   - 1 degrees of freedom. Supply either the \emph{F} or the \eqn{T^2}. For a
 #'   hypothesis of rank greater than one (three or more groups, say) the
 #'   multivariate noncentrality is a set of eigenvalues rather than a single
-#'   number, the usual test statistics have only approximate \emph{F} forms, and
-#'   this correction does not apply; \code{ss_buc_manova} will not accept such a
-#'   design.
+#'   number, so the power of the usual tests depends on more than one
+#'   parameter and this correction, which solves for one, does not apply;
+#'   \code{ss_buc_manova} will not accept such a design.
 #'
 #'   The approach uses a likelihood function of a truncated noncentral
 #'   \emph{F} distribution, where the truncation occurs due to small effect
@@ -108,6 +108,7 @@
 #' @template planning-params
 #'
 #' @templateVar size_phrase per-group sample size
+#' @templateVar ncp_scale on the scale of the \emph{F} statistic, at the prior study's sample size (with one outcome variable it is the square of the independent \emph{t} planner's)
 #' @template return
 #'
 #' @export
@@ -171,6 +172,11 @@ ss_buc_manova <- function(F_observed, N, p_variables, T2_observed,
   n_ru <- ceiling(N / 2)
   n_rd <- floor(N / 2)
 
+  # The prior study's own p value, at its own degrees of freedom, so that a
+  # statistic significant there but not at the rounded-down design is not
+  # called nonsignificant (see .stop_nonsignificant()).
+  p_own <- pf(F_stat, df1 = df_numerator, df2 = N - p_variables - 1, lower.tail = FALSE)
+
   branch <- function(n_prior) {
     N_branch <- 2 * n_prior
     df_denominator <- N_branch - p_variables - 1
@@ -178,14 +184,18 @@ ss_buc_manova <- function(F_observed, N, p_variables, T2_observed,
       stop("The combination of 'N' and 'p_variables' leaves no error degrees of freedom. Reduce 'p_variables' or increase 'N'.", call. = FALSE)
     }
     crit <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator)
-    if (F_stat <= crit) stop("Your observed multivariate test is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so the prior result exceeds the critical value.", call. = FALSE)
-    solution <- .solve_ncp_assurance(
-      .tm_f(F_stat, crit, df_numerator, df_denominator), assurance)
-    if (solution$ncp == 0) .stop_zero_ncp(solution$ceiling)
-    solution
+    if (F_stat <= crit)
+      .stop_nonsignificant("multivariate test", "the prior result", p_own, alpha_prior,
+                           pf(F_stat, df_numerator, 2 * n_rd - p_variables - 1,
+                              lower.tail = FALSE), assurance)
+    .solve_ncp_assurance(.tm_f(F_stat, crit, df_numerator, df_denominator), assurance)
   }
   solution_ru <- branch(n_ru)
   solution_rd <- branch(n_rd)
+  # Both branches are solved before either can refuse, so the refusal names
+  # the smaller of the two ceilings, which is a feasible assurance for both.
+  if (solution_ru$ncp == 0 || solution_rd$ncp == 0)
+    .stop_zero_ncp(min(solution_ru$ceiling, solution_rd$ceiling))
 
   # The multivariate noncentrality is proportional to the per-group sample
   # size, as in the univariate two-group case.

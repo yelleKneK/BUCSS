@@ -5,6 +5,7 @@ S3method("[",bucss_plan)
 S3method("[<-",bucss_plan)
 S3method("[[",bucss_plan)
 S3method("[[<-",bucss_plan)
+S3method("names<-",bucss_plan)
 S3method(generics::glance,bucss_plan)
 S3method(generics::tidy,bucss_plan)
 S3method(knitr::knit_print,bucss_plan)
@@ -47,27 +48,33 @@ export(ss_buc_smd)
 export(ss_buc_smd_paired)
 export(ss_buc_welch_t)
 export(tidy)
-importFrom(generics,glance)
-importFrom(generics,tidy)
-importFrom(graphics,abline)
-importFrom(graphics,box)
-importFrom(graphics,lines)
-importFrom(graphics,mtext)
-importFrom(graphics,par)
-importFrom(graphics,points)
-importFrom(graphics,rect)
-importFrom(graphics,text)
-importFrom(stats,dnbinom)
-importFrom(stats,pbeta)
-importFrom(stats,pchisq)
-importFrom(stats,pf)
-importFrom(stats,pt)
-importFrom(stats,qchisq)
-importFrom(stats,qf)
-importFrom(stats,qnbinom)
-importFrom(stats,qt)
-importFrom(stats,quantile)
-importFrom(stats,rchisq)
-importFrom(stats,rf)
-importFrom(stats,rt)
-importFrom(stats,uniroot)
+importFrom(generics,
+  glance,
+  tidy
+)
+importFrom(graphics,
+  abline,
+  box,
+  lines,
+  mtext,
+  par,
+  points,
+  rect,
+  text
+)
+importFrom(stats,
+  dnbinom,
+  pbeta,
+  pchisq,
+  pf,
+  pt,
+  qchisq,
+  qf,
+  qnbinom,
+  qt,
+  quantile,
+  rchisq,
+  rf,
+  rt,
+  uniroot
+)

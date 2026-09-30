@@ -43,11 +43,11 @@
   gsub(".", "_", match.arg(effect, choices_1x), fixed = TRUE)
 }
 
-#' Deprecated 1.x functions in BUCSS
+#' Deprecated 1.x Functions in BUCSS
 #'
 #' @description The dot-named functions from BUCSS 1.x are \strong{deprecated} as
 #'   of BUCSS 2.0.0 and are no longer actively developed. They are retained so
-#'   that scripts written for BUCSS 1.x continue to run unchanged. Each one
+#'   that scripts written for BUCSS 1.x continue to run. Each one
 #'   translates its arguments to the 2.x convention and calls the corresponding
 #'   \code{ss_buc_*} function, returning that function's
 #'   \code{\link{bucss_plan}} object.
@@ -56,8 +56,10 @@
 #'   positional extraction: \code{result[[1]]} is the necessary sample size and
 #'   \code{result[[2]]} is the bias and uncertainty adjusted noncentrality
 #'   parameter, the same two values the 1.x functions returned as an unnamed
-#'   list (this is provided by a \code{[[} method for \code{bucss_plan}). The
-#'   richer named view
+#'   list (this is provided by a \code{[[} method for \code{bucss_plan}). Only
+#'   those two subscripts are kept: code that treats the 1.x result as a list
+#'   in other ways (\code{unlist(result)}, \code{result[[1L]]}, or printing it
+#'   through \code{rbind()}) now sees the data frame. The richer named view
 #'   (\code{result$value}, \code{tidy(result)}, \code{glance(result)}) is also
 #'   available.
 #'
@@ -89,15 +91,27 @@
 #'   the implied parameter exceeds 100. The \code{step} argument is accepted for
 #'   call compatibility and ignored.
 #'
-#'   Three further 1.x behaviors deliberately changed, so a 1.x call can now
-#'   error where it used to return a number. \code{ss.power.ba.general} rejects
-#'   a \code{df.denominator} greater than \code{N - cells} (1.x accepted such a
+#'   Some 1.x behaviors deliberately changed, so a 1.x call can now error where
+#'   it used to return a number. \code{ss.power.ba.general} rejects a
+#'   \code{df.denominator} greater than \code{N - cells} (1.x accepted such a
 #'   value and ignored the argument entirely, including in its own documented
-#'   example). An \code{assurance} or \code{power} of exactly 0 or 1, and a
-#'   \code{power} of 100, are rejected rather than returning an artifact of the
-#'   internal search. Non-scalar, non-finite, and fractional inputs are rejected
-#'   with a message naming the argument. See \code{NEWS} for the full
-#'   accounting.
+#'   example). As in 1.x, an \code{assurance} or \code{power} of 1 or more is
+#'   read as a percentage, so exactly 1 means 1 percent; after that reading, an
+#'   \code{assurance} or \code{power} of 0, or of 100 (which means 1), is
+#'   rejected rather than returning an artifact of the internal search.
+#'   \code{ss.power.ba} and \code{ss.power.wa} refuse \code{effect =
+#'   "factor.B"} or \code{"interaction"} when \code{levels.B} is not given (1.x
+#'   refused only the interaction, and silently returned the Factor A plan for
+#'   \code{"factor.B"}). \code{ss.power.ba.general} and
+#'   \code{ss.power.spa.general} reject numerator degrees of freedom no design
+#'   of their kind can have (\code{df.numerator} above \code{cells - 1}; for
+#'   the split plot, above \code{num.groups - 1} for the between-subjects
+#'   effect, or not a multiple of \code{df.num.within} within that bound for
+#'   the interaction). Non-scalar, non-finite, and fractional inputs are
+#'   rejected with a message naming the argument. Errors raised through these
+#'   wrappers come from the \code{ss_buc_*} planners and name their
+#'   arguments (\code{t_observed} for \code{t.observed}, and so on). See
+#'   \code{NEWS} for the full accounting.
 #'
 #' @param t.observed,F.observed The observed \emph{t} or \emph{F} statistic from
 #'   the prior study (the 1.x spelling of \code{t_observed} / \code{F_observed}).
@@ -165,10 +179,10 @@ ss.power.ba <- function(F.observed, N, levels.A, levels.B = NULL,
                         assurance = .80, power = .80, step = .001) {
   .deprecate_once("ss.power.ba",
                   "'ss_buc_one_way_anova' (one factor) or 'ss_buc_factorial_anova' (two factors)")
-  # 1.x refused to plan a two-factor effect without the second factor. Keep
-  # that refusal: dispatching to the one-way planner instead would silently
-  # return the Factor A plan for a user who asked for Factor B or the
-  # interaction.
+  # Without the second factor only Factor A can be planned. 1.x refused the
+  # interaction here but silently returned the Factor A plan for "factor.B";
+  # 2.0.0 refuses both, since dispatching to the one-way planner would hand a
+  # user who asked for Factor B the plan for Factor A.
   if (is.null(levels.B) && !identical(match.arg(effect), "factor.A")) {
     stop("You cannot select 'effect = \"", match.arg(effect),
          "\"' if you do not specify 'levels.B'.", call. = FALSE)
@@ -255,7 +269,11 @@ ss.power.spa.general <- function(F.observed, N, df.numerator, num.groups,
                num_groups = num.groups, effect = effect,
                alpha_prior = alpha.prior, alpha_planned = alpha.planned,
                assurance = assurance, desired_power = power)
-  if (!missing(df.num.within)) args$df_num_within <- df.num.within
+  # 1.x accepted 'df.num.within' with any effect and used it only for the
+  # between-within interaction; the web apps pass it on every call. Forward it
+  # only where it is used, so 1.x calls keep working without a warning.
+  if (!missing(df.num.within) && identical(effect, "between_within"))
+    args$df_num_within <- df.num.within
   do.call(ss_buc_mixed_anova_general, args)
 }
 
@@ -290,7 +308,7 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
                    assurance = assurance, desired_power = power)
 }
 
-#' Positional extraction from a bias and uncertainty corrected sample size result
+#' Positional Extraction From a Bias and Uncertainty Corrected Sample Size Result
 #'
 #' @description Backward-compatible positional extraction for
 #'   \code{\link{bucss_plan}} objects. The deprecated 1.x functions (see
@@ -306,12 +324,15 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
 #'   and \code{result$value} are unaffected.
 #'
 #' @param x A \code{bucss_plan} object.
-#' @param i A subscript. A single \code{1} or \code{2} selects the legacy scalar;
-#'   anything else is passed to the \code{data.frame} method.
+#' @param i A subscript. A single double \code{1} or \code{2}, as 1.x code
+#'   writes it, selects the legacy scalar; anything else, including the
+#'   integers \code{1L} and \code{2L}, is passed to the \code{data.frame}
+#'   method as a column index.
 #' @param ... Passed to the \code{data.frame} method.
 #'
-#' @return For \code{i} equal to \code{1} or \code{2}, a single numeric value;
-#'   otherwise whatever the \code{data.frame} \code{[[} method returns.
+#' @return For \code{i} equal to the double \code{1} or \code{2}, a single
+#'   numeric value; otherwise whatever the \code{data.frame} \code{[[} method
+#'   returns.
 #'
 #' @keywords internal
 #' @export
@@ -333,16 +354,25 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
   NextMethod()
 }
 
-#' Subset a bias and uncertainty corrected sample size result
+#' Subset a Bias and Uncertainty Corrected Sample Size Result
 #'
 #' Row and column subsetting returns a plain \code{data.frame}. The class is
 #' dropped first so that \code{[.data.frame}'s internal column extraction
 #' (which uses \code{[[} on columns 1 and 2) cannot collide with the legacy
-#' positional \code{[[} contract above; without this, \code{head(result)} and
-#' \code{result[i, ]} would silently return the legacy scalars in place of the
-#' \code{term} and \code{value} columns. A subset is no longer the full
-#' planning result (its attributes and print contract no longer apply), so the
-#' honest return is an ordinary \code{data.frame}.
+#' positional \code{[[} contract (see \code{\link{[[.bucss_plan}}); without
+#' this, \code{head(result)} and \code{result[i, ]} would silently return the
+#' legacy scalars in place of the \code{term} and \code{value} columns. A
+#' subset is no longer the full planning result (its attributes and print
+#' contract no longer apply), so the return is an ordinary \code{data.frame}.
+#'
+#' Modifying or stacking a result does the same. Assignment through
+#' \code{[<-}, \code{[[<-}, \code{$<-}, and \code{names<-} (and so
+#' \code{colnames<-} and \code{setNames()}), and \code{rbind()}, all return an
+#' ordinary \code{data.frame} without the print, \code{tidy()},
+#' \code{glance()}, or positional \code{[[} behavior. Assigning to
+#' \code{result[[1]]} or \code{result[[2]]} is refused with an error, because
+#' reading those subscripts gives the legacy scalars while assigning to them
+#' would overwrite the \code{term} or \code{value} column.
 #'
 #' @param x A \code{bucss_plan} object.
 #' @param ... Passed to the \code{data.frame} method.
@@ -400,6 +430,17 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
 #' @keywords internal
 #' @export
 `$<-.bucss_plan` <- function(x, name, value) {
+  class(x) <- setdiff(class(x), "bucss_plan")
+  NextMethod()
+}
+
+#' @rdname sub-.bucss_plan
+#' @keywords internal
+#' @export
+`names<-.bucss_plan` <- function(x, value) {
+  # Renamed columns are no longer the term/value contract the print method,
+  # the broom verbs, and the legacy positional [[ read. (colnames<- and
+  # setNames() come through here too.)
   class(x) <- setdiff(class(x), "bucss_plan")
   NextMethod()
 }

@@ -4,7 +4,7 @@
 \alias{bucss_tidiers}
 \alias{tidy.bucss_plan}
 \alias{glance.bucss_plan}
-\title{Tidy and summarize a bias and uncertainty corrected sample size result}
+\title{Tidy and Summarize a Bias and Uncertainty Corrected Sample Size Result}
 \usage{
 \method{tidy}{bucss_plan}(x, ...)
 
@@ -19,18 +19,22 @@ function.}
 \value{
 A one-row \code{data.frame}. For \code{tidy()}, the columns
   \code{term}, \code{estimate}, and \code{power}. For \code{glance()}, the
-  wide summary described above.
+  wide summary described above. Both stop with an explanation if the object
+  no longer has the shape of a single plan (for example, several plans
+  stacked with \code{dplyr::bind_rows()}, which keeps the class).
 }
 \description{
-\code{tidy()} returns the compact estimate view, mirroring the sibling
-package \code{DMAR}'s sample size planners: one row with \code{term}
+\code{tidy()} returns the compact estimate view, as the sibling package
+\code{DMAR}'s sample size planners do: one row with \code{term}
 (\code{"sample_size"}), \code{estimate} (the necessary sample size in the
-design's unit), and \code{power} (the conservative achieved power at that
-sample size; see the planner's help page). \code{glance()} returns the
-one-row wide view: the estimate plus one column per row of the result
-(\code{total_N} where applicable, \code{ncp_adjusted}, and every echoed
-planning input) together with the design, the effect tested, the unit, the
-planned test's degrees of freedom, and the assurance ceiling.
+design's unit, which the result's \code{sample_size_unit} attribute names),
+and \code{power} (the power of the plan the result reports; see
+\code{actual_power} on the planner's help page). \code{glance()} returns
+the one-row wide view: the same three columns, then one column per row of
+the result (the sample size row, \code{total_N} where applicable,
+\code{actual_power}, \code{ncp_adjusted}, and every echoed planning input)
+together with the design, the effect tested, the unit, the planned test's
+degrees of freedom where the design has them, and the assurance ceiling.
 }
 \details{
 These methods come from the \pkg{generics} package and need no extra setup;

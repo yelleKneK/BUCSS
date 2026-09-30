@@ -1,6 +1,6 @@
-#' Necessary sample size to reach desired power for a between-subjects ANOVA
-#' with any number of factors using a publication bias and uncertainty
-#' correction procedure
+#' Necessary Sample Size to Reach Desired Power for a Between-Subjects ANOVA
+#' With Any Number of Factors Using a Publication Bias and Uncertainty
+#' Correction Procedure
 #'
 #' @description \code{ss_buc_factorial_anova_general} returns the necessary
 #'   per-cell sample size to achieve a desired level of statistical power for a
@@ -115,7 +115,8 @@
 #'   using both of these values of \emph{n}, and the function returns the larger
 #'   of these two suggestions, to be conservative. The adjusted noncentrality
 #'   parameter that is output is the lower of the two possibilities, again, to
-#'   be conservative. Although equal-n previous studies are preferable, this
+#'   be conservative. Although equal-\emph{n} previous studies are preferable,
+#'   this
 #'   approach will work well as long as the cell sizes are only slightly
 #'   discrepant.
 #'
@@ -133,6 +134,7 @@
 #' @template planning-params
 #'
 #' @templateVar size_phrase per-cell sample size
+#' @templateVar ncp_scale on the scale of the \emph{F} statistic, at the prior study's sample size
 #' @template return
 #'
 #' @export
@@ -174,6 +176,7 @@ ss_buc_factorial_anova_general <- function(F_observed, N, cells, df_numerator,
   .check_count(cells, "cells", min = 2)
   .check_count(df_numerator, "df_numerator", min = 1)
   .check_count(df_denominator, "df_denominator", min = 1)
+  if (df_numerator > cells - 1) stop("'df_numerator' cannot exceed 'cells' - 1, the degrees of freedom available among the cell means of a between-subjects design.", call. = FALSE)
 
   nuisance_df <- (N - cells) - df_denominator
   if (nuisance_df < 0) stop("'df_denominator' cannot exceed 'N' - 'cells', which is the residual degrees of freedom when the cell means are the only estimated parameters. Check 'N', 'cells', and 'df_denominator'.", call. = FALSE)
@@ -183,19 +186,46 @@ ss_buc_factorial_anova_general <- function(F_observed, N, cells, df_numerator,
   # nuisance parameters are carried through. Reduces to 2 when nuisance_df = 0.
   n_rep_start <- max(2, ceiling((cells + nuisance_df + 1) / cells))
 
+  # The prior study's own p value, at its own degrees of freedom, so that a
+  # statistic significant there but not at the rounded-down design is not
+  # called nonsignificant (see .stop_nonsignificant()).
+  p_own <- pf(F_observed, df1 = df_numerator, df2 = df_denominator, lower.tail = FALSE)
+
   ## Rounding up
   n_ru <- ceiling(N / cells)
   N_ru <- n_ru * cells
   df_denominator_ru <- (n_ru * cells) - cells - nuisance_df
 
   crit_F_ru <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator_ru)
-  if (F_observed <= crit_F_ru) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.", call. = FALSE)
+  if (F_observed <= crit_F_ru)
+    .stop_nonsignificant("F statistic", "'F_observed'", p_own, alpha_prior,
+                         pf(F_observed, df_numerator,
+                            floor(N / cells) * cells - cells - nuisance_df,
+                            lower.tail = FALSE), assurance)
 
   solution_ru <- .solve_ncp_assurance(
     .tm_f(F_observed, crit_F_ru, df_numerator, df_denominator_ru), assurance)
   ncp_ru <- solution_ru$ncp
 
-  if (ncp_ru == 0) .stop_zero_ncp(solution_ru$ceiling)
+  ## Rounding down
+  n_rd <- floor(N / cells)
+  N_rd <- n_rd * cells
+  df_denominator_rd <- (n_rd * cells) - cells - nuisance_df
+
+  crit_F_rd <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator_rd)
+  if (F_observed <= crit_F_rd)
+    .stop_nonsignificant("F statistic", "'F_observed'", p_own, alpha_prior,
+                         pf(F_observed, df_numerator, df_denominator_rd, lower.tail = FALSE),
+                         assurance)
+
+  solution_rd <- .solve_ncp_assurance(
+    .tm_f(F_observed, crit_F_rd, df_numerator, df_denominator_rd), assurance)
+  ncp_rd <- solution_rd$ncp
+
+  # Both branches are solved before either can refuse, so the refusal names
+  # the smaller of the two ceilings, which is a feasible assurance for both.
+  if (ncp_ru == 0 || ncp_rd == 0)
+    .stop_zero_ncp(min(solution_ru$ceiling, solution_rd$ceiling))
 
   power_at <- function(n_rep, n_prior, ncp_b) {
     denom_df <- (n_rep * cells) - cells - nuisance_df
@@ -204,21 +234,6 @@ ss_buc_factorial_anova_general <- function(F_observed, N, cells, df_numerator,
   }
   repn_ru <- .smallest_n_for_power(function(k) power_at(k, n_ru, ncp_ru), desired_power,
                                    start = n_rep_start)
-
-  ## Rounding down
-  n_rd <- floor(N / cells)
-  N_rd <- n_rd * cells
-  df_denominator_rd <- (n_rd * cells) - cells - nuisance_df
-
-  crit_F_rd <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator_rd)
-  if (F_observed <= crit_F_rd) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.", call. = FALSE)
-
-  solution_rd <- .solve_ncp_assurance(
-    .tm_f(F_observed, crit_F_rd, df_numerator, df_denominator_rd), assurance)
-  ncp_rd <- solution_rd$ncp
-
-  if (ncp_rd == 0) .stop_zero_ncp(solution_rd$ceiling)
-
   repn_rd <- .smallest_n_for_power(function(k) power_at(k, n_rd, ncp_rd), desired_power,
                                    start = n_rep_start)
 

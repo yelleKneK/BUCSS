@@ -170,8 +170,8 @@ test_that("knit_print() renders the table and the same footers as print()", {
 test_that("planning_sentence() writes the manuscript sentence", {
   res <- ss_buc_independent_t(t_observed = 3, n = c(50, 55), assurance = .90)
   s <- planning_sentence(res)
-  expect_match(s, "1485 participants per group", fixed = TRUE)
-  expect_match(s, "total N = 2970", fixed = TRUE)
+  expect_match(s, "1,485 participants per group", fixed = TRUE)
+  expect_match(s, "total N = 2,970", fixed = TRUE)
   expect_match(s, "80% power", fixed = TRUE)
   expect_match(s, "90% assurance", fixed = TRUE)
   expect_error(planning_sentence(1), "bucss_plan", fixed = TRUE)

@@ -1,6 +1,6 @@
-#' Necessary sample size to reach desired power for an independent t test (or
-#' standardized mean difference) using a publication bias and uncertainty
-#' correction procedure
+#' Necessary Sample Size to Reach Desired Power for an Independent t Test (or
+#' Standardized Mean Difference) Using a Publication Bias and Uncertainty
+#' Correction Procedure
 #'
 #' @description \code{ss_buc_independent_t} returns the necessary per-group sample size
 #'   to achieve a desired level of statistical power for a planned study using
@@ -106,8 +106,10 @@
 #'
 #'   If you are working from a standardized mean difference (Cohen's \eqn{d})
 #'   rather than a \emph{t} statistic, convert it before calling: for two
-#'   independent groups \eqn{t = d / \sqrt{1/n_1 + 1/n_2}}, which equals
-#'   \eqn{d\sqrt{n/2}} when the per-group sample sizes are equal.
+#'   independent groups
+#'   \eqn{t = d / \sqrt{1/n_1 + 1/n_2}}{t = d / sqrt(1/n_1 + 1/n_2)}, which
+#'   equals \eqn{d\sqrt{n/2}}{d*sqrt(n/2)} when the per-group sample sizes are
+#'   equal.
 #'
 #'   \code{ss_buc_independent_t} assumes that the planned study will have equal
 #'   \emph{n}. Unequal \emph{n} in the previous study is handled in the
@@ -141,6 +143,7 @@
 #' @template planning-params
 #'
 #' @templateVar size_phrase per-group sample size
+#' @templateVar ncp_scale on the scale of the \emph{t} statistic (the noncentrality parameter of the prior study's noncentral \emph{t})
 #' @template return
 #'
 #' @export
@@ -209,10 +212,17 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
     if (length(n) == 2) {
       n_1 <- n[1]
       n_2 <- n[2]
-      n_ru <- ceiling(2 / ((1 / n_1) + (1 / n_2)))
+      # The harmonic mean 2 * n_1 * n_2 / (n_1 + n_2), rounded down and up in
+      # integer arithmetic. Through a floating-point quotient an exact whole
+      # number can land a unit in the last place away from itself (49 and 49
+      # gives 49.000000000000007), which ceiling() or floor() then turns into
+      # a spurious second rounding branch one unit off.
+      hm_num <- 2 * n_1 * n_2
+      hm_den <- n_1 + n_2
+      n_rd <- hm_num %/% hm_den
+      n_ru <- n_rd + (hm_num %% hm_den != 0)
       N_ru <- 2 * n_ru
       DF_ru <- N_ru - 2
-      n_rd <- floor(2 / ((1 / n_1) + (1 / n_2)))
       N_rd <- 2 * n_rd
       DF_rd <- N_rd - 2
     }
@@ -226,15 +236,34 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
     }
   }
 
+  # The prior study's own p value, at its own degrees of freedom, so that a
+  # statistic significant there but not at the rounded-down design is not
+  # called nonsignificant (see .stop_nonsignificant()).
+  df_own <- if (!missing(N) && !is.null(N)) N - 2 else if (length(n) == 2) sum(n) - 2 else 2 * n - 2
+  p_own <- 2 * pt(t_stat, df = df_own, lower.tail = FALSE)
+
   ## Rounding up
   value_critical_ru <- qt(1 - alpha_prior / 2, df = DF_ru)
-  if (t_stat <= value_critical_ru) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.", call. = FALSE)
-
+  if (t_stat <= value_critical_ru)
+    .stop_nonsignificant("t statistic", "'t_observed'", p_own, alpha_prior,
+                         2 * pt(t_stat, df = DF_rd, lower.tail = FALSE), assurance)
   solution_ru <- .solve_ncp_assurance(
     .tm_t(t_stat, value_critical_ru, DF_ru), assurance)
   ncp_ru <- solution_ru$ncp
 
-  if (ncp_ru == 0) .stop_zero_ncp(solution_ru$ceiling)
+  ## Rounding down
+  value_critical_rd <- qt(1 - alpha_prior / 2, df = DF_rd)
+  if (t_stat <= value_critical_rd)
+    .stop_nonsignificant("t statistic", "'t_observed'", p_own, alpha_prior,
+                         2 * pt(t_stat, df = DF_rd, lower.tail = FALSE), assurance)
+  solution_rd <- .solve_ncp_assurance(
+    .tm_t(t_stat, value_critical_rd, DF_rd), assurance)
+  ncp_rd <- solution_rd$ncp
+
+  # Both branches are solved before either can refuse, so the refusal names
+  # the smaller of the two ceilings, which is a feasible assurance for both.
+  if (ncp_ru == 0 || ncp_rd == 0)
+    .stop_zero_ncp(min(solution_ru$ceiling, solution_rd$ceiling))
 
   power_at <- function(n_rep, n_prior, ncp_b) {
     denom_df <- (2 * n_rep) - 2
@@ -244,17 +273,6 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
       pt(-1 * critical_t, df = denom_df, ncp = scaled)
   }
   repn_ru <- .smallest_n_for_power(function(k) power_at(k, n_ru, ncp_ru), desired_power)
-
-  ## Rounding down
-  value_critical_rd <- qt(1 - alpha_prior / 2, df = DF_rd)
-  if (t_stat <= value_critical_rd) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.", call. = FALSE)
-
-  solution_rd <- .solve_ncp_assurance(
-    .tm_t(t_stat, value_critical_rd, DF_rd), assurance)
-  ncp_rd <- solution_rd$ncp
-
-  if (ncp_rd == 0) .stop_zero_ncp(solution_rd$ceiling)
-
   repn_rd <- .smallest_n_for_power(function(k) power_at(k, n_rd, ncp_rd), desired_power)
 
   output_n <- max(repn_ru, repn_rd)

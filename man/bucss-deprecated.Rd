@@ -13,7 +13,7 @@
 \alias{ss.power.reg1}
 \alias{ss.power.reg.all}
 \alias{ss.power.reg.joint}
-\title{Deprecated 1.x functions in BUCSS}
+\title{Deprecated 1.x Functions in BUCSS}
 \usage{
 ss.power.it(
   t.observed,
@@ -198,7 +198,7 @@ A \code{\link{bucss_plan}} object, as returned by the corresponding
 \description{
 The dot-named functions from BUCSS 1.x are \strong{deprecated} as
   of BUCSS 2.0.0 and are no longer actively developed. They are retained so
-  that scripts written for BUCSS 1.x continue to run unchanged. Each one
+  that scripts written for BUCSS 1.x continue to run. Each one
   translates its arguments to the 2.x convention and calls the corresponding
   \code{ss_buc_*} function, returning that function's
   \code{\link{bucss_plan}} object.
@@ -207,8 +207,10 @@ The dot-named functions from BUCSS 1.x are \strong{deprecated} as
   positional extraction: \code{result[[1]]} is the necessary sample size and
   \code{result[[2]]} is the bias and uncertainty adjusted noncentrality
   parameter, the same two values the 1.x functions returned as an unnamed
-  list (this is provided by a \code{[[} method for \code{bucss_plan}). The
-  richer named view
+  list (this is provided by a \code{[[} method for \code{bucss_plan}). Only
+  those two subscripts are kept: code that treats the 1.x result as a list
+  in other ways (\code{unlist(result)}, \code{result[[1L]]}, or printing it
+  through \code{rbind()}) now sees the data frame. The richer named view
   (\code{result$value}, \code{tidy(result)}, \code{glance(result)}) is also
   available.
 
@@ -241,15 +243,27 @@ The replacements are:
   the implied parameter exceeds 100. The \code{step} argument is accepted for
   call compatibility and ignored.
 
-  Three further 1.x behaviors deliberately changed, so a 1.x call can now
-  error where it used to return a number. \code{ss.power.ba.general} rejects
-  a \code{df.denominator} greater than \code{N - cells} (1.x accepted such a
+  Some 1.x behaviors deliberately changed, so a 1.x call can now error where
+  it used to return a number. \code{ss.power.ba.general} rejects a
+  \code{df.denominator} greater than \code{N - cells} (1.x accepted such a
   value and ignored the argument entirely, including in its own documented
-  example). An \code{assurance} or \code{power} of exactly 0 or 1, and a
-  \code{power} of 100, are rejected rather than returning an artifact of the
-  internal search. Non-scalar, non-finite, and fractional inputs are rejected
-  with a message naming the argument. See \code{NEWS} for the full
-  accounting.
+  example). As in 1.x, an \code{assurance} or \code{power} of 1 or more is
+  read as a percentage, so exactly 1 means 1 percent; after that reading, an
+  \code{assurance} or \code{power} of 0, or of 100 (which means 1), is
+  rejected rather than returning an artifact of the internal search.
+  \code{ss.power.ba} and \code{ss.power.wa} refuse \code{effect =
+  "factor.B"} or \code{"interaction"} when \code{levels.B} is not given (1.x
+  refused only the interaction, and silently returned the Factor A plan for
+  \code{"factor.B"}). \code{ss.power.ba.general} and
+  \code{ss.power.spa.general} reject numerator degrees of freedom no design
+  of their kind can have (\code{df.numerator} above \code{cells - 1}; for
+  the split plot, above \code{num.groups - 1} for the between-subjects
+  effect, or not a multiple of \code{df.num.within} within that bound for
+  the interaction). Non-scalar, non-finite, and fractional inputs are
+  rejected with a message naming the argument. Errors raised through these
+  wrappers come from the \code{ss_buc_*} planners and name their
+  arguments (\code{t_observed} for \code{t.observed}, and so on). See
+  \code{NEWS} for the full accounting.
 }
 \seealso{
 The \code{ss_buc_*} replacements listed above.

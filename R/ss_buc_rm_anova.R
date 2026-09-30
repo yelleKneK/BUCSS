@@ -1,10 +1,10 @@
-#' Necessary sample size to reach desired power for a one or two-way
-#' within-subjects ANOVA using a publication bias and uncertainty correction
-#' procedure
+#' Necessary Sample Size to Reach Desired Power for a One- or Two-Way
+#' Within-Subjects ANOVA Using a Publication Bias and Uncertainty Correction
+#' Procedure
 #'
 #' @description \code{ss_buc_rm_anova} returns the necessary total sample size to
 #'   achieve a desired level of statistical power for a planned study testing an
-#'   omnibus effect using a one or two-way fully within-subjects ANOVA, based on
+#'   omnibus effect using a one- or two-way fully within-subjects ANOVA, based on
 #'   information obtained from a previous study. The effect from the previous
 #'   study can be corrected for publication bias and/or uncertainty to provide a
 #'   sample size that will achieve more accurate statistical power for a planned
@@ -92,8 +92,8 @@
 #'   sample size for a planned study.
 #' @param N Total sample size of the previous study.
 #' @param levels_A Number of levels for Factor A.
-#' @param levels_B Number of levels for Factor B, which is NULL if a single
-#'   factor design.
+#' @param levels_B Number of levels for Factor B, which is \code{NULL} for a
+#'   single-factor design.
 #' @param effect Effect of most interest to the planned study: main effect of A
 #'   (\code{factor_A}), main effect of B (\code{factor_B}), or interaction
 #'   (\code{interaction}). Case-insensitive shorthand is also accepted but not
@@ -103,6 +103,7 @@
 #' @template planning-params
 #'
 #' @templateVar size_phrase total sample size
+#' @templateVar ncp_scale on the scale of the \emph{F} statistic, at the prior study's sample size
 #' @template return-effect
 #'
 #' @export
@@ -156,7 +157,7 @@ ss_buc_rm_anova <- function(F_observed, N, levels_A, levels_B = NULL,
   df_denominator <- df_numerator * (n - 1)
 
   crit_F <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator)
-  if (F_observed <= crit_F) stop("Your observed F statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.", call. = FALSE)
+  if (F_observed <= crit_F) .stop_nonsignificant("F statistic", "'F_observed'")
 
   ncp_solution <- .solve_ncp_assurance(
     .tm_f(F_observed, crit_F, df_numerator, df_denominator), assurance)
@@ -180,7 +181,7 @@ ss_buc_rm_anova <- function(F_observed, N, levels_A, levels_B = NULL,
     df_effect = df_numerator,
     df_error = df_error,
     ncp = ncp,
-    design = "One or two-way within-subjects ANOVA",
+    design = "One- or two-way within-subjects ANOVA",
     sample_size_unit = "total",
     assurance_ceiling = ncp_solution$ceiling,
     effect = effect,

@@ -94,7 +94,7 @@ test_that("split-plot ANOVA (general)", {
   expect_oracle(
     ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2,
                                num_groups = 3, effect = "between_only",
-                               df_num_within = 3, alpha_prior = .05,
+                               alpha_prior = .05,
                                alpha_planned = .05, assurance = .80, desired_power = .80),
     1489, 0.194)
 })

@@ -3,7 +3,7 @@
 \name{print.bucss_plan}
 \alias{print.bucss_plan}
 \alias{bucss_plan}
-\title{Print a bias and uncertainty corrected sample size result}
+\title{Print a Bias and Uncertainty Corrected Sample Size Result}
 \usage{
 \method{print}{bucss_plan}(x, digits = getOption("bucss.digits", 3L), ...)
 }

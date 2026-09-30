@@ -1,5 +1,5 @@
-#' Necessary sample size to reach desired power for a Pearson correlation using
-#' a publication bias and uncertainty correction procedure
+#' Necessary Sample Size to Reach Desired Power for a Pearson Correlation Using
+#' a Publication Bias and Uncertainty Correction Procedure
 #'
 #' @description \code{ss_buc_correlation} returns the necessary total sample
 #'   size to achieve a desired level of statistical power for a test of a
@@ -26,7 +26,8 @@
 #'   achieve the desired level of power in the planned study.
 #'
 #'   The observed correlation \emph{r} with sample size \emph{N} gives
-#'   \eqn{t = r\sqrt{(N - 2)/(1 - r^2)}} on \emph{N} - 2 degrees of freedom,
+#'   \eqn{t = r\sqrt{(N - 2)/(1 - r^2)}}{t = r*sqrt((N - 2)/(1 - r^2))} on
+#'   \emph{N} - 2 degrees of freedom,
 #'   and the planner works from that \emph{t}. Supplying \code{t_observed}
 #'   directly instead of \code{r_observed} is equivalent.
 #'
@@ -47,20 +48,22 @@
 #'   \emph{both} variables. Conditional on the sampled \emph{X}, the statistic
 #'   is noncentral \emph{F}, but its noncentrality parameter is itself random:
 #'   it is proportional to the sampled spread of \emph{X}, which follows a
-#'   chi-square distribution on \emph{N} - 1 degrees of freedom. The marginal
-#'   distribution is therefore a chi-square mixture of noncentral \emph{F}
+#'   chi square distribution on \emph{N} - 1 degrees of freedom. The marginal
+#'   distribution is therefore a chi square mixture of noncentral \emph{F}
 #'   distributions, which is more dispersed than any single noncentral
 #'   \emph{F}, and treating the statistic as noncentral \emph{F} overstates the
-#'   power of the planned study by up to about .04.
+#'   power of the planned study in every case, by roughly 1/\emph{n} for a plan
+#'   of \emph{n} participants: about .01 at \emph{n} = 100, .02 at 50, .05 at
+#'   20, .10 at 10, and up to about .2 for the smallest plans.
 #'
 #'   \code{ss_buc_correlation} uses the mixture, which has an exact closed form
 #'   (the Poisson weights of the noncentral \emph{F} become negative binomial
 #'   weights), for both the correction and the planned study's power. The
 #'   returned sample size is therefore exact for bivariate normal data rather
 #'   than a few participants light, and it is typically 2 to 5 participants
-#'   larger than the fixed-predictor calculation, more when the plan is small.
-#'   Near the assurance ceiling the difference reverses and the mixture calls
-#'   for a slightly smaller sample. If your predictor really is fixed by design,
+#'   larger than the fixed-predictor calculation (1 to 3 for the smallest plans,
+#'   up to about 8 for plans in the hundreds). Near the assurance ceiling the
+#'   difference reverses and the mixture calls for a slightly smaller sample. If your predictor really is fixed by design,
 #'   the analysis is a regression slope rather than a correlation, and
 #'   \code{\link{ss_buc_reg_coef}} with \code{p = 1} is the planner for it.
 #'
@@ -124,9 +127,11 @@
 #'   magnitude enters the computation.
 #'
 #'   The returned \code{ncp_adjusted} is the noncentrality parameter the
-#'   adjusted correlation implies at the prior study's sample size, the same
-#'   scale the other planners report it on. The adjusted correlation itself is
-#'   \code{sqrt(ncp_adjusted / (ncp_adjusted + N))}.
+#'   adjusted correlation implies at the prior study's sample size,
+#'   \eqn{N\rho^2/(1 - \rho^2)}{N rho^2/(1 - rho^2)}, on the scale of the
+#'   \emph{F} statistic, as in the regression planners (the \emph{t}-based
+#'   planners report theirs on the scale of \emph{t} instead). The adjusted
+#'   correlation itself is \code{sqrt(ncp_adjusted / (ncp_adjusted + N))}.
 #'
 #' @param r_observed Observed Pearson correlation from a previous study used to
 #'   plan sample size for a planned study. Either sign is accepted; only the
@@ -138,6 +143,7 @@
 #' @template planning-params
 #'
 #' @templateVar size_phrase total sample size
+#' @templateVar ncp_scale on the scale of the \emph{F} statistic, \eqn{N\rho^2/(1 - \rho^2)}{N rho^2/(1 - rho^2)} at the prior study's sample size
 #' @template return
 #'
 #' @export
@@ -196,7 +202,7 @@ ss_buc_correlation <- function(r_observed, N, t_observed, alpha_prior = .05,
 
   value_critical <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator)
 
-  if (t_stat^2 <= value_critical) stop("Your observed correlation is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so the prior result exceeds the critical value.", call. = FALSE)
+  if (t_stat^2 <= value_critical) .stop_nonsignificant("correlation", "the prior result")
 
   # Both the correction and the planned-study power use the exact
   # random-predictor distribution (.p_correlation_f), because a correlation

@@ -3,7 +3,7 @@
 \name{print.bucss_sensitivity}
 \alias{print.bucss_sensitivity}
 \alias{bucss_sensitivity}
-\title{Print a simulated sensitivity audit of a plan}
+\title{Print a Simulated Sensitivity Audit of a Plan}
 \usage{
 \method{print}{bucss_sensitivity}(x, digits = getOption("bucss.digits", 3L), ...)
 }
@@ -26,7 +26,7 @@ read against.
 }
 \examples{
 plan <- ss_buc_paired_t(t_observed = 3, N = 30, assurance = .80)
-ss_buc_sensitivity(plan, true_ncp = 2, replications = 200, seed = 2017)
+ss_buc_sensitivity(plan, true_ncp = 2, replications = 200, seed = 113)
 
 }
 \keyword{internal}

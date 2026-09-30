@@ -2,6 +2,7 @@ Package: BUCSS
 Type: Package
 Title: Bias and Uncertainty Corrected Sample Size
 Version: 2.0.0
+Date: 2026-09-29
 Authors@R: c(
     person("Ken", "Kelley", role = c("aut", "cre"),
            email = "kkelley@nd.edu",
@@ -14,30 +15,32 @@ Authors@R: c(
 Description: Implements sample size planning for a future study from the summary
     statistics of a prior study, correcting the prior effect for publication bias
     and uncertainty so the planned study attains its target statistical power more
-    reliably than methods that take a sample effect size at face value. Covers the
-    independent and dependent 't' test, between-subjects, within-subjects, and
-    split-plot factorial analysis of variance, and multiple regression. The method
-    is described in Anderson, Kelley, and Maxwell (2017) <doi:10.1177/0956797617723724>.
-    The noncentrality parameter underlying the correction is obtained by direct
-    numerical root finding, a more accurate approach than a fixed grid search that
-    also removes an internal upper limit on the parameter. A small number of
-    planned sample sizes therefore differ slightly from versions 1.x; the new
-    values are more accurate.
+    reliably than methods that take a sample effect size at face value. Planners
+    cover the one-sample, paired, independent, and Welch t tests; between-subjects
+    analysis of variance and covariance; within-subjects and split-plot analysis
+    of variance; a regression coefficient, the squared multiple correlation, and a
+    subset of predictors; the Pearson correlation; a two-group multivariate
+    comparison; and the chi square difference between nested models. A simulation
+    function audits how often a plan attains its target power. The method is
+    described in Anderson, Kelley, and Maxwell (2017) <doi:10.1177/0956797617723724>
+    and extended to replication studies in Anderson and Kelley (2024)
+    <doi:10.1037/met0000520>.
 License: GPL (>= 3)
 Encoding: UTF-8
 Language: en-US
-Depends: R (>= 3.5.0)
+Depends: R (>= 3.6.0)
 Imports:
     generics,
     graphics,
-    stats
+    stats,
+    withr (>= 3.0.3)
 Suggests:
-    testthat (>= 3.0.0),
+    testthat (>= 3.1.7),
     knitr,
     rmarkdown
 VignetteBuilder: knitr
-URL: https://github.com/yelleKneK/BUCSS, https://yelleKneK.github.io/BUCSS,
+URL: https://github.com/yelleKneK/BUCSS, https://yelleKneK.github.io/BUCSS/,
     https://designingexperiments.com
 BugReports: https://github.com/yelleKneK/BUCSS/issues
 Config/testthat/edition: 3
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.0

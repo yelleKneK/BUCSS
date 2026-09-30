@@ -6,8 +6,9 @@
 \alias{[<-.bucss_plan}
 \alias{[[<-.bucss_plan}
 \alias{$<-.bucss_plan}
+\alias{names<-.bucss_plan}
 \alias{rbind.bucss_plan}
-\title{Subset a bias and uncertainty corrected sample size result}
+\title{Subset a Bias and Uncertainty Corrected Sample Size Result}
 \usage{
 \method{[}{bucss_plan}(x, ...)
 
@@ -16,6 +17,8 @@
 \method{[[}{bucss_plan}(x, i, j) <- value
 
 \method{$}{bucss_plan}(x, name) <- value
+
+\method{names}{bucss_plan}(x) <- value
 
 \method{rbind}{bucss_plan}(..., deparse.level = 1)
 }
@@ -35,10 +38,20 @@ A \code{data.frame} (or vector, under the usual \code{drop} rules).
 Row and column subsetting returns a plain \code{data.frame}. The class is
 dropped first so that \code{[.data.frame}'s internal column extraction
 (which uses \code{[[} on columns 1 and 2) cannot collide with the legacy
-positional \code{[[} contract above; without this, \code{head(result)} and
-\code{result[i, ]} would silently return the legacy scalars in place of the
-\code{term} and \code{value} columns. A subset is no longer the full
-planning result (its attributes and print contract no longer apply), so the
-honest return is an ordinary \code{data.frame}.
+positional \code{[[} contract (see \code{\link{[[.bucss_plan}}); without
+this, \code{head(result)} and \code{result[i, ]} would silently return the
+legacy scalars in place of the \code{term} and \code{value} columns. A
+subset is no longer the full planning result (its attributes and print
+contract no longer apply), so the return is an ordinary \code{data.frame}.
+}
+\details{
+Modifying or stacking a result does the same. Assignment through
+\code{[<-}, \code{[[<-}, \code{$<-}, and \code{names<-} (and so
+\code{colnames<-} and \code{setNames()}), and \code{rbind()}, all return an
+ordinary \code{data.frame} without the print, \code{tidy()},
+\code{glance()}, or positional \code{[[} behavior. Assigning to
+\code{result[[1]]} or \code{result[[2]]} is refused with an error, because
+reading those subscripts gives the legacy scalars while assigning to them
+would overwrite the \code{term} or \code{value} column.
 }
 \keyword{internal}

@@ -1,6 +1,6 @@
-#' Necessary sample size to reach desired power for a single coefficient in a
-#' multiple regression using a publication bias and uncertainty correction
-#' procedure
+#' Necessary Sample Size to Reach Desired Power for a Single Coefficient in a
+#' Multiple Regression Using a Publication Bias and Uncertainty Correction
+#' Procedure
 #'
 #' @description \code{ss_buc_reg_coef} returns the necessary total sample size to
 #'   achieve a desired level of statistical power for a single regression
@@ -25,6 +25,23 @@
 #'   publication bias and/or uncertainty. This new estimated noncentrality
 #'   parameter is then used to calculate the necessary total sample size to
 #'   achieve the desired level of power in the planned study.
+#'
+#'   \strong{The predictors are treated as fixed.} As in most power analysis
+#'   for regression, the prior study's statistic and the planned study's power
+#'   are computed from the noncentral \emph{F} distribution, which is exact
+#'   when the values of the predictors are fixed by design. When the predictors
+#'   are sampled along with the outcome, as in most observational research, the
+#'   statistic follows a more dispersed mixture of noncentral \emph{F}
+#'   distributions. \code{actual_power} then overstates the planned study's
+#'   power by roughly (\emph{p} + 1)/(2\emph{n}) for a plan of \emph{n}
+#'   participants and \emph{p} predictors: about 1/\emph{n} with one predictor
+#'   (.01 at \emph{n} = 100) and about 4/\emph{n} with eight. The correction
+#'   itself stays close to its \code{assurance} (in simulation at an
+#'   \code{assurance} of .80 and a prior \emph{N} of 30, about .78 with one
+#'   predictor and .81 to .82 with three to eight). For a single sampled
+#'   predictor, \code{\link{ss_buc_correlation}} uses the exact distribution;
+#'   for a coefficient among several sampled predictors, no random-predictor
+#'   planner is available yet.
 #'
 #'   The approach uses a likelihood function of a truncated noncentral
 #'   \emph{F} distribution, where the truncation occurs due to small effect
@@ -107,6 +124,7 @@
 #' @template planning-params
 #'
 #' @templateVar size_phrase total sample size
+#' @templateVar ncp_scale on the scale of the \emph{F} statistic (the square of the prior \emph{t}), at the prior study's sample size, so the planned study's is \code{ncp_adjusted} times the planned over the prior sample size
 #' @template return
 #'
 #' @export
@@ -147,7 +165,7 @@ ss_buc_reg_coef <- function(t_observed, N, p, alpha_prior = .05,
 
   value_critical <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator)
 
-  if (t_observed^2 <= value_critical) stop("Your observed t statistic is nonsignificant based on your specified 'alpha_prior' of the prior study. Please increase 'alpha_prior' so 't_observed' exceeds the critical value.", call. = FALSE)
+  if (t_observed^2 <= value_critical) .stop_nonsignificant("t statistic", "'t_observed'")
 
   ncp_solution <- .solve_ncp_assurance(
     .tm_f(t_observed^2, value_critical, df_numerator, df_denominator), assurance)

@@ -67,7 +67,7 @@
           tol = .Machine$double.eps^0.5)$root
 }
 
-#' Simulate the literature a plan came from and audit how often it works
+#' Simulate the Literature a Plan Came From and Audit How Often It Works
 #'
 #' @description \code{ss_buc_sensitivity} takes a plan returned by any
 #'   \code{ss_buc_*} function and asks the question the method's assurance
@@ -104,8 +104,11 @@
 #'   \itemize{
 #'     \item \code{attainment} counts only the prior studies for which the
 #'       method issued a plan. This is what a user experiences.
-#'     \item \code{attainment_with_refusals} counts a refusal (the zero
-#'       noncentrality parameter stop) as attaining, because declining to plan
+#'     \item \code{attainment_with_refusals} counts a refusal (the planner's
+#'       stop when the corrected noncentrality parameter is zero, or, for a
+#'       design the planner reduces to a balanced one, its stop when a
+#'       published statistic is not significant at the balanced design's
+#'       degrees of freedom) as attaining, because declining to plan
 #'       is the limiting case of an arbitrarily conservative plan. This is the
 #'       quantity the assurance guarantee is about, and it should land on
 #'       \code{assurance}.
@@ -129,7 +132,7 @@
 #'   themselves, including checks against raw simulated data that do not share
 #'   the method's distributional assumptions (bivariate normal samples for the
 #'   correlation planner, two-group normal samples for the Welch planner), is
-#'   installed with \code{BUCSS} and can be rerun in a few minutes with
+#'   installed with \code{BUCSS} and can be rerun in a few seconds with
 #'   \code{source(system.file("tools", "verify_by_simulation.R", package =
 #'   "BUCSS"))}.
 #'
@@ -137,34 +140,44 @@
 #' @param true_ncp The assumed true noncentrality parameter of the prior
 #'   study's design, on the same scale as the \code{ncp_adjusted} row of
 #'   \code{object}. Required; there is deliberately no default.
-#' @param replications Number of published prior studies to simulate. The
-#'   default of 1000 gives a Monte Carlo standard error near .013 on the
-#'   attainment rate; 10000 gives about .004.
-#' @param seed Optional random number seed. \code{NULL} (the default) leaves
-#'   the random number stream alone. When supplied, the caller's random number
-#'   state is restored on exit.
+#' @param replications Number of published prior studies to simulate. At an
+#'   assurance of .80 the default of 1000 gives
+#'   \code{attainment_with_refusals} a Monte Carlo standard error near .013,
+#'   and 10000 about .004; both are reported. The standard error of
+#'   \code{attainment}, which counts only the issued plans, is larger when many
+#'   prior studies are refused.
+#' @param seed Optional random number seed. \code{NULL} (the default) draws
+#'   from the caller's own random number stream, advancing it as any
+#'   simulation does. When a seed is supplied, the caller's random number state
+#'   and generator are restored on exit (and no state is left behind if the
+#'   caller had none).
 #'
 #' @return An object of class \code{bucss_sensitivity}, a \code{data.frame}
 #'   with columns \code{term} and \code{value} carrying the assumed true
 #'   parameter and the plan's own \code{ncp_adjusted} for comparison, the
 #'   number of replications, the publication and refusal rates, the two
-#'   attainment rates and the Monte Carlo standard error of the first, the
-#'   sample size the true effect requires, and the quartiles of the sample
-#'   sizes the simulated plans called for. The design, the sample size unit,
-#'   the requested \code{assurance}, and the requested \code{desired_power}
-#'   travel as attributes.
+#'   attainment rates each with its Monte Carlo standard error, the sample size
+#'   the true effect requires, and the quartiles of the sample sizes the
+#'   simulated plans called for. The design, the effect tested (for designs
+#'   with one), the sample size unit, the requested \code{assurance}, and the
+#'   requested \code{desired_power} travel as attributes. If every simulated
+#'   prior study is refused, \code{attainment}, its standard error, and the
+#'   quartiles are \code{NA}, with a warning.
 #'
 #' @export
 #'
 #' @examples
 #' plan <- ss_buc_independent_t(t_observed = 3, n = c(50, 55), assurance = .80)
-#' plan$value[plan$term == "ncp_adjusted"]
+#' ncp <- plan$value[plan$term == "ncp_adjusted"]
+#' ncp
 #'
-#' # Take the corrected estimate at face value as the truth.
-#' ss_buc_sensitivity(plan, true_ncp = 1.9, replications = 200, seed = 2017)
+#' # Take the corrected estimate at face value as the truth. (200 replications
+#' # keep the example quick; the rates are good to about .03. A reported audit
+#' # deserves 10000.)
+#' ss_buc_sensitivity(plan, true_ncp = ncp, replications = 200, seed = 113)
 #'
 #' # And ask what happens if the truth is smaller than the correction assumed.
-#' ss_buc_sensitivity(plan, true_ncp = 1.2, replications = 200, seed = 2017)
+#' ss_buc_sensitivity(plan, true_ncp = .6 * ncp, replications = 200, seed = 113)
 #'
 #' @seealso \code{\link{ss_buc_independent_t}} and the other \code{ss_buc_*}
 #'   planners, whose results this function takes as input.
@@ -182,14 +195,8 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
   if (true_ncp <= 0) stop("'true_ncp' must be a positive number.", call. = FALSE)
   .check_count(replications, "replications", min = 2)
 
-  if (!is.null(seed)) {
-    .check_count(seed, "seed")
-    if (exists(".Random.seed", envir = .GlobalEnv)) {
-      old_seed <- get(".Random.seed", envir = .GlobalEnv)
-      on.exit(assign(".Random.seed", old_seed, envir = .GlobalEnv), add = TRUE)
-    }
-    set.seed(seed)
-  }
+  .check_plan_shape(object)
+  .bucss_local_seed(seed)
 
   design <- attr(object, "design")
   spec <- .BUCSS_DESIGN_SPECS[[design]]
@@ -208,12 +215,11 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
   # against a silently wrong reconstruction.
   # Only the computed rows are compared: a correlation stated in r is replayed
   # in t, so the echoed input rows legitimately carry a different label.
-  computed <- c(.BUCSS_SIZE_TERMS, "total_N", "actual_power", "ncp_adjusted")
-  replay <- do.call(planner, args)
-  got <- replay$value[replay$term %in% computed]
-  want <- object$value[object$term %in% computed]
-  if (length(got) != length(want) ||
-      !isTRUE(all.equal(got, want, tolerance = 1e-10)))
+  # The replay repeats any warning the plan raised when it was built (an
+  # assurance below .5, say), which the user has already seen.
+  replay <- withCallingHandlers(do.call(planner, args),
+                                warning = function(w) invokeRestart("muffleWarning"))
+  if (!.replay_matches(replay, object))
     stop("The planning inputs stored in 'object' do not reproduce it when replayed, so this plan cannot be simulated. Please report this, naming the design '", design, "'.", call. = FALSE)
 
   alpha_prior <- inputs$alpha_prior
@@ -221,11 +227,32 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
   pub <- .prior_publication(spec, df, true_ncp, alpha_prior)
 
   # One planner run on a candidate statistic: the corrected parameter, the
-  # sample size, or NA when the correction refuses.
+  # sample size, or NA when the correction refuses. Only the planner's own
+  # refusals (the zero noncentrality parameter stop, and the nonsignificance
+  # stop a simulated study can meet when the planner rounds an unbalanced
+  # design) count as refusals; any other error stops the audit with its
+  # message rather than being counted as a refusal, which would count it as
+  # attaining. Planner warnings are collected and reported once.
+  # Warnings are counted separately for the search for the sample size the
+  # true effect requires and for the simulated prior studies themselves.
+  warned <- new.env(parent = emptyenv())
+  warned$phase <- "search"
+  warned$n <- c(search = 0L, studies = 0L)
+  warned$first <- NULL
   run <- function(stat) {
     a <- args
     a[[spec$statistic]] <- stat
-    out <- tryCatch(do.call(planner, a), error = function(e) NULL)
+    out <- withCallingHandlers(
+      tryCatch(do.call(planner, a),
+               bucss_zero_ncp = function(e) NULL,
+               bucss_nonsignificant = function(e) NULL,
+               error = function(e) stop("While replaying the planner: ",
+                                        conditionMessage(e), call. = FALSE)),
+      warning = function(w) {
+        warned$n[[warned$phase]] <- warned$n[[warned$phase]] + 1L
+        if (is.null(warned$first)) warned$first <- conditionMessage(w)
+        invokeRestart("muffleWarning")
+      })
     if (is.null(out)) return(c(NA_real_, NA_real_))
     c(out$value[out$term %in% .BUCSS_SIZE_TERMS][1],
       out$value[out$term == "ncp_adjusted"])
@@ -238,6 +265,8 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
   if (is.na(stat_true))
     stop("Could not determine the sample size that 'true_ncp' requires for this design. Try a 'true_ncp' closer to the plan's own 'ncp_adjusted'.", call. = FALSE)
   size_at_true <- run(stat_true)[1]
+  if (is.na(size_at_true))
+    stop("At 'true_ncp' = ", signif(true_ncp, 3), " the planner refuses to plan (the corrected parameter is zero), so the sample size the true effect requires is undefined. Choose a larger 'true_ncp'.", call. = FALSE)
 
   # Simulate published prior studies. Oversample by the publication rate, in
   # blocks, so the requested number of published studies is actually reached.
@@ -253,30 +282,46 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
     stop("Fewer than 'replications' simulated prior studies reached significance at 'alpha_prior'. The publication rate at this 'true_ncp' is about ", signif(pub$rate, 2), "; raise 'true_ncp' or lower 'replications'.", call. = FALSE)
   drawn <- drawn[seq_len(replications)]
 
+  warned$phase <- "studies"
   res <- vapply(drawn, run, numeric(2))
   sizes <- res[1, ]
   refused <- is.na(sizes)
   issued <- sizes[!refused]
 
   attained <- issued >= size_at_true
-  attainment <- mean(attained)
   refusal_rate <- mean(refused)
-  quart <- quantile(issued, c(.25, .5, .75), names = FALSE)
+  if (length(issued) == 0L) {
+    warning("Every simulated prior study was refused, so 'attainment', its standard error, and the size quartiles are undefined and reported as NA.", call. = FALSE)
+    attainment <- NA_real_
+    quart <- rep(NA_real_, 3)
+  } else {
+    attainment <- mean(attained)
+    quart <- quantile(issued, c(.25, .5, .75), names = FALSE)
+  }
+  if (sum(warned$n) > 0L)
+    warning("The planner raised warnings on ", warned$n[["studies"]], " of the ",
+            replications, " simulated prior studies and ", warned$n[["search"]],
+            " times while finding the sample size the true effect requires; ",
+            "the first was: ", warned$first, call. = FALSE)
   # A refusal counts as attaining: declining to plan is the limiting case of an
   # arbitrarily conservative plan, and it is the assurance guarantee's own
   # convention.
   with_refusals <- refused
   with_refusals[!refused] <- attained
+  attainment_with_refusals <- mean(with_refusals)
 
   out <- data.frame(
     term = c("true_ncp", "ncp_adjusted", "replications", "publication_rate",
              "refusal_rate", "attainment", "attainment_mcse",
-             "attainment_with_refusals", "size_at_true_effect",
-             "size_q25", "size_median", "size_q75"),
+             "attainment_with_refusals", "attainment_with_refusals_mcse",
+             "size_at_true_effect", "size_q25", "size_median", "size_q75"),
     value = c(true_ncp, object$value[object$term == "ncp_adjusted"],
               replications, pub$rate, refusal_rate, attainment,
-              sqrt(attainment * (1 - attainment) / length(issued)),
-              mean(with_refusals),
+              if (length(issued) == 0L) NA_real_ else
+                sqrt(attainment * (1 - attainment) / length(issued)),
+              attainment_with_refusals,
+              sqrt(attainment_with_refusals * (1 - attainment_with_refusals) /
+                     replications),
               size_at_true, quart[1], quart[2], quart[3]),
     stringsAsFactors = FALSE)
 
@@ -289,7 +334,7 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
   out
 }
 
-#' Print a simulated sensitivity audit of a plan
+#' Print a Simulated Sensitivity Audit of a Plan
 #'
 #' Prints the aligned \code{term}/\code{value} table, then factual footer
 #' lines naming the design, the sample size unit, and the requested
@@ -305,12 +350,23 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
 #'
 #' @examples
 #' plan <- ss_buc_paired_t(t_observed = 3, N = 30, assurance = .80)
-#' ss_buc_sensitivity(plan, true_ncp = 2, replications = 200, seed = 2017)
+#' ss_buc_sensitivity(plan, true_ncp = 2, replications = 200, seed = 113)
 #'
 #' @aliases bucss_sensitivity
 #' @export
 #' @keywords internal
 print.bucss_sensitivity <- function(x, digits = getOption("bucss.digits", 3L), ...) {
+  # An object that is no longer one audit (a subset, or two audits stacked,
+  # which keep the class) prints as the plain data frame it is, without footers
+  # describing only one of them.
+  one_audit <- is.data.frame(x) && identical(names(x), c("term", "value")) &&
+    is.numeric(x[["value"]]) && !is.null(attr(x, "design")) &&
+    all(vapply(c("true_ncp", "attainment", "attainment_with_refusals"),
+               function(nm) sum(x[["term"]] == nm) == 1L, logical(1)))
+  if (!one_audit) {
+    print(structure(x, class = "data.frame"))
+    return(invisible(x))
+  }
   shown <- data.frame(term = x$term,
                       value = .format_bucss_value(x$value, digits),
                       stringsAsFactors = FALSE)

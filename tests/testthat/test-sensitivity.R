@@ -99,7 +99,8 @@ test_that("ss_buc_sensitivity returns the documented shape", {
     s$term,
     c("true_ncp", "ncp_adjusted", "replications", "publication_rate",
       "refusal_rate", "attainment", "attainment_mcse",
-      "attainment_with_refusals", "size_at_true_effect", "size_q25",
+      "attainment_with_refusals", "attainment_with_refusals_mcse",
+      "size_at_true_effect", "size_q25",
       "size_median", "size_q75"))
   expect_equal(s$value[s$term == "true_ncp"], 2)
   expect_equal(s$value[s$term == "replications"], 200)
@@ -140,10 +141,41 @@ test_that("the seed is honored and the caller's random stream is restored", {
   b <- ss_buc_sensitivity(plan, true_ncp = 2, replications = 100, seed = 2017)
   expect_equal(a$value, b$value)
 
-  set.seed(99)
+  # The caller's stream: seed 99 in the global state, restored when this test
+  # ends so no seed is left behind.
+  withr::local_seed(99)
   before <- get(".Random.seed", envir = .GlobalEnv)
   ss_buc_sensitivity(plan, true_ncp = 2, replications = 100, seed = 2017)
   expect_identical(get(".Random.seed", envir = .GlobalEnv), before)
+})
+
+test_that("a seeded call restores the caller's generator kind", {
+  plan <- ss_buc_paired_t(t_observed = 3, N = 30)
+  withr::local_seed(99, .rng_kind = "L'Ecuyer-CMRG")
+  kind <- RNGkind()
+  expected <- withr::with_preserve_seed(runif(3))
+  ss_buc_sensitivity(plan, true_ncp = 2, replications = 100, seed = 2017)
+  expect_identical(RNGkind(), kind)
+  expect_identical(runif(3), expected)
+})
+
+test_that("a seeded call leaves no seed behind when the caller had none", {
+  # Without this, the caller's next unseeded draw would be a fixed
+  # continuation of seed 2017 in every session.
+  plan <- ss_buc_paired_t(t_observed = 3, N = 30)
+  withr::local_preserve_seed()
+  if (exists(".Random.seed", envir = globalenv(), inherits = FALSE))
+    rm(".Random.seed", envir = globalenv())
+  ss_buc_sensitivity(plan, true_ncp = 2, replications = 100, seed = 2017)
+  expect_false(exists(".Random.seed", envir = globalenv(), inherits = FALSE))
+})
+
+test_that("the default seed = NULL draws from the caller's own stream", {
+  plan <- ss_buc_paired_t(t_observed = 3, N = 30)
+  run <- function(s) withr::with_seed(s, ss_buc_sensitivity(
+    plan, true_ncp = 2, replications = 100))
+  expect_identical(run(5), run(5))
+  expect_false(identical(run(5)$value, run(6)$value))
 })
 
 test_that("size_at_true_effect is the size the true effect requires", {

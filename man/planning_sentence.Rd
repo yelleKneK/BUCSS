@@ -2,7 +2,7 @@
 % Please edit documentation in R/bucss-output-helpers.R
 \name{planning_sentence}
 \alias{planning_sentence}
-\title{The planning sentence for a manuscript}
+\title{The Planning Sentence for a Manuscript}
 \usage{
 planning_sentence(x)
 }
@@ -16,14 +16,23 @@ A single character string.
 \description{
 Turns a \code{bucss_plan} result into the sentence an author writes in a
 manuscript's planning or method section: the necessary sample size in its
-design's unit, the desired power, the assurance, and a clause noting the
-publication bias and uncertainty correction. This mirrors the
-\code{results_sentence()} helper in the sibling package \code{DMAR}.
+design's unit, the desired power, the assurance, and a clause stating which
+corrections the plan made. The clause is built from the plan's own settings:
+the publication bias correction is named, with its assumed threshold, only
+when \code{alpha_prior} is below 1, and the uncertainty correction only when
+\code{assurance} is above .5 (at .5 the plan uses the median estimate). This
+mirrors the \code{results_sentence()} helper in the sibling package
+\code{DMAR}.
 }
 \examples{
 result <- ss_buc_independent_t(t_observed = 3, n = c(50, 55),
   assurance = .90)
 planning_sentence(result)
+
+# With no publication bias assumed (a pilot study, say), the sentence
+# names the uncertainty correction alone.
+planning_sentence(ss_buc_independent_t(t_observed = 3, n = 20,
+  alpha_prior = 1))
 
 }
 \author{
