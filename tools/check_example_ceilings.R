@@ -147,7 +147,7 @@ for (f in files) {
       cl2$assurance <- as.numeric(live)
       r2 <- run_call(cl2)$value
       attr_c <- if (inherits(r2, "bucss_plan")) attr(r2, "assurance_ceiling") else NULL
-      attr_s <- if (is.null(attr_c)) "(none)" else fmt2(floor(attr_c * 100 + 1e-9) / 100)
+      attr_s <- if (is.null(attr_c)) "(none)" else fmt2(floor(attr_c * 100 - 1e-9) / 100)
       rerun <- if (inherits(r2, "bucss_plan")) {
         sprintf("re-run at %s plans n = %s, attribute %s", live,
                 format(r2$value[1L]), attr_s)

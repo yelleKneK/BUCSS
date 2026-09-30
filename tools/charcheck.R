@@ -1,7 +1,8 @@
 # Characterization harness (developer tool, not shipped: tools/ is excluded by
 # .Rbuildignore). Runs a broad grid of inputs through every ss_buc_* planner
 # and records, for each call, every number the result reports: the size row,
-# total_N, actual_power, ncp_adjusted, and the assurance_ceiling attribute. A
+# total_N, actual_power, ncp_adjusted, the planning effect size (its term and
+# its value), and the assurance_ceiling attribute. A
 # call the planner refuses is recorded as well, by the kind of refusal (the
 # zero noncentrality parameter, a nonsignificant prior, or another error) and
 # the ceiling its message names, since a changed refusal is a changed output.
@@ -20,6 +21,13 @@
 # the fields that moved, writes them to DIFFS.csv when --out is given, and
 # exits with status 1 on any difference or on a grid that no longer matches
 # the baseline's; 'save' exits 0 once the baseline is written.
+#
+# 'check' compares the fields that both the baseline and this version of the
+# harness record. A field recorded on only one side (a baseline saved before
+# a field was added, or one saved by a later version) is listed as a notice
+# and not compared, so a change that adds a recorded field can still be
+# proved against the baseline saved before it; every shared field must match
+# exactly, and the grid itself (the set of cases) must match exactly.
 
 args <- commandArgs(trailingOnly = TRUE)
 flag_value <- function(flag) {
@@ -52,6 +60,10 @@ if (!is.na(lib)) {
 }
 bucss_ns <- asNamespace("BUCSS")
 size_terms <- get(".BUCSS_SIZE_TERMS", envir = bucss_ns)
+# A version from before the planning effect size row has no such vocabulary;
+# its calls then record the row as absent.
+effect_terms <- if (exists(".BUCSS_EFFECT_TERMS", envir = bucss_ns, inherits = FALSE))
+  get(".BUCSS_EFFECT_TERMS", envir = bucss_ns) else character(0)
 provenance <- sprintf("BUCSS %s from %s; %s", as.character(utils::packageVersion("BUCSS")),
                       getNamespaceInfo("BUCSS", "path"), R.version.string)
 cat(provenance, "\n")
@@ -126,13 +138,25 @@ grids <- list(
                      effect = c("factor_A", "factor_B", "interaction"),
                      alpha_prior = c(.05, 1), assurance = c(.5, .8, .9),
                      desired_power = .8, stringsAsFactors = FALSE, KEEP.OUT.ATTRS = FALSE)
-    as_cases(g)
+    # A sphericity correction, as a separate slice so the rows above keep the
+    # keys of baselines saved before epsilon existed: the effects with two
+    # within-subjects df (Factor A has one, and can only be spherical).
+    g_eps <- expand.grid(F_observed = c(4, 6, 10), N = c(40, 60),
+                         levels_A = 2, levels_B = 3,
+                         effect = c("factor_B", "interaction"),
+                         alpha_prior = c(.05, 1), assurance = c(.5, .8, .9),
+                         desired_power = .8, epsilon = c(.8, .6),
+                         stringsAsFactors = FALSE, KEEP.OUT.ATTRS = FALSE)
+    c(as_cases(g), as_cases(g_eps))
   },
   ss_buc_rm_anova_general = function() {
     g <- expand.grid(F_observed = c(4, 6.5, 10), N = c(60, 80), df_numerator = c(1, 2),
                      alpha_prior = c(.05, 1), assurance = c(.5, .8, .9),
                      desired_power = .8, KEEP.OUT.ATTRS = FALSE)
-    as_cases(g)
+    g_eps <- expand.grid(F_observed = c(4, 6.5, 10), N = c(60, 80), df_numerator = 2,
+                         alpha_prior = c(.05, 1), assurance = c(.5, .8, .9),
+                         desired_power = .8, epsilon = c(.8, .6), KEEP.OUT.ATTRS = FALSE)
+    c(as_cases(g), as_cases(g_eps))
   },
   ss_buc_mixed_anova = function() {
     # N = 61 and 91 do not divide over the 2 groups, so the split-plot's own
@@ -142,7 +166,15 @@ grids <- list(
                      effect = c("between", "within", "interaction"),
                      alpha_prior = c(.05, 1), assurance = c(.5, .8, .9),
                      desired_power = .8, stringsAsFactors = FALSE, KEEP.OUT.ATTRS = FALSE)
-    as_cases(g)
+    # A sphericity correction for the effects it applies to (the
+    # between-subjects effect has none), odd N included.
+    g_eps <- expand.grid(F_observed = c(4, 6, 10), N = c(60, 61, 90, 91),
+                         levels_between = 2, levels_within = 3,
+                         effect = c("within", "interaction"),
+                         alpha_prior = c(.05, 1), assurance = c(.5, .8, .9),
+                         desired_power = .8, epsilon = c(.8, .6),
+                         stringsAsFactors = FALSE, KEEP.OUT.ATTRS = FALSE)
+    c(as_cases(g), as_cases(g_eps))
   },
   ss_buc_mixed_anova_general = function() {
     # All three effect arms, at N = 90 (balanced over 3 groups) and at N = 61
@@ -173,19 +205,42 @@ grids <- list(
                       effect = "within_only", alpha_prior = c(.05, 1),
                       assurance = c(.5, .8, .9), desired_power = .8,
                       stringsAsFactors = FALSE, KEEP.OUT.ATTRS = FALSE)
-    c(as_cases(g), as_cases(g2), as_cases(g2b), as_cases(g3))
+    # A sphericity correction for the effects with at least two
+    # within-subjects df: within_only with 2, and between_within with 3.
+    g_eps <- expand.grid(F_observed = c(4, 6, 10), N = c(61, 90, 91), df_numerator = 2,
+                         num_groups = 3, effect = "within_only", alpha_prior = c(.05, 1),
+                         assurance = c(.5, .8, .9), desired_power = .8, epsilon = c(.8, .6),
+                         stringsAsFactors = FALSE, KEEP.OUT.ATTRS = FALSE)
+    g_eps_bw <- expand.grid(F_observed = c(3, 4, 6), N = c(61, 90, 91), df_numerator = 6,
+                            num_groups = 3, effect = "between_within", df_num_within = 3,
+                            alpha_prior = c(.05, 1), assurance = c(.5, .8, .9),
+                            desired_power = .8, epsilon = c(.8, .6),
+                            stringsAsFactors = FALSE, KEEP.OUT.ATTRS = FALSE)
+    c(as_cases(g), as_cases(g2), as_cases(g2b), as_cases(g3), as_cases(g_eps),
+      as_cases(g_eps_bw))
   },
   ss_buc_reg_coef = function() {
     g <- expand.grid(t_observed = c(2.5, 3, 4, 6), N = c(80, 150), p = c(2, 3, 5),
                      alpha_prior = c(.05, 1), assurance = c(.5, .8, .9),
                      desired_power = .8, KEEP.OUT.ATTRS = FALSE)
-    as_cases(g)
+    # The same grid with the predictor frame written out, in both frames. The
+    # rows above keep the default, so their keys still match baselines saved
+    # before random_predictors existed.
+    g_rp <- expand.grid(t_observed = c(2.5, 3, 4, 6), N = c(80, 150), p = c(2, 3, 5),
+                        alpha_prior = c(.05, 1), assurance = c(.5, .8, .9),
+                        desired_power = .8, random_predictors = c(FALSE, TRUE),
+                        KEEP.OUT.ATTRS = FALSE)
+    c(as_cases(g), as_cases(g_rp))
   },
   ss_buc_R2 = function() {
     g <- expand.grid(F_observed = c(4, 6, 10), N = c(100, 150), p = c(3, 4, 6),
                      alpha_prior = c(.05, 1), assurance = c(.5, .8, .9),
                      desired_power = .8, KEEP.OUT.ATTRS = FALSE)
-    as_cases(g)
+    g_rp <- expand.grid(F_observed = c(4, 6, 10), N = c(100, 150), p = c(3, 4, 6),
+                        alpha_prior = c(.05, 1), assurance = c(.5, .8, .9),
+                        desired_power = .8, random_predictors = c(FALSE, TRUE),
+                        KEEP.OUT.ATTRS = FALSE)
+    c(as_cases(g), as_cases(g_rp))
   },
   ss_buc_correlation = function() {
     g <- expand.grid(r_observed = c(.2, .35, .5, .7), N = c(60, 100, 151),
@@ -238,7 +293,11 @@ grids <- list(
     g <- expand.grid(F_observed = c(4, 6, 10), N = c(120, 150), p = c(4, 5),
                      p_joint = c(2, 3), alpha_prior = c(.05, 1),
                      assurance = c(.5, .8, .9), desired_power = .8, KEEP.OUT.ATTRS = FALSE)
-    as_cases(g)
+    g_rp <- expand.grid(F_observed = c(4, 6, 10), N = c(120, 150), p = c(4, 5),
+                        p_joint = c(2, 3), alpha_prior = c(.05, 1),
+                        assurance = c(.5, .8, .9), desired_power = .8,
+                        random_predictors = c(FALSE, TRUE), KEEP.OUT.ATTRS = FALSE)
+    c(as_cases(g), as_cases(g_rp))
   }
 )
 
@@ -264,7 +323,8 @@ message_ceiling <- function(msg) {
   as.numeric(m[nzchar(m)][2L])
 }
 
-fields <- c("n", "total_N", "actual_power", "ncp", "ceiling", "refusal", "refusal_ceiling")
+fields <- c("n", "total_N", "actual_power", "ncp", "effect_term", "effect", "ceiling",
+            "refusal", "refusal_ceiling")
 
 run_grid <- function() {
   rows <- list()
@@ -278,17 +338,21 @@ run_grid <- function() {
       }
       row <- if (inherits(res, "bucss_plan")) {
         ceil <- attr(res, "assurance_ceiling")
+        is_effect <- res$term %in% effect_terms
         data.frame(planner = fn_name, key = case_key(fn_name, a),
                    n = res$value[res$term %in% size_terms][1L],
                    total_N = pick("total_N"), actual_power = pick("actual_power"),
                    ncp = pick("ncp_adjusted"),
+                   effect_term = if (any(is_effect)) res$term[is_effect][1L] else NA_character_,
+                   effect = if (any(is_effect)) res$value[is_effect][1L] else NA_real_,
                    ceiling = if (is.null(ceil)) NA_real_ else ceil,
                    refusal = "", refusal_ceiling = NA_real_, stringsAsFactors = FALSE)
       } else {
         msg <- if (inherits(res, "error")) conditionMessage(res) else "not a bucss_plan"
         data.frame(planner = fn_name, key = case_key(fn_name, a),
                    n = NA_real_, total_N = NA_real_, actual_power = NA_real_,
-                   ncp = NA_real_, ceiling = NA_real_,
+                   ncp = NA_real_, effect_term = NA_character_, effect = NA_real_,
+                   ceiling = NA_real_,
                    refusal = refusal_kind(msg), refusal_ceiling = message_ceiling(msg),
                    stringsAsFactors = FALSE)
       }
@@ -310,6 +374,7 @@ if (anyDuplicated(res$key)) {
 
 if (mode == "save") {
   attr(res, "provenance") <- provenance
+  attr(res, "fields") <- fields
   saveRDS(res, path)
   cat("baseline saved to", path, "\n")
   quit(status = 0L)
@@ -317,9 +382,31 @@ if (mode == "save") {
 
 base <- readRDS(path)
 cat("baseline:", if (is.null(attr(base, "provenance"))) "(no provenance)" else attr(base, "provenance"), "\n")
-if (!is.data.frame(base) || !all(c("key", fields) %in% names(base))) {
-  cat("FAIL: the baseline was not saved by this version of charcheck.R (it lacks the recorded fields).\n")
+if (!is.data.frame(base) || !"key" %in% names(base)) {
+  cat("FAIL: the baseline was not saved by charcheck.R (it has no case keys).\n")
   quit(status = 1L)
+}
+# The fields the baseline recorded: as saved with it, or, for a baseline saved
+# before the list was stored, every column but the case identifiers.
+base_fields <- attr(base, "fields")
+if (is.null(base_fields)) base_fields <- setdiff(names(base), c("planner", "key"))
+base_fields <- intersect(base_fields, names(base))
+only_base_fields <- setdiff(base_fields, fields)
+only_now_fields <- setdiff(fields, base_fields)
+fields <- intersect(fields, base_fields)
+if (!length(fields)) {
+  cat("FAIL: the baseline and this version of charcheck.R record no field in common.\n")
+  quit(status = 1L)
+}
+if (length(only_base_fields) || length(only_now_fields)) {
+  cat("NOTICE: comparing the ", length(fields), " fields both record (",
+      paste(fields, collapse = ", "), ").\n", sep = "")
+  if (length(only_now_fields))
+    cat("NOTICE: recorded now but not in the baseline, so not compared:",
+        paste(only_now_fields, collapse = ", "), "\n")
+  if (length(only_base_fields))
+    cat("NOTICE: recorded in the baseline but not now, so not compared:",
+        paste(only_base_fields, collapse = ", "), "\n")
 }
 only_base <- setdiff(base$key, res$key)
 only_now <- setdiff(res$key, base$key)
@@ -352,7 +439,9 @@ if (!is.na(out_csv)) {
 }
 n_cases <- length(unique(diffs$key))
 if (n_cases == 0L) {
-  cat("OK: all", nrow(res), "grid outputs identical to baseline, in every recorded field.\n")
+  cat("OK: all", nrow(res), "grid outputs identical to baseline, in every",
+      if (length(only_base_fields) || length(only_now_fields)) "shared" else "recorded",
+      "field.\n")
   quit(status = 0L)
 }
 for (k in unique(diffs$key)) {

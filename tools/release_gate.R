@@ -140,7 +140,7 @@ check_budget_s <- 200
 # The shipped harness and the example ceiling tool each state how many checks
 # they run; a changed count fails the gate until the count here is updated on
 # purpose, so a check cannot silently disappear.
-expected_harness_checks <- 20L
+expected_harness_checks <- 24L
 expected_ceiling_comments <- 18L
 # Help-page examples seed with 113, and only help-page examples do.
 example_seed <- 113L
