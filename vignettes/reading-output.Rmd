@@ -13,9 +13,12 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 library(BUCSS)
 ```
 
-Every `ss_buc_*` function returns the same kind of object: a tidy result of
-class `bucss_plan`. This vignette shows the three ways to read it, which follow
-the same conventions as the **DMAR** package, so the habits carry over.
+Once a planner has returned, how do you read the plan, pull the one number you
+need out of it, or collect it into a table or a manuscript? Every `ss_buc_*`
+function returns the same kind of object: a tidy result of class `bucss_plan`,
+holding a bias and uncertainty corrected plan (Anderson, Kelley, & Maxwell,
+2017). This vignette shows the three ways to read it, which follow the same
+conventions as the **DMAR** package, so the habits carry over.
 
 We will use a two-way between-subjects ANOVA throughout.
 
@@ -26,8 +29,8 @@ result <- ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2,
 
 ## 1. Read It as a Printed Summary
 
-Printing the object shows the aligned `term`/`value` table, exactly as in
-**DMAR**: the design results first (the necessary sample size, named for its
+Printing the object shows the aligned `term`/`value` table, in the **DMAR**
+style: the design results first (the necessary sample size, named for its
 unit; the implied total sample size for per-group and per-cell designs; the
 achieved power at the returned size; and the bias and uncertainty adjusted
 noncentrality parameter), then the rows echoing the planning inputs you
@@ -40,12 +43,13 @@ result
 
 Displayed values are rounded for reading (whole numbers print clean; other
 values print at three significant figures); the stored values keep full
-precision. Change the display with `options(bucss.digits = )`.
+precision. Change the display with `options(bucss.digits = )`, and put back
+whatever was set before when you are done:
 
 ```{r}
-options(bucss.digits = 5)
+old <- options(bucss.digits = 5)
 result
-options(bucss.digits = 3)  # restore the default
+options(old)  # restore the previous setting
 ```
 
 ## 2. Pull a Single Number Out
@@ -62,8 +66,9 @@ result$value[result$term == "necessary_n_per_cell"]
 result$value[result$term == "total_N"]
 ```
 
-That works, but the `tidy()` view below is usually tidier for pulling one value
-out by name.
+That works for any row. For the sample size and its power, `tidy()` below
+gives them directly, and `glance()` puts every row in a column of its own, so
+any single value can be pulled out by name.
 
 ## 3. The Broom Verbs: `tidy()` and `glance()`
 
@@ -77,14 +82,16 @@ tidy(result)
 tidy(result)$estimate
 ```
 
-`glance()` returns the one-row wide view: every quantity and echoed planning
-input as a column, plus the design, the effect tested, the unit, the planned
-test's degrees of freedom, and the assurance ceiling. It is the convenient
-shape for pulling one value out by name or collecting many results into one
-table for reporting.
+`glance()` returns the one-row wide view. It begins with the same `term`,
+`estimate`, and `power` columns as `tidy()` (as **DMAR**'s planners do), then
+gives every quantity and echoed planning input a column of its own, and ends
+with the design, the effect tested, the unit, the planned test's degrees of
+freedom, and the assurance ceiling. It is the convenient shape for pulling one
+value out by name or collecting many results into one table for reporting.
 
 ```{r}
 glance(result)
+glance(result)$ncp_adjusted
 ```
 
 Both verbs come from the **generics** package and are re-exported by BUCSS, so
@@ -99,14 +106,16 @@ planning_sentence(result)
 
 ## What Lives Where
 
-* Everything numeric is a row of the `value` column: the design results (the
-  size row named for its unit, `total_N`, `actual_power`, `ncp_adjusted`) and
-  the echoed planning inputs. Rows survive any further arithmetic, subsetting,
-  or export you do on the object.
-* Only non-numeric metadata travels on attributes: the design label, the
-  effect tested, the unit, plus the assurance ceiling and the planned test's
-  degrees of freedom. All of it is surfaced by the print method and by
-  `glance()`.
+* Every planning result and every echoed input is a row of the `value`
+  column: the design results (the size row named for its unit, `total_N`,
+  `actual_power`, `ncp_adjusted`) and the planning inputs. Rows survive any
+  further arithmetic, subsetting, or export you do on the object.
+* Everything else travels on attributes: the design label, the effect tested,
+  and the unit, which are text, and the assurance ceiling and the planned
+  test's degrees of freedom, which are numbers describing the prior result and
+  the planned test rather than rows of the plan. All of it is surfaced by
+  `glance()`, and the design (with the effect tested), the unit, and the
+  ceiling by the print method's footer.
 
 ## References
 

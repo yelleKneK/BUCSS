@@ -53,13 +53,12 @@ ss_buc_independent_t(t_observed = 3, n = c(50, 55), alpha_prior = .05,
 ```
 
 This yields a necessary sample size of $n_1=n_2=1485$ per group (i.e.,
-$N=n_1+n_2=2970$). The 2017 paper reported 1482 for this example under the
-original grid-search method; as of BUCSS 2.0.0 the bias and uncertainty adjusted
-noncentrality parameter is found by direct root finding, which gives 1485 (see
-`NEWS.md`).
+$N=n_1+n_2=2970$). BUCSS 1.x reported 1482 for this example under its grid
+search; as of BUCSS 2.0.0 the bias and uncertainty adjusted noncentrality
+parameter is found by direct root finding, which gives 1485 (see `NEWS.md`).
 
 The functions return a tidy object of class `bucss_plan`, shaped like the
-result tables in the [`DMAR`](https://github.com/yelleKneK/DMAR) package: an
+result tables in the [`DMAR`](https://CRAN.R-project.org/package=DMAR) package: an
 ordinary `data.frame` of `term`/`value` rows holding the design results (the
 size row is named for its unit, here `necessary_n_per_group`) followed by rows
 echoing the planning inputs, so the assumptions travel with the result:
@@ -73,14 +72,17 @@ result$value[result$term == "actual_power"]           # power at that size
 result$value[result$term == "ncp_adjusted"]           # adjusted noncentrality
 ```
 
-The broom verbs give the two convenient views, again exactly as in `DMAR`:
-`tidy()` is the compact estimate view and `glance()` the one-row wide view
-with every quantity and echoed input as a column:
+The broom verbs give the two convenient views. `tidy()` is the compact
+estimate view (`term`, `estimate`, `power`), as in `DMAR`'s sample size
+planners, and `glance()` the one-row wide view, which begins with those same
+three columns, as `DMAR`'s does, and then, unlike `DMAR`'s, keeps every row
+of the result as a column (so the sample size and `actual_power` appear
+twice):
 
 ``` r
-tidy(result)            # term = "sample_size", estimate = 1485, power
-tidy(result)$estimate   # 1485
-glance(result)          # every row as a column, plus design metadata
+tidy(result)               # term = "sample_size", estimate = 1485, power
+tidy(result)$estimate      # 1485
+glance(result)             # term, estimate, power, then every row as a column
 planning_sentence(result)  # the sentence for a manuscript
 ```
 
@@ -126,16 +128,20 @@ forwards to its `ss_buc_*` replacement and issues a one-time-per-session warning
 naming the new function. The object it returns keeps the 1.x positional
 extraction working, so legacy code that reads `result[[1]]` (the necessary
 sample size) and `result[[2]]` (the adjusted noncentrality parameter) continues
-to work unchanged. New code should call the `ss_buc_*` functions directly. See
-the `NEWS.md` file for the full list of changes.
+to work. Only those two literal subscripts are kept: code that treats the
+result as a plain two-element list in other ways, such as `unlist(result)` or
+an integer subscript like `result[[1L]]`, sees the new data frame instead. New
+code should call the `ss_buc_*` functions directly. See the `NEWS.md` file for
+the full list of changes.
 
 ## Verified by Simulation
 
 The planners are verified against simulation, and the verification ships with
 the package so you can rerun it yourself. The harness simulates published
 prior studies from known true effects and confirms, among other checks, that
-the corrected noncentrality parameter falls at or below the truth at exactly
-the requested assurance rate, across every sampling family the package uses;
+the corrected noncentrality parameter falls at or below the truth at the
+requested assurance rate, within simulation error, across every sampling
+family the package uses;
 it also checks the correlation and Welch planners against raw simulated data
 rather than statistics. From any R session with `BUCSS` installed:
 
@@ -143,9 +149,9 @@ rather than statistics. From any R session with `BUCSS` installed:
 source(system.file("tools", "verify_by_simulation.R", package = "BUCSS"))
 ```
 
-The quick mode runs 17 checks in a few minutes; set
+The quick mode runs 20 checks in a few seconds; set
 `Sys.setenv(BUCSS_VERIFY = "full")` first for published-precision
-replications. To audit a specific plan of your own rather than the package at
+replications, which take about half a minute. To audit a specific plan of your own rather than the package at
 large, use `ss_buc_sensitivity()`, which runs the same kind of simulation on
 the design and inputs of any plan you pass it.
 

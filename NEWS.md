@@ -5,12 +5,15 @@ internal computation. It is the first CRAN release since 1.2.1.
 
 The corrected noncentrality and sample size computations follow the same method
 as 1.2.1; the rounded (three-decimal) adjusted noncentrality parameters match
-the 1.2.1 values for every documented example. The one substantive numerical
-change is the engine that finds the noncentrality parameter (see "Engine"
-below), which shifts a small number of planned sample sizes by a few units and
-makes them more accurate. The general between-subjects function's
-`df_denominator` argument, silently ignored in 1.x, now functions (see "Bug
-fixes").
+the 1.2.1 values for every documented example. The main numerical change is the
+engine that finds the noncentrality parameter (see "Engine" below), which
+shifts some planned sample sizes, most by a few units, and makes them more
+accurate. Two smaller deliberate changes are described under "Bug Fixes": the
+general between-subjects function's `df_denominator` argument, silently
+ignored in 1.x, now functions, and the independent *t* planner rounds the
+harmonic mean of two prior group sizes in integer arithmetic, which changes
+the plan (to a smaller, correct one) for pairs whose harmonic mean is a whole
+number.
 
 ## Engine: Root Finding Instead of a Fixed Grid
 
@@ -23,20 +26,32 @@ fixes").
     returned a silently truncated (incorrect) result; they are now solved
     correctly.
   * The parameter is exact rather than snapped to the grid resolution. The
-    rounded (three-decimal) parameters are unchanged from 1.2.1, but the extra
-    precision shifts a small number of planned sample sizes by a few units. For
-    the documented unequal-*n* replication example
+    rounded (three-decimal) parameters are unchanged from 1.2.1 (apart from
+    the harmonic-mean cases above), but the extra precision shifts some
+    planned sample sizes. For the documented unequal-*n*
+    replication example
     (`ss_buc_independent_t(t_observed = 3, n = c(50, 55), assurance = .90)`), the
-    necessary sample size moves from 1482 (the value quoted by Anderson et al.,
-    2017, under the grid method) to 1485, which is the smallest sample size that
-    actually reaches the target power. Across the developer characterization
-    grid, about 95% of sample sizes are unchanged and the rest move by a few
-    units. Among the documented examples, five planned sample sizes move:
-    1482 to 1485 and 1904 to 1902 (`ss_buc_independent_t`), 968 to 969
-    (`ss_buc_mixed_anova`), 1491 to 1489 (`ss_buc_rm_anova`), and 3963 to 3960
-    (`ss_buc_reg_joint`). Each new value is the smallest sample size that
-    actually attains the target power at the exact noncentrality parameter;
-    they are pinned in the package's regression tests.
+    necessary sample size moves from 1482 (the value BUCSS 1.x reported under
+    its grid search) to 1485, which is the smallest sample size that actually
+    reaches the target power. Across the developer characterization grid,
+    leaving out the cases the old cap affected, the `df_denominator` change,
+    and the harmonic-mean correction, about 95% of sample sizes are unchanged; most of the rest move by a
+    few units and none by more than 2 percent, except close to the assurance
+    ceiling, where the corrected parameter is small and the grid's resolution
+    mattered most (up to about 5 percent). Among the documented examples, five
+    planned sample sizes move: 1482 to 1485 (`ss_buc_independent_t`), 1904 to
+    1902 (`ss_buc_rm_anova`), 968 to 969 (`ss_buc_mixed_anova`), 1491 to 1489
+    (`ss_buc_mixed_anova_general`), and 3963 to 3960 (`ss_buc_reg_joint`). Each
+    new value is the smallest sample size that actually attains the target
+    power at the exact noncentrality parameter; they are pinned in the
+    package's regression tests.
+* Every worked example in Anderson, Kelley, and Maxwell (2017) and its
+  supplemental material is reproduced, and the values are pinned in the
+  regression tests. Where a printed sample size appears to differ by a unit or
+  two (332 per group for the article's first researcher, where *d* = 0.68 gives
+  330), the printed effect size is a rounded simulation median (the article's
+  notes 18 to 20); the median before rounding (*d* = 0.6799) gives 332, in
+  BUCSS 1.2.1 as in 2.0.0.
 * There is no grid-resolution argument or option. The 1.x `step` argument and
   any grid resolution setting are gone, since root finding has no resolution
   parameter.
@@ -76,8 +91,9 @@ fixes").
   numeric `value` column. The design results come first: the necessary sample
   size, named for its unit (`necessary_n_per_group`, `necessary_n_per_cell`,
   or `necessary_N`); `total_N`, the implied total, for per-group and per-cell
-  designs; `actual_power`, the conservative achieved power at the returned
-  size; and `ncp_adjusted`. Rows echoing the planning inputs follow (a
+  designs; `actual_power`, the power of the plan returned; and `ncp_adjusted`,
+  whose scale (that of the prior study's *t*, *F*, or chi square statistic)
+  each help page states. Rows echoing the planning inputs follow (a
   length-2 prior `n` echoes as `n_1`/`n_2`), so the assumptions travel with
   the result through subsetting and CSV export. Only non-numeric metadata
   (the design label, the effect tested, the unit) plus the assurance ceiling
@@ -105,22 +121,24 @@ fixes").
 
 ## New Designs
 
-Six designs join the twelve the package has always covered. Three are exact
-within the published method and were already reachable by hand; three extend
-the correction to statistics the package did not previously accept.
+Six designs join the twelve the package has always covered. Two re-present
+computations the package already made (the one-sample *t* and the analysis of
+covariance); four extend the correction to statistics or distributions it did
+not previously handle.
 
 * `ss_buc_correlation()` plans from a prior Pearson correlation (or its *t*).
   A correlation study samples both variables, so its test statistic is not
   noncentral *F*: conditional on the sampled predictor it is, but the
   noncentrality parameter is itself random, proportional to the sampled spread
-  of the predictor. The marginal distribution is a chi-square mixture of
+  of the predictor. The marginal distribution is a chi square mixture of
   noncentral *F* distributions, and it is more dispersed. The planner uses
   that mixture, which has an exact closed form (the Poisson weights of the
   noncentral *F* become negative binomial weights), for both the correction
   and the planned study's power, so the returned sample size is exact for
   bivariate normal data. Treating the statistic as noncentral *F*, which is
   correct only when the predictor is fixed by design, overstates the planned
-  study's power by up to about .04 and returns a sample size typically 2 to 5
+  study's power by roughly 1/*n* for a plan of *n* participants (about .01 at
+  *n* = 100 and .05 at *n* = 20) and returns a sample size typically 2 to 5
   participants light. When the predictor really is fixed, the analysis is a
   regression slope and `ss_buc_reg_coef()` with `p = 1` is the planner for it.
   The largest supportable assurance is the same either way, because at a zero
@@ -143,17 +161,20 @@ the correction to statistics the package did not previously accept.
   noncentral *F*; hypotheses of higher rank have an eigenvalue spectrum rather
   than a single noncentrality parameter and are outside the method.
 
-* `ss_buc_chisq_diff()` plans from a nested model chi-square difference
+* `ss_buc_chisq_diff()` plans from a nested model chi square difference
   (likelihood ratio) test, the test used for a constrained path in a
-  structural equation model. It is *not* for an omnibus model fit chi-square,
+  structural equation model. It is *not* for an omnibus model fit chi square,
   where a publishable result is a small statistic and the selection region is
   inverted, and the function **refuses** that case rather than only warning
   about it. That is why it takes both models' degrees of freedom, `df_full`
   and `df_restricted`, rather than only their difference: an omnibus fit
-  chi-square is the comparison of a model against the saturated model, which
-  has zero degrees of freedom, so `df_full = 0` identifies the misuse exactly.
-  Given only the difference, nothing distinguishes a fit test from a genuine
-  comparison of two substantive models and the mistake would pass silently.
+  chi square is the comparison of a model against the saturated model, which
+  has zero degrees of freedom, so `df_full = 0` is its signature. Given only
+  the difference, nothing distinguishes a fit test from a genuine comparison
+  of two substantive models and the mistake would pass silently. (A
+  just-identified full model also has zero degrees of freedom; the help page
+  and the error say how to plan that case.) The help page states the
+  finite-sample liberality of the likelihood ratio test for a named model.
 
 * `ss_buc_welch_t()` plans a Welch (unequal variance) *t* test from the two
   prior group sizes and the groups' relative spread. Only the ratio of the
@@ -164,6 +185,11 @@ the correction to statistics the package did not previously accept.
   given is the one echoed back in the result. A Welch statistic is not exactly
   noncentral *t*, so this planner is an approximation, and its help page says
   which assumption it needs and suggests re-running across a range of ratios.
+  The approximation is accurate once each group has about ten participants
+  (within .006 of the real Welch test's power for every plan it returns, from
+  10 per group) but overstates
+  the power of smaller planned studies, badly so for the smallest, so the
+  planner never returns fewer than 10 per group.
 
 ## The Assurance Ceiling, Drawn
 
@@ -215,11 +241,31 @@ the correction to statistics the package did not previously accept.
   defect.
 
 * The package-wide verification ships with the package. The simulation harness
-  that validated the planners, seventeen checks covering assurance calibration
+  that validated the planners, twenty checks covering assurance calibration
   across every sampling family plus raw-data audits of the correlation and
-  Welch planners and the finite-sample behavior behind the chi-square
-  caveat, is installed under `inst/tools/` and reruns in a few minutes with
+  Welch planners and the finite-sample behavior behind the chi square
+  caveat, is installed under `inst/tools/` and reruns in a few seconds (about
+  half a minute in its full mode) with
   `source(system.file("tools", "verify_by_simulation.R", package = "BUCSS"))`.
+  It reports the version and location of the BUCSS it verified.
+
+* `ss_buc_sensitivity()` reports the Monte Carlo standard error of both
+  attainment rates. Only the planner's own refusals count as refusals; any
+  other error stops the audit with its message, and the planner's warnings are
+  summarized once rather than repeated for every simulated study. A plan given
+  as Hotelling's *T* squared can be audited like any other.
+
+* Neither leaves a trace in the session. `ss_buc_sensitivity()`'s `seed`
+  defaults to `NULL`, which draws from the caller's own random number stream;
+  a supplied seed is set through `withr::local_seed()`, so the caller's
+  generator state and kind are restored on exit (or removed again, if the
+  caller had none), and the package never reads or writes the random number
+  state itself. `withr` (>= 3.0.3; earlier versions of `local_seed()` did not
+  restore anything when called from inside a function) joins `Imports`. The
+  harness runs entirely inside `local()` with the same seed handling, so
+  sourcing it creates or overwrites nothing in the global environment, leaves
+  the caller's random number state as it was, and reports a failed check as
+  an error rather than quitting the session.
 
 ## New Features
 
@@ -244,9 +290,12 @@ the correction to statistics the package did not previously accept.
 * Added `tidy()` and `glance()` methods for `bucss_plan` results (from the
   `generics` package), with the same division of labor as `DMAR`'s planners:
   `tidy()` is the compact estimate view (`term = "sample_size"`, `estimate`,
-  and `power`), and `glance()` is the one-row wide view with every quantity
-  and echoed planning input as a column, plus the design metadata and the
-  planned study's test degrees of freedom (`df_effect`, `df_error`).
+  and `power`), and `glance()` is the one-row wide view that begins with the
+  same three columns and then has every quantity and echoed planning input as
+  a column, plus the design metadata and the planned study's test degrees of
+  freedom (`df_effect`, and `df_error` where the test has a denominator). Both
+  stop with an explanation, rather than reporting one plan's numbers for
+  another, when given several plans stacked into one object.
 
 * Every planner reports `actual_power`, the statistical power of the plan it
   reports: the power of a study of the returned sample size when the effect is
@@ -256,7 +305,10 @@ the correction to statistics the package did not previously accept.
 
 * Added `planning_sentence()`, which turns a result into the sentence an
   author writes in a manuscript's planning section (the analog of `DMAR`'s
-  `results_sentence()`).
+  `results_sentence()`). The sentence names only the corrections the plan
+  actually made: the publication bias correction, with its assumed threshold,
+  when `alpha_prior` is below 1, and the uncertainty correction when
+  `assurance` is above .5.
 
 * The zero-noncentrality error now says plainly that re-running at a lower
   assurance is not free: the plan it returns carries that lower assurance, not
@@ -299,9 +351,10 @@ the correction to statistics the package did not previously accept.
 
 ## Bug Fixes
 
-* A negative observed *t* is now accepted by all three *t*-based planners
-  (`ss_buc_independent_t()`, `ss_buc_paired_t()`, `ss_buc_reg_coef()`),
-  which plan from its magnitude. The publication rule the correction
+* A negative observed *t* is now accepted by every planner that takes a *t*
+  (`ss_buc_independent_t()`, `ss_buc_paired_t()`, `ss_buc_one_sample_t()`,
+  `ss_buc_welch_t()`, `ss_buc_reg_coef()`, and `ss_buc_correlation()`), each
+  of which plans from its magnitude. The publication rule the correction
   assumes is two-sided and the truncated likelihood is symmetric in the
   sign of *t*, so `t_observed = -3` is the same evidence as
   `t_observed = 3`; the sign records which group was subtracted from
@@ -326,6 +379,39 @@ the correction to statistics the package did not previously accept.
   unattainable, so the returned sample size was where the computed power
   crossed 1 by floating-point error. The documented rule that an `assurance` or
   `power` of exactly 1 is read as 1 percent is unchanged.
+
+* When the two prior group sizes given to `ss_buc_independent_t()` (or
+  `ss.power.it`) have a harmonic mean that is a whole number, the planner no
+  longer plans from a spurious second rounding one unit off. The mean was
+  computed in floating point, where a whole number can land a hair away from
+  itself: `n = c(49, 49)` planned 222 per group where `n = 49` plans 219, and
+  `n = c(10, 15)`, whose harmonic mean is exactly 12, planned 177 where 12
+  plans 154. The mean is now rounded in integer arithmetic. Only such inputs
+  change, and the change is in the direction of a smaller, correct plan.
+
+* For a prior study whose group sizes are unequal, the between-subjects and
+  split-plot planners (and the independent *t* and MANOVA planners) reduce it
+  to a balanced design rounded both down and up. When a statistic is
+  significant at the prior study's own degrees of freedom but not at the
+  rounded-down design, the error now says exactly that, rather than calling
+  the prior result nonsignificant. And when the correction reaches zero, the
+  error names the smaller of the two rounded designs' ceilings, so re-running
+  at the assurance it names now produces a plan; before, it could name the
+  larger one, which failed again.
+
+* `ss.power.ba` and `ss.power.wa` refuse `effect = "factor.B"` (as well as the
+  interaction) when `levels.B` is not given. 1.2.1 refused only the
+  interaction, and silently returned the Factor A plan for `"factor.B"`.
+
+* `ss_buc_factorial_anova_general()` and `ss_buc_ancova()` reject a
+  `df_numerator` larger than `cells - 1`, and `ss_buc_mixed_anova_general()`
+  rejects numerator degrees of freedom no design of its kind can have and
+  warns that `df_num_within` is ignored except for the between-within
+  interaction. Each used to return an ordinary-looking plan. The 1.x wrappers
+  `ss.power.ba.general` and `ss.power.spa.general` inherit the same checks, so
+  such 1.x calls now stop with an explanation (the wrapper passes
+  `df.num.within` on only for the interaction, as 1.x used it, so 1.x calls
+  that supply it with another effect do not warn).
 
 * `df_denominator` now functions in `ss_buc_factorial_anova_general()`. In 1.x
   it was accepted but silently ignored, and the documented example supplied an
@@ -377,7 +463,18 @@ the correction to statistics the package did not previously accept.
 
 * Added the reference Maxwell, Delaney, and Kelley (2027, *Designing Experiments
   and Analyzing Data: A Model Comparison Perspective*, 4th ed.) to the package
-  references, and ORCIDs for all three authors.
+  references, DOIs for Anderson and Maxwell (2017) and Taylor and Muller
+  (1996), and ORCIDs for all three authors.
+
+* The regression planners' help pages state that they treat the predictors as
+  fixed, and what that costs when the predictors are sampled: the reported
+  power is then too high by an amount that shrinks as 1/*n* for a plan of *n*
+  participants and grows with the number of predictors (roughly 1/*n* to
+  1.4/*n* for the squared multiple correlation, and from about 1/*n* with one
+  predictor to about 4/*n* with eight for a coefficient or a subset).
+
+* The package help page and the Getting Started vignette list all eighteen
+  planners.
 
 ## Internal
 
@@ -385,6 +482,31 @@ the correction to statistics the package did not previously accept.
   planned sample size search each live in a single internal helper
   (`.solve_ncp_assurance`, `.tm_f`/`.tm_t`, and `.smallest_n_for_power`), shared
   by every planner, so the numerical core is maintained in one place.
+
+* The zero-noncentrality and nonsignificance stops carry the condition classes
+  `bucss_zero_ncp` and `bucss_nonsignificant`, so code that loops over plans
+  (including `plot()` and `ss_buc_sensitivity()`) can catch a refusal without
+  catching anything else. `plot()` now draws the plans of a prior result whose
+  ceiling is below .5 instead of treating the warning for such an assurance as
+  a refusal.
+
+* R's warning that a noncentral *t* probability "may not have been computed to
+  full precision", which the root finder triggered with large observed *t*
+  statistics, is muffled where it arises; the solved parameter agrees with
+  independent quadrature in every such case examined.
+
+* The planned sample size search stops with a message rather than looping
+  forever once the answer exceeds about 4.5e15 (2^52). Doubles hold every
+  whole number exactly only up to 2^53, beyond which the bisection could not
+  finish; answers below the bound are found exactly. Only an assurance a hair below the
+  ceiling gets there. The correlation planner's series is summed over a window
+  around its mode, so it stays exact for a strong correlation in a very large
+  prior study (an *r* of .9 with an *N* in the hundreds of thousands), where a
+  fixed number of terms would have dropped most of its mass.
+
+* Seeds are set through `withr` (>= 3.0.3), and R 3.6.0 is now the stated
+  minimum, which the package's delayed S3 registration and its dependencies
+  already required.
 
 * The planned sample size search brackets by doubling and then bisects instead
   of stepping by one, so its cost is logarithmic in the answer. Requests whose

@@ -11,6 +11,12 @@ vignette: >
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 library(BUCSS)
+# Helpers for numbers quoted in the text: one row of a result by its term, and
+# a proportion at the printed tables' precision, without the leading zero.
+row_value <- function(x, term) x$value[x$term == term]
+apa <- function(x, digits = 3) {
+  sub("^0\\.", ".", format(signif(x, digits), scientific = FALSE))
+}
 ```
 
 Two settings control how aggressively BUCSS corrects the prior study's effect:
@@ -26,11 +32,13 @@ Assurance is the long-run proportion of replications whose realized power meets
 or exceeds the target. If you plan for 80% power with `assurance = .80`, then in
 about 80% of replications the realized power will be at least 80%.
 
-* `assurance = .5` selects the median of the likelihood. This corrects for
-  publication bias only; it does not add any cushion for uncertainty.
-* `assurance > .5` selects a lower quantile of the likelihood, which is a
-  smaller, more conservative noncentrality parameter, and therefore a larger
-  planned sample size. The extra sample size is the price of protecting against
+* `assurance = .5` selects the noncentrality parameter at which the observed
+  statistic sits at the median of the publication-truncated distribution, a
+  median unbiased estimate. This corrects for publication bias only; it does
+  not add any cushion for uncertainty.
+* `assurance > .5` selects instead a one-sided lower confidence bound at that
+  level, which is a smaller, more conservative noncentrality parameter, and
+  therefore a larger planned sample size. The extra sample size is the price of protecting against
   the chance that the prior estimate was lucky.
 * `assurance < .5` is not recommended (the functions warn), because it implies
   under a 50% chance of reaching the desired power.
@@ -84,14 +92,14 @@ ss_buc_independent_t(t_observed = 3, n = 20, assurance = .95, desired_power = .8
 #> 'assurance' is not free: the plan it returns carries that lower
 #> assurance, not the one you first asked for, so the long run proportion
 #> of replications reaching your target power falls accordingly.
-#> 'alpha_prior' does not change
-#> the prior study, which is what it is; it is your assumption about the
-#> publication threshold the study's literature faced, so raising it toward
-#> 1 assumes less publication bias to undo (for example, 'alpha_prior = .10'
-#> assumes the literature's journals would have published a result
-#> significant at the .10 level, a more lenient policy than .05, and
-#> 'alpha_prior = 1' assumes no publication bias at all). See Anderson,
-#> Kelley, and Maxwell (2017) and Anderson and Kelley (2024).
+#> 'alpha_prior' does not change the prior study, which is what it is; it
+#> is your assumption about the publication threshold the study's
+#> literature faced, so raising it toward 1 assumes less publication bias
+#> to undo (for example, 'alpha_prior = .10' assumes the literature's
+#> journals would have published a result significant at the .10 level, a
+#> more lenient policy than .05, and 'alpha_prior = 1' assumes no
+#> publication bias at all). See Anderson, Kelley, and Maxwell (2017) and
+#> Anderson and Kelley (2024).
 ```
 
 That last sentence is worth dwelling on, because the first remedy looks
@@ -148,9 +156,10 @@ buy a large reduction in sample size. Raising `alpha_prior` moves the wall
 itself to the right.
 
 The plotted values come back invisibly, so the figure can be redrawn with any
-other graphics system:
+other graphics system (the call also draws the sample size panel again, which
+is not repeated here):
 
-```{r}
+```{r, fig.show = "hide"}
 curve_values <- plot(plan, which = "size", n_points = 12)
 head(curve_values, 4)
 ```
@@ -210,18 +219,28 @@ that number is the natural anchor.
 
 ```{r}
 plan <- ss_buc_paired_t(t_observed = 3, N = 30, assurance = .80)
-plan$value[plan$term == "ncp_adjusted"]
-ss_buc_sensitivity(plan, true_ncp = 2, replications = 2000, seed = 2017)
+ncp <- plan$value[plan$term == "ncp_adjusted"]
+ncp
+audit <- ss_buc_sensitivity(plan, true_ncp = ncp, replications = 2000,
+                            seed = 2017)
+audit
 ```
 
 Two attainment rates are reported, and the gap between them is the point.
-`attainment_with_refusals` lands on the requested assurance, because that is
+`attainment_with_refusals` lands on the requested assurance within simulation
+error (here `r apa(row_value(audit, "attainment_with_refusals"))`, with a Monte
+Carlo standard error of
+`r apa(row_value(audit, "attainment_with_refusals_mcse"), 2)`), because that is
 the quantity the guarantee is about: a refusal counts as attaining, since
 declining to plan is the limiting case of an arbitrarily conservative plan.
 `attainment` counts only the prior studies for which a plan was actually
-issued, and it is lower, often much lower. That is what a user experiences,
-and it is the visible price of a method that refuses rather than guesses. Its
-expected value is `(assurance - refusal_rate)/(1 - refusal_rate)`.
+issued, and it is lower, often much lower: here
+`r apa(row_value(audit, "attainment"))` (Monte Carlo standard error
+`r apa(row_value(audit, "attainment_mcse"), 2)`), because the method refuses
+`r apa(row_value(audit, "refusal_rate"))` of the simulated published prior
+results as too weak to plan from. That is what a user experiences, and it is
+the visible price of a method that refuses rather than guesses. Its expected value is
+`(assurance - refusal_rate)/(1 - refusal_rate)`.
 
 The most useful thing to do with this function is to run it more than once,
 at the corrected estimate and at values below it, and watch how fast the

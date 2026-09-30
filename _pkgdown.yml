@@ -1,4 +1,4 @@
-url: https://yelleKneK.github.io/BUCSS
+url: https://yelleKneK.github.io/BUCSS/
 
 template:
   bootstrap: 5
@@ -39,7 +39,7 @@ reference:
   - ss_buc_reg_joint
 
 - title: Multivariate and Latent Variable Designs
-  desc: A two-group multivariate comparison, and the chi-square difference test between nested models.
+  desc: A two-group multivariate comparison, and the chi square difference test between nested models.
   contents:
   - ss_buc_manova
   - ss_buc_chisq_diff

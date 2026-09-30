@@ -47,7 +47,8 @@ small, nonsignificant effects go unpublished (Taylor & Muller, 1996), then reads
 off a corrected noncentrality parameter at a chosen level of *assurance*. That corrected
 noncentrality parameter, rather than the face-value estimate, drives the sample
 size calculation for the planned study. The method is described in Anderson,
-Kelley, and Maxwell (2017).
+Kelley, and Maxwell (2017), and Anderson and Kelley (2024) extend it to the
+design of replication studies.
 
 ```{r}
 library(BUCSS)
@@ -95,10 +96,11 @@ unit also travels on the object so you never have to guess:
 attr(result, "sample_size_unit")
 ```
 
-For programmatic use the broom verbs give the convenient views, exactly as in
-the **DMAR** package: `tidy()` returns the compact estimate view (the sample
-size and its achieved power), and `glance()` returns the one-row wide view
-with every quantity and echoed input as a column.
+For programmatic use the broom verbs give the convenient views. `tidy()`
+returns the compact estimate view (`term`, `estimate`, and `power`: the sample
+size and its achieved power), as the **DMAR** package's sample size planners
+do, and `glance()` returns the one-row wide view, which begins with those same
+three columns and then keeps every row of the result as a column.
 
 ```{r}
 tidy(result)
@@ -125,35 +127,64 @@ ss_buc_independent_t(t_observed = 3, n = c(50, 55), alpha_prior = .05,
 
 The corrected plan calls for 1485 per group, a vivid illustration of how much
 publication bias and uncertainty can inflate the sample size needed for a
-dependable replication. Anderson et al. (2017) quoted 1482 for this example
-under the original grid-search method; as of BUCSS 2.0.0 the adjusted
-noncentrality parameter is found by direct root finding, which gives 1485.
+dependable replication. BUCSS 1.x reported 1482 for this example under its grid
+search; as of BUCSS 2.0.0 the adjusted noncentrality parameter is found by
+direct root finding, which gives 1485.
+
+## When the Prior Result Is Not Enough
+
+The correction can also decline to plan. The prior study of the first example
+supports assurance up to about .90, the value its printed footer reports; ask
+for .95 and the function stops rather than returning a meaningless number, and
+its message says how far to step back:
+
+```{r, error = TRUE}
+ss_buc_independent_t(t_observed = 3, n = 20, assurance = .95)
+```
+
+`vignette("understanding-assurance", package = "BUCSS")` explains where that
+ceiling comes from and draws it.
 
 ## The Function Family
 
-BUCSS covers a range of designs, one function per analysis. Each summarizes the
+BUCSS covers eighteen designs, one function per analysis. Each summarizes the
 prior study with a single test statistic plus the design.
 
 | Function | Analysis | Prior statistic |
 |----------|----------|-----------------|
+| `ss_buc_one_sample_t` | one-sample *t* test | `t_observed` |
 | `ss_buc_independent_t` (alias `ss_buc_smd`) | independent *t* test / standardized mean difference | `t_observed` |
 | `ss_buc_paired_t` (alias `ss_buc_smd_paired`) | dependent (paired) *t* test | `t_observed` |
+| `ss_buc_welch_t` | Welch (unequal variance) *t* test | `t_observed` |
 | `ss_buc_one_way_anova` | one-way between-subjects ANOVA | `F_observed` |
 | `ss_buc_factorial_anova` | two-way between-subjects ANOVA | `F_observed` |
 | `ss_buc_factorial_anova_general` | between-subjects ANOVA, any factors or contrast | `F_observed` |
-| `ss_buc_rm_anova` | within-subjects ANOVA (one or two-way) | `F_observed` |
+| `ss_buc_ancova` | analysis of covariance | `F_observed` |
+| `ss_buc_rm_anova` | within-subjects ANOVA (one-way or two-way) | `F_observed` |
 | `ss_buc_rm_anova_general` | within-subjects ANOVA, any factors | `F_observed` |
 | `ss_buc_mixed_anova` | split-plot (mixed) ANOVA | `F_observed` |
 | `ss_buc_mixed_anova_general` | split-plot ANOVA, any factors | `F_observed` |
+| `ss_buc_correlation` | Pearson correlation | `r_observed` (or `t_observed`) |
 | `ss_buc_reg_coef` | single regression coefficient | `t_observed` |
 | `ss_buc_R2` | omnibus model R-squared | `F_observed` |
 | `ss_buc_reg_joint` | joint test of a subset of predictors | `F_observed` |
+| `ss_buc_manova` | two-group multivariate comparison (Hotelling *T* squared) | `F_observed` (or `T2_observed`) |
+| `ss_buc_chisq_diff` | nested model chi square difference test | `chisq_observed` |
+
+Two further functions take a finished plan from any of these planners:
+
+| Function | What it does |
+|----------|--------------|
+| `ss_buc_sensitivity()` | audits the plan by simulation: from a true effect you name, how often a plan built this way reaches the target power |
+| `plot()` | draws the plan's assurance ceiling: the corrected noncentrality parameter and the sample size as assurance rises toward the largest value the prior result supports |
 
 See `vignette("worked-examples", package = "BUCSS")` for one worked example of
-each, `vignette("understanding-assurance", package = "BUCSS")` for how the
-`assurance` and `alpha_prior` settings shape the correction,
+each planner, `vignette("understanding-assurance", package = "BUCSS")` for how
+the `assurance` and `alpha_prior` settings shape the correction,
 `vignette("reading-output", package = "BUCSS")` for the print, `tidy()`, and
-`glance()` views of the result, and
+`glance()` views of the result,
+`vignette("correlation", package = "BUCSS")` for why a correlation study needs
+its own planner and how `ss_buc_sensitivity()` audits a plan, and
 `vignette("planning-replications", package = "BUCSS")` for a worked
 demonstration of why a literature of underpowered studies misleads and how the
 correction repairs the replication sample size.
