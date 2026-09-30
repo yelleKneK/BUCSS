@@ -32,15 +32,22 @@ from a distribution truncated at the publication threshold (Taylor & Muller,
 1996), and returns the total sample size the replication needs.
 
 ```{r}
-ss_buc_correlation(r_observed = .35, N = 100, alpha_prior = .05,
-                   alpha_planned = .05, assurance = .80, desired_power = .80)
+first_plan <- ss_buc_correlation(r_observed = .35, N = 100, alpha_prior = .05,
+                                 alpha_planned = .05, assurance = .80,
+                                 desired_power = .80)
+first_plan
 ```
 
-The returned `necessary_N` is the total sample size; `ncp_adjusted` is the
-corrected noncentrality parameter, from which the corrected correlation is
-recoverable as `sqrt(ncp / (ncp + N))`. For the meaning of `assurance` and
-`alpha_prior`, and how each moves the recommended sample size, see
-`vignette("understanding-assurance", package = "BUCSS")`. Briefly, raising
+The returned `necessary_N` is the total sample size and `ncp_adjusted` the
+bias and uncertainty adjusted noncentrality parameter. `rho_planning` is the
+planning effect size, the correlation the plan is built on,
+`sqrt(ncp_adjusted / (ncp_adjusted + N))` with the prior study's *N*: here
+`r apa(row_value(first_plan, "rho_planning"))`, against the published .35. A
+study of `r row_value(first_plan, "necessary_N")` participants has exactly
+the returned `actual_power` when the population correlation is
+`r apa(row_value(first_plan, "rho_planning"))`. For the meaning of
+`assurance` and `alpha_prior`, and how each moves the recommended sample size,
+see `vignette("understanding-assurance", package = "BUCSS")`. Briefly, raising
 assurance buys protection against an unlucky prior estimate at the cost of a
 larger study:
 
@@ -57,23 +64,26 @@ data.frame(assurance = assurances, necessary_N = sizes)
 
 The test of whether a correlation differs from zero is arithmetically the test
 of the slope in a simple regression, so it is tempting to plan a correlation
-study with the single-coefficient regression planner. Doing so gives a slightly
-different, and slightly too small, answer:
+study with the single-coefficient regression planner, treating the predictor
+as fixed. Doing so gives a slightly different, and slightly too small, answer:
 
 ```{r}
 t_equivalent <- .35 * sqrt(98 / (1 - .35^2))
 by_correlation <- ss_buc_correlation(t_observed = t_equivalent, N = 100)
-by_regression  <- ss_buc_reg_coef(t_observed = t_equivalent, N = 100, p = 1)
+by_regression  <- ss_buc_reg_coef(t_observed = t_equivalent, N = 100, p = 1,
+                                  random_predictors = FALSE)
 c(correlation = by_correlation$value[by_correlation$term == "necessary_N"],
   regression  = by_regression$value[by_regression$term == "necessary_N"])
 ```
 
-The gap is small here, three participants, but it is systematic (only very
-near the assurance ceiling does it reverse, and then slightly), and the reason
+The gap is small here, three participants, but it is systematic (only near
+the assurance ceiling does it reverse, and then by a few percent, which can be
+hundreds of participants because plans there are very large), and the reason
 is worth understanding because it decides which planner is correct for your
 design.
 
-The regression planner is exact when the predictor is **fixed by design**: the
+The regression planner, with `random_predictors = FALSE`, is exact when the
+predictor is **fixed by design**: the
 researcher chooses the values of the predictor, as in an experiment with
 assigned doses. A correlation study is different. It **samples both
 variables**, and the sampled spread of the predictor is itself random from
@@ -82,7 +92,9 @@ statistic is a noncentral *F*, but its noncentrality parameter rises and falls
 with that spread, which follows a chi square distribution on *N* - 1 degrees of
 freedom. The distribution that actually governs the statistic is therefore a
 mixture of noncentral *F* distributions, not a single one, and a mixture is
-more spread out than its center. Planning as though the statistic were a plain
+more spread out than its center. The two frames give the same estimates, and
+the same distribution when there is no effect, but different power when there
+is one (Sampson, 1974; Gatsonis & Sampson, 1989; Kelley & Maxwell, 2003). Planning as though the statistic were a plain
 noncentral *F* overstates the planned study's power by roughly 1/*n* for a
 plan of *n* participants: about .01 at *n* = 100, .02 at 50, .05 at 20, and .10
 at 10 (for the regression plan of 119 above, about .009). It therefore returns
@@ -98,9 +110,10 @@ simple:
 * If both variables are sampled, as in an observational correlation study, use
   `ss_buc_correlation()`.
 * If the predictor is fixed by the design, the effect is a regression slope,
-  and `ss_buc_reg_coef()` with `p = 1` is the planner for it. The multiple
-  regression planners make the same fixed-predictor assumption for every
-  predictor; their help pages give its cost when the predictors are sampled.
+  and `ss_buc_reg_coef()` with `p = 1` and `random_predictors = FALSE` is the
+  planner for it. With `random_predictors = TRUE` the same call returns exactly
+  what `ss_buc_correlation()` returns, and the multiple regression planners use
+  the same mixture for several sampled predictors.
 
 You may supply the prior result either as the correlation `r_observed` or as
 its *t* statistic `t_observed`; the two are equivalent.
@@ -231,6 +244,18 @@ Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample-size planning for
 more accurate statistical power: A method adjusting sample effect sizes for
 publication bias and uncertainty. *Psychological Science, 28*, 1547--1562.
 https://doi.org/10.1177/0956797617723724
+
+Gatsonis, C., & Sampson, A. R. (1989). Multiple correlation: Exact power and
+sample size calculations. *Psychological Bulletin, 106*, 516--524.
+https://doi.org/10.1037/0033-2909.106.3.516
+
+Kelley, K., & Maxwell, S. E. (2003). Sample size for multiple regression:
+Obtaining regression coefficients that are accurate, not simply significant.
+*Psychological Methods, 8*, 305--321. https://doi.org/10.1037/1082-989X.8.3.305
+
+Sampson, A. R. (1974). A tale of two regressions. *Journal of the American
+Statistical Association, 69*, 682--689.
+https://doi.org/10.1080/01621459.1974.10480189
 
 Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and sample
 size calculation due to estimating noncentrality. *Communications in

@@ -141,8 +141,10 @@ ss_buc_mixed_anova(F_observed = 5, N = 60, levels_between = 2, levels_within = 3
 
 The general form takes the numerator degrees of freedom and the number of
 between-subjects groups directly. The effect is one of `between_only`,
-`within_only`, or `between_within`; supply `df_num_within` when the effect
-involves a within-subjects component. The returned sample size is per group.
+`within_only`, or `between_within`; supply `df_num_within`, the numerator
+degrees of freedom of the within-subjects component, only when
+`effect = "between_within"` (it is required there, and ignored with a warning
+otherwise). The returned sample size is per group.
 
 ```{r}
 ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2,
@@ -150,6 +152,55 @@ ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2,
                            alpha_prior = .05, alpha_planned = .05,
                            assurance = .80, desired_power = .80)
 ```
+
+## Departures From Sphericity
+
+The within-subjects and split-plot planners assume sphericity by default, as
+the uncorrected within-subjects test does, and echo that assumption as an
+`epsilon` row of 1. When a paper reports a Greenhouse-Geisser (1959) or
+Huynh-Feldt (1976) correction instead, it shows fractional degrees of freedom:
+a three-level within-subjects factor measured on 30 subjects might be reported
+as *F*(1.73, 50.2) = 6.50. The uncorrected degrees of freedom are 2 and 58, so
+the correction is `epsilon = 1.73/2`, about .865. The denominator agrees
+(50.2/58 is also about .865), and 50.2/1.73 = 29.0 is one less than the 30
+subjects, which confirms how many subjects the analysis used.
+
+```{r}
+ss_buc_rm_anova(F_observed = 6.5, N = 30, levels_A = 3, epsilon = 1.73 / 2)
+```
+
+Ignoring the correction plans 92 subjects rather than 162:
+
+```{r}
+ss_buc_rm_anova(F_observed = 6.5, N = 30, levels_A = 3)
+```
+
+The difference has two sources. The same *F* on fewer degrees of freedom is
+weaker evidence: its *p* value rises from .0028 to .0045, the largest
+supportable assurance falls from .94 to .90, and the correction for
+uncertainty at an `assurance` of .80 takes correspondingly more off. And the
+planned study, analyzed with the same correction, has less power at any size.
+Both follow the approximation of Muller and Barton (1989), in which both
+degrees of freedom and the noncentrality parameter are multiplied by
+`epsilon`; `ncp_adjusted` stays on the sphericity scale, so the two plans'
+parameters are comparable. The plan is sensitive to `epsilon`, so it is worth
+seeing across the values you find plausible:
+
+```{r}
+eps <- c(1, .95, .9, .85, .8, .75)
+sapply(eps, function(e) {
+  res <- ss_buc_rm_anova(F_observed = 6.5, N = 30, levels_A = 3, epsilon = e)
+  res$value[res$term == "necessary_N"]
+})
+```
+
+One `epsilon` describes both studies: it is a property of the covariance of
+the repeated measures, which the planned study shares with the prior one.
+When a paper reports both corrections, use the Greenhouse-Geisser value. The
+correction is an approximation, and the help page for `ss_buc_rm_anova()`
+reports how well it holds up in simulation. In a split-plot design it applies
+to the within-subjects effect and the interaction, not to the between-subjects
+effect, whose test is on subject means.
 
 ## Multiple Regression
 
@@ -183,17 +234,35 @@ ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2,
                  desired_power = .80)
 ```
 
-All three regression planners treat the predictors as fixed by design, as in
-an experiment in which the researcher sets their values. When the predictors are
-sampled along with the outcome, as in most observational research, the test
-statistic is more dispersed than that model assumes, and the reported
-`actual_power` overstates the planned study's power by an amount that shrinks as
-1/*n* for a plan of *n* participants and grows with the number of predictors
-(roughly 1/*n* with one predictor and 4/*n* with eight: at most about .04 at
-*n* = 100, and less than .01
-for each of the three plans above). For a single sampled predictor,
-`ss_buc_correlation()`, described in the next section, uses the exact
-distribution.
+All three regression planners take `random_predictors`. By default
+(`random_predictors = FALSE`) they treat the predictors as fixed by design, as
+in an experiment in which the researcher sets their values, the frame of BUCSS
+1.x. When the predictors are sampled along with the outcome, as in most
+observational research (Kelley & Maxwell, 2003), pass
+`random_predictors = TRUE`: the test statistic's noncentrality parameter then
+rises and falls with the sampled spread of the tested predictors, and the
+planners use the exact distribution that follows (Sampson, 1974; Gatsonis &
+Sampson, 1989).
+
+```{r}
+ss_buc_R2(F_observed = 5, N = 150, p = 4, random_predictors = TRUE)
+```
+
+Planned as though they were fixed, sampled predictors make the reported
+`actual_power` overstate the planned study's power by an amount that shrinks
+as 1/*n* for a plan of *n* participants and grows with the number of
+predictors left untested (roughly 1/*n* with one predictor and 4/*n* for a
+coefficient among eight: about .04 at *n* = 100, and less than .01 for each of
+the three plans above). From prior studies as large as these the two frames
+differ little: with `random_predictors = TRUE` the three plans above are 623,
+239, and 3,898 rather than 624, 234, and 3,960, the joint test's differing
+most because it is requested close to its assurance ceiling of .84. From a
+small prior study, with predictors left untested and a plan several times the
+prior *N*, the random-predictor plan can be as much as a quarter smaller (the
+help pages of `ss_buc_reg_coef()` and `ss_buc_reg_joint()` describe the
+pattern). With one predictor,
+`ss_buc_reg_coef(p = 1, random_predictors = TRUE)` returns exactly what
+`ss_buc_correlation()`, described in the next section, returns.
 
 ## Correlation
 
@@ -213,18 +282,21 @@ then the statistic's noncentrality parameter is itself random, proportional to
 the sampled spread of the predictor. The resulting distribution is more
 dispersed, and planning as though it were not overstates the power. The
 planner uses the exact distribution for sampled variables, so it asks for a
-few more participants than the regression planner does:
+few more participants than the regression planner does when that planner
+treats the predictor as fixed:
 
 ```{r}
 t_equivalent <- .35 * sqrt(98 / (1 - .35^2))
 by_correlation <- ss_buc_correlation(t_observed = t_equivalent, N = 100)
-by_regression  <- ss_buc_reg_coef(t_observed = t_equivalent, N = 100, p = 1)
+by_regression  <- ss_buc_reg_coef(t_observed = t_equivalent, N = 100, p = 1,
+                                  random_predictors = FALSE)
 c(correlation = by_correlation$value[by_correlation$term == "necessary_N"],
   regression  = by_regression$value[by_regression$term == "necessary_N"])
 ```
 
 If your predictor really is fixed by design, the analysis is a regression
-slope, and `ss_buc_reg_coef()` with `p = 1` is the planner for it.
+slope, and `ss_buc_reg_coef()` with `p = 1` and `random_predictors = FALSE` is
+the planner for it.
 `vignette("correlation", package = "BUCSS")` develops the comparison.
 
 ## Analysis of Covariance
@@ -306,10 +378,11 @@ ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1.5,
 
 This planner treats the Welch statistic as noncentral *t* on the
 Welch-Satterthwaite degrees of freedom, the usual approximation in power
-analysis for this test. It is accurate once each group has about ten
-participants and overstates the real test's power below that, so the planner
-never returns fewer than 10 per group; when the target power is reached with
-fewer, it returns 10.
+analysis for this test. A minimum planned sample size of 10 per group is
+imposed because of estimation accuracy issues at smaller sample sizes: with
+fewer per group the approximation overstates the real test's power, while
+from 10 per group it is within .006 of it. When the target power is reached
+with fewer than 10 per group, the planner returns 10.
 
 Only the ratio enters the computation, but a paper usually reports the group
 standard deviations or variances rather than their ratio, so those may be
@@ -364,3 +437,27 @@ Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample-size planning for
 more accurate statistical power: A method adjusting sample effect sizes for
 publication bias and uncertainty. *Psychological Science, 28*, 1547--1562.
 https://doi.org/10.1177/0956797617723724
+
+Gatsonis, C., & Sampson, A. R. (1989). Multiple correlation: Exact power and
+sample size calculations. *Psychological Bulletin, 106*, 516--524.
+https://doi.org/10.1037/0033-2909.106.3.516
+
+Greenhouse, S. W., & Geisser, S. (1959). On methods in the analysis of profile
+data. *Psychometrika, 24*, 95--112. https://doi.org/10.1007/BF02289823
+
+Huynh, H., & Feldt, L. S. (1976). Estimation of the Box correction for degrees
+of freedom from sample data in randomized block and split-plot designs.
+*Journal of Educational Statistics, 1*, 69--82.
+https://doi.org/10.3102/10769986001001069
+
+Kelley, K., & Maxwell, S. E. (2003). Sample size for multiple regression:
+Obtaining regression coefficients that are accurate, not simply significant.
+*Psychological Methods, 8*, 305--321. https://doi.org/10.1037/1082-989X.8.3.305
+
+Muller, K. E., & Barton, C. N. (1989). Approximate power for repeated-measures
+ANOVA lacking sphericity. *Journal of the American Statistical Association,
+84*, 549--555. https://doi.org/10.1080/01621459.1989.10478802
+
+Sampson, A. R. (1974). A tale of two regressions. *Journal of the American
+Statistical Association, 69*, 682--689.
+https://doi.org/10.1080/01621459.1974.10480189

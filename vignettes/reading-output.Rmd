@@ -32,10 +32,12 @@ result <- ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2,
 Printing the object shows the aligned `term`/`value` table, in the **DMAR**
 style: the design results first (the necessary sample size, named for its
 unit; the implied total sample size for per-group and per-cell designs; the
-achieved power at the returned size; and the bias and uncertainty adjusted
-noncentrality parameter), then the rows echoing the planning inputs you
-supplied. Footer lines close with the design, the unit the sample size is
-counted in, and the largest assurance this prior result can support.
+achieved power at the returned size; the bias and uncertainty adjusted
+noncentrality parameter; and the planning effect size, the effect size the
+plan is built on, in the design's usual metric), then the rows echoing the
+planning inputs you supplied. Footer lines close with the design, for the regression planners the
+predictor frame (`random_predictors`), the unit the sample size is counted in,
+and the largest assurance this prior result can support.
 
 ```{r}
 result
@@ -57,8 +59,9 @@ options(old)  # restore the previous setting
 The object is an ordinary `data.frame` with a character `term` column and a
 numeric `value` column, so you can index it like any data frame. The design
 results come first (here `necessary_n_per_cell`, `total_N`, `actual_power`,
-and `ncp_adjusted`; the size row is `necessary_n_per_group` or `necessary_N`
-in other designs), followed by one row per planning input, so the assumptions
+`ncp_adjusted`, and `f_planning`; the size row is `necessary_n_per_group` or
+`necessary_N` in other designs, and the planning effect size row is named for
+its metric), followed by one row per planning input, so the assumptions
 travel with the result through subsetting and `write.csv()`.
 
 ```{r}
@@ -104,12 +107,93 @@ printed display rounds. And for a manuscript's method section,
 planning_sentence(result)
 ```
 
+## The Planning Effect Size
+
+The noncentrality parameter is the natural scale for the correction, but it is
+not the scale a paper reports an effect on, and it grows with the sample size.
+So every plan also carries its **planning effect size**: the effect size the
+plan is built on, which is `ncp_adjusted` restated in the design's usual
+metric. It sits directly after `ncp_adjusted`, and its name says which metric
+it is:
+
+| Planner | Row | Metric |
+|---------|-----|--------|
+| `ss_buc_independent_t` (`ss_buc_smd`) | `smd_planning` | standardized mean difference |
+| `ss_buc_welch_t` | `smd_planning` | standardized mean difference, standardized by the root mean square of the two standard deviations |
+| `ss_buc_paired_t` (`ss_buc_smd_paired`) | `dz_planning` | standardized mean of the paired differences |
+| `ss_buc_one_sample_t` | `std_mean_planning` | standardized mean |
+| the eight ANOVA and ANCOVA planners | `f_planning` | Cohen's *f* for the effect, relative to its own error term |
+| `ss_buc_reg_coef`, `ss_buc_reg_joint` | `f2_planning` | Cohen's *f* squared |
+| `ss_buc_R2` | `R2_planning` | squared multiple correlation |
+| `ss_buc_correlation` | `rho_planning` | correlation |
+| `ss_buc_manova` | `D2_planning` | squared Mahalanobis distance |
+| `ss_buc_chisq_diff` | `rmsea_d_planning` | root mean square error of approximation of the difference test |
+
+For the example above, the published result was *F*(2, 114) = 5, whose sample
+Cohen's *f* is `sqrt(5 * 2/114)`, about `r format(signif(sqrt(10 / 114), 3))`.
+The plan is built on a much smaller effect:
+
+```{r}
+f_planning <- result$value[result$term == "f_planning"]
+f_planning
+f_planning^2 / (1 + f_planning^2)  # the same effect as a partial eta squared
+```
+
+"Built on" is meant literally. `actual_power` is the ordinary power of a study
+of the returned size when the population effect is the planning effect size,
+so any power calculator reproduces it from the effect alone. Here the planned
+study has `r result$value[result$term == "total_N"]` participants in 6 cells,
+and its test of the effect has 2 and
+`r result$value[result$term == "total_N"] - 6` degrees of freedom:
+
+```{r}
+total_N <- result$value[result$term == "total_N"]
+1 - pf(qf(.95, 2, total_N - 6), 2, total_N - 6, ncp = total_N * f_planning^2)
+result$value[result$term == "actual_power"]
+```
+
+A few things to know when you carry the planning effect size elsewhere:
+
+* **It is the value the plan is built on, not a better estimate of the
+  effect.** With `alpha_prior = 1` and `assurance = .5` it is a median
+  unbiased estimate; at a higher assurance it is deliberately smaller, an
+  effect the plan must still be powered for, so report it as the planning
+  effect size rather than as the size of the effect.
+* **Within-subjects and split-plot designs.** There `f_planning` is relative
+  to the effect's own error term, which already reflects the correlation among
+  the repeated measures. Power functions that take an *f* standardized by the
+  raw scores together with a correlation (such as **DMAR**'s
+  `ss_power_rm_anova()` and `ss_power_split_plot_anova()`) expect a different
+  number; each planner's help page gives the conversion. With `epsilon` below
+  1 the planning effect size stays on the sphericity scale, like
+  `ncp_adjusted`, and `actual_power` is the power under the same sphericity
+  correction.
+* **Regression with sampled predictors.** With `random_predictors = TRUE`,
+  `f2_planning` and `R2_planning` are the population values when the
+  predictors are sampled along with the outcome, and `actual_power` is the
+  power in that frame.
+* **An unbalanced prior study.** When the planner reduces the prior study to
+  a balanced design in two ways and reports the smaller noncentrality
+  parameter, the planning effect size belongs to that same balanced design. An
+  ordinary power analysis at it can then return a slightly smaller sample size
+  than the plan, never a larger one, because the plan is the larger of the two
+  designs' requirements.
+
+`planning_sentence()` names the planning effect size in its second sentence,
+as shown in the previous section.
+
 ## What Lives Where
 
 * Every planning result and every echoed input is a row of the `value`
   column: the design results (the size row named for its unit, `total_N`,
-  `actual_power`, `ncp_adjusted`) and the planning inputs. Rows survive any
-  further arithmetic, subsetting, or export you do on the object.
+  `actual_power`, `ncp_adjusted`, and the planning effect size) and the
+  planning inputs. Rows survive any
+  further arithmetic, subsetting, or export you do on the object. A switch
+  such as the regression planners' `random_predictors` is echoed as 1 (`TRUE`)
+  or 0 (`FALSE`), since the value column is numeric, and the print method's
+  footer names it in words. The within-subjects and split-plot planners echo
+  `epsilon`, the sphericity parameter the plan assumed (1 under sphericity),
+  for every effect it applies to.
 * Everything else travels on attributes: the design label, the effect tested,
   and the unit, which are text, and the assurance ceiling and the planned
   test's degrees of freedom, which are numbers describing the prior result and
