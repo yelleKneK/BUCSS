@@ -57,12 +57,18 @@
 #'   power, by about 1/\emph{n} to 1.4/\emph{n} for a plan of \emph{n}
 #'   participants when every predictor is tested, and more the more
 #'   predictors are left untested: 2/\emph{n} for two of four and
-#'   3.8/\emph{n} for two of eight (at \emph{n} = 100). The correction's
-#'   coverage then departs from the requested \code{assurance} (at an
-#'   \code{assurance} of .80 and prior studies with power .3 to .8 at the true
-#'   effect, about .80 to .83 for two or three of five or six predictors and
-#'   prior studies of 40 to 60, the higher values for better powered prior
-#'   studies).
+#'   3.8/\emph{n} for two of eight (at \emph{n} = 100), so the assurance the
+#'   plans deliver can fall short of the requested \code{assurance}. The
+#'   delivered assurance is what \code{assurance} promises: the proportion of
+#'   plans, each made from its own published prior study, whose power at the
+#'   true effect reaches \code{desired_power}, counting a refusal to plan as
+#'   meeting the target. In simulations with multivariate normal predictors,
+#'   an \code{assurance} of .80, and prior studies of 40 to 100 participants
+#'   with power .3 to .8 at the true effect, testing two of four or five
+#'   predictors or three of six, the fixed frame delivered about .76 to .81,
+#'   the lower values from smaller, better powered prior studies;
+#'   \code{random_predictors = TRUE} delivered .79 to .81 in the same
+#'   configurations.
 #'
 #'   Which frame plans the larger study depends on the untested predictors
 #'   and on how far the plan outgrows the prior study, because the fixed
@@ -73,10 +79,14 @@
 #'   a few percent smaller). With predictors left untested the two plans are
 #'   within a few participants, the random-predictor plan usually the larger,
 #'   when the plan is no more than about twice the prior \emph{N}; beyond
-#'   that the random-predictor plan is usually smaller, by up to about a
-#'   quarter from prior studies of 20 or 30 (518 rather than 600 participants
-#'   for \emph{F} = 6 from a prior study of 30 testing two of six predictors)
-#'   and by at most about 5 percent from prior studies of 100 or more. The
+#'   that the random-predictor plan is usually smaller, and the more the plan
+#'   outgrows the prior study, the closer the ratio of the two plans comes to
+#'   (\emph{N} - 1 - (\emph{p} - \code{p_joint}))/\emph{N}, so the
+#'   random-predictor plan is smaller by at most about (1 + \emph{p} -
+#'   \code{p_joint})/\emph{N}: 518 rather than 600 participants for \emph{F} =
+#'   6 from a prior study of 30 testing two of six predictors, where the limit
+#'   is about 17 percent, and, with two of eight predictors tested, a limit of
+#'   35 percent from a prior study of 20 and 7 percent from 100. The
 #'   largest assurance a prior result can support is the same in both frames,
 #'   because at a zero effect both are the central \emph{F} distribution. With
 #'   \code{p_joint = p} this function returns what \code{\link{ss_buc_R2}}

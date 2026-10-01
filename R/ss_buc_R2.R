@@ -55,12 +55,21 @@
 #'   Treating sampled predictors as fixed overstates the planned study's
 #'   power, by about 1/\emph{n} for a plan of \emph{n} participants with one
 #'   predictor, 1.2/\emph{n} with three, and 1.4/\emph{n} with eight to ten
-#'   (.010 to .014 at \emph{n} = 100, and .05 to .06 at \emph{n} = 20), and
-#'   the correction then delivers a little less than the requested
-#'   \code{assurance} (at an \code{assurance} of .80, about .79 for prior
-#'   studies of 30 to 40, and on target from about 150). The random-predictor
-#'   plan is usually a few participants larger; close to the assurance
-#'   ceiling, where plans run to thousands, it can be a few percent smaller.
+#'   (.010 to .014 at \emph{n} = 100, and .05 to .06 at \emph{n} = 20), so
+#'   the assurance the plans deliver falls a little short of the requested
+#'   \code{assurance}. The delivered assurance is what \code{assurance}
+#'   promises: the proportion of plans, each made from its own published
+#'   prior study, whose power at the true effect reaches
+#'   \code{desired_power}, counting a refusal to plan as meeting the target.
+#'   In simulations with three multivariate normal predictors, an
+#'   \code{assurance} of .80, and prior studies with power .3 to .8 at the
+#'   true effect, the fixed frame delivered about .76 to .80 from prior
+#'   studies of 30 to 40, the lower values from better powered prior studies,
+#'   and .79 to .80 from prior studies of 100 to 300;
+#'   \code{random_predictors = TRUE} delivered .79 to .82 in the same
+#'   configurations. The random-predictor plan is usually a few participants
+#'   larger; close to the assurance ceiling, where plans run to thousands, it
+#'   can be a few percent smaller.
 #'   The largest assurance a prior result can support is the same in both
 #'   frames, because at a zero effect both are the central \emph{F}
 #'   distribution. With one predictor and \code{random_predictors = TRUE} this

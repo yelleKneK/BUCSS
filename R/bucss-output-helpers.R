@@ -43,6 +43,16 @@ knit_print.bucss_plan <- function(x, ...) {
   sub("\\.?0+$", "", sprintf(paste0("%.", d, "f"), round(100 * p, d)))
 }
 
+# The sphericity parameter as the sentence writes it: three significant
+# figures and no leading zero (.865), with as many more figures as it takes
+# for a value below 1 never to print as 1 (.9996 -> ".9996"), the rule
+# .format_pct() applies to proportions. Display only.
+.format_epsilon <- function(e) {
+  d <- 3L
+  while (e < 1 && signif(e, d) >= 1 && d < 15L) d <- d + 1L
+  sub("^0", "", format(signif(e, d), digits = d, scientific = FALSE))
+}
+
 # An alpha level as APA writes it: no leading zero, and two decimals when two
 # suffice (.1 -> ".10", .05 -> ".05", .025 -> ".025").
 .format_alpha <- function(a) {
@@ -145,7 +155,7 @@ planning_sentence <- function(x) {
   departure <- length(epsilon) == 1L && epsilon < 1
   sphericity <- if (departure)
     paste0(", allowing for a departure from sphericity (epsilon = ",
-           sub("^0", "", format(signif(epsilon, 3))), ")")
+           .format_epsilon(epsilon), ")")
   # The second sentence names the planning effect size, the effect size the
   # plan is built on, in the design's usual metric. Under a sphericity
   # correction it stays on the sphericity scale, as ncp_adjusted does.

@@ -336,11 +336,11 @@ previously handle.
   help pages report its accuracy in simulations of raw data: at an
   `assurance` of .80, plans reached the target power in .70 to .80 of
   replications for trend-like effects and in .92 to .99 for effects in the
-  least variable contrasts, against .26 to .64 when the departure was
-  ignored. The default, `epsilon = 1`, reproduces the plans that assume
-  sphericity exactly. Every plan for an effect with a within-subjects
-  component echoes `epsilon` as a row (1 under sphericity), and
-  `ss_buc_sensitivity()`, `plot()`, and `planning_sentence()` follow it.
+  least variable contrasts, against .26 to .64 and .70 to .87, respectively,
+  when the departure was ignored. The default, `epsilon = 1`, reproduces the
+  plans that assume sphericity exactly. Every plan for an effect with a
+  within-subjects component echoes `epsilon` as a row (1 under sphericity),
+  and `ss_buc_sensitivity()`, `plot()`, and `planning_sentence()` follow it.
 
 * Every plan reports its planning effect size, the effect size the plan is
   built on: `ncp_adjusted` restated in the design's usual metric, as a row
@@ -480,12 +480,15 @@ previously handle.
   returned has changed.
 
 * An `assurance` or `power` of exactly 0 or 1 (after the percentage coercion,
-  so also `power = 100`) is now rejected with a clear error. In 1.x these
-  endpoint values were accepted and silently returned meaningless results: an
-  `assurance` of 0 has no solution, so the reported noncentrality parameter was
-  an artifact of the internal search bound, and a target power of exactly 1 is
-  unattainable, so the returned sample size was where the computed power
-  crossed 1 by floating-point error. The documented rule that an `assurance` or
+  so also `power = 100`) is now rejected with a clear error. In 1.x an
+  `assurance` of 0 and a `power` of 0 or 100 percent were accepted and
+  silently returned meaningless results: an `assurance` of 0 has no solution,
+  so the reported noncentrality parameter was an artifact of the internal
+  search bound, and a target power of 100 percent is unattainable, so the
+  returned sample size was where the computed power crossed 1 by
+  floating-point error. An `assurance` of 100 percent (`assurance = 100`)
+  already stopped in 1.x, but with the misleading message that the corrected
+  noncentrality parameter was zero. The documented rule that an `assurance` or
   `power` of exactly 1 is read as 1 percent is unchanged.
 
 * When the two prior group sizes given to `ss_buc_independent_t()` (or

@@ -153,22 +153,30 @@
 #'   followed the dominant pattern of variation (a linear trend over
 #'   autocorrelated occasions), and in .92 to .99 when it lay in the least
 #'   variable contrasts. Ignoring the departure (\code{epsilon = 1}) reached it
-#'   in .26 to .64. The shortfall does not shrink as the prior study grows, and
-#'   is not larger near the lower bound of \eqn{\epsilon}. The planned study's
-#'   power is approximated the same way, and for the Greenhouse-Geisser test,
-#'   whose estimate of \eqn{\epsilon} is biased downward, the real power of a
-#'   plan of 10 to 30 subjects can be up to about .08 below \code{actual_power}
-#'   for a trend-like effect; a planned study analyzed with the Huynh-Feldt
-#'   correction tracks \code{actual_power} more closely. Even when sphericity
-#'   holds and \code{epsilon = 1}, a planned study analyzed with the
-#'   Greenhouse-Geisser correction anyway, as some software does by default,
-#'   has up to about .08 less power than \code{actual_power}, the power of the
-#'   uncorrected test, for plans of 10 to 30 subjects (the Huynh-Feldt test is
-#'   within about .02). When a paper reports both corrections, supply the
-#'   Greenhouse-Geisser one: the Huynh-Feldt estimate is larger, and planning
-#'   from it attained .03 to .08 less. When sphericity in fact holds but the
-#'   prior study reported a Greenhouse-Geisser correction anyway, supplying it
-#'   is conservative, with a median plan 7 to 34 percent larger.
+#'   in .26 to .64 of replications for the trend-like effects and in .70 to .87
+#'   for the effects in the least variable contrasts. The shortfall does not
+#'   shrink as the prior study grows, and is not larger near the lower bound of
+#'   \eqn{\epsilon}. The planned study's power is approximated the same way.
+#'   Separate simulations of planned one-way studies of 10 to 30 subjects, with
+#'   4, 6, or 8 levels, measured the real power of the Greenhouse-Geisser test,
+#'   whose estimate of \eqn{\epsilon} is biased downward. For a trend-like
+#'   effect (a linear trend over occasions with first-order autoregressive
+#'   correlations of .3 to .9, \eqn{\epsilon} from .50 to .94) it fell below
+#'   \code{actual_power} by about .04 to .08 with four levels and .06 to .13
+#'   with six, the larger shortfalls for the smaller plans; a planned study
+#'   analyzed with the Huynh-Feldt correction tracks \code{actual_power} more
+#'   closely. Even when sphericity holds and \code{epsilon = 1}, a planned
+#'   study analyzed with the Greenhouse-Geisser correction anyway, as some
+#'   software does by default, has less power than \code{actual_power}, the
+#'   power of the uncorrected test: about .02 to .06 less with four levels, .03
+#'   to .11 with six, and .04 to .15 with eight, for plans of 30 down to 10
+#'   subjects (the Huynh-Feldt test is within about .02). When a paper reports
+#'   both corrections, supply the Greenhouse-Geisser one: the Huynh-Feldt
+#'   estimate is larger, and planning from it attained about .02 to .09 less,
+#'   the larger differences from the smaller prior studies. When sphericity in
+#'   fact holds but the prior study reported a Greenhouse-Geisser correction
+#'   anyway, supplying it is conservative, with a median plan 7 to 34 percent
+#'   larger.
 #'
 #'   \strong{The planning effect size and other power software.} Here
 #'   \code{f_planning} is Cohen's \emph{f} relative to the effect's own error

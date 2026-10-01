@@ -39,6 +39,7 @@ bibentry(
   journal = "Psychological Science",
   year    = "2017",
   volume  = "28",
+  number  = "11",
   pages   = "1547--1562",
   doi     = "10.1177/0956797617723724"
 )
@@ -79,6 +80,7 @@ bibentry(
   journal = "Psychological Methods",
   year    = "2024",
   volume  = "29",
+  number  = "5",
   pages   = "844--867",
   doi     = "10.1037/met0000520"
 )

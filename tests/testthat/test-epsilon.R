@@ -203,6 +203,75 @@ test_that("epsilon is validated against the effect's own lower bound", {
   expect_identical(ss_buc_rm_anova(F_observed = 12, N = 30, levels_A = 2,
                                    epsilon = 1 - 1e-12),
                    ss_buc_rm_anova(F_observed = 12, N = 30, levels_A = 2))
+  # the one-df message fits every one-df effect, not only a two-level factor
+  expect_error(ss_buc_rm_anova_general(F_observed = 9, N = 30, df_numerator = 1,
+                                       epsilon = .9),
+               "(as for a two-level factor or a single contrast)", fixed = TRUE)
+})
+
+test_that("an epsilon a rounding error below 1 is read as exactly 1", {
+  # the departure test is epsilon < 1, so a value a rounding error below 1
+  # must become exactly 1 (the plan that assumes sphericity, bit for bit, with
+  # no departure claimed), just as a value a rounding error above 1 does
+  base <- ss_buc_rm_anova(F_observed = 9, N = 30, levels_A = 4)
+  near <- ss_buc_rm_anova(F_observed = 9, N = 30, levels_A = 4, epsilon = 1 - 1e-10)
+  expect_identical(near, base)
+  expect_identical(pick(near, "epsilon"), 1)
+  expect_identical(planning_sentence(near), planning_sentence(base))
+  expect_false(grepl("sphericity", planning_sentence(near), fixed = TRUE))
+  # a value genuinely below 1 is a departure, and the sentence never shows it
+  # as 1: it gets the figures it needs
+  r <- ss_buc_rm_anova(F_observed = 9, N = 30, levels_A = 4, epsilon = .9996)
+  expect_equal(pick(r, "epsilon"), .9996)
+  expect_match(planning_sentence(r),
+               "allowing for a departure from sphericity (epsilon = .9996).",
+               fixed = TRUE)
+  expect_false(grepl("(epsilon = 1)", planning_sentence(r), fixed = TRUE))
+  # the usual three figures are unchanged
+  expect_match(planning_sentence(ss_buc_rm_anova(F_observed = 9, N = 30, levels_A = 4,
+                                                 epsilon = 1.73 / 2)),
+               "(epsilon = .865)", fixed = TRUE)
+})
+
+test_that("an epsilon reported at the lower bound to three or four decimals plans", {
+  # the bound of a 4-level factor is 1/3; the error names it as about 0.3333,
+  # so that value, and a published .333, must be read as the bound itself
+  at_bound <- ss_buc_rm_anova(F_observed = 30, N = 30, levels_A = 4, epsilon = 1/3)
+  expect_identical(ss_buc_rm_anova(F_observed = 30, N = 30, levels_A = 4,
+                                   epsilon = .3333), at_bound)
+  expect_identical(ss_buc_rm_anova(F_observed = 30, N = 30, levels_A = 4,
+                                   epsilon = .333), at_bound)
+  expect_identical(pick(at_bound, "epsilon"), 1/3)
+  # the same holds for the split-plot interaction's own bound (1/(levels_within - 1))
+  sp <- ss_buc_mixed_anova(F_observed = 12, N = 60, levels_between = 2,
+                           levels_within = 4, effect = "interaction", epsilon = 1/3)
+  expect_identical(ss_buc_mixed_anova(F_observed = 12, N = 60, levels_between = 2,
+                                      levels_within = 4, effect = "interaction",
+                                      epsilon = .333), sp)
+  # beyond half a unit in the third decimal place it is still refused, and
+  # the value the message names is one the check accepts
+  err <- tryCatch(ss_buc_rm_anova(F_observed = 30, N = 30, levels_A = 4, epsilon = .3328),
+                  error = function(e) conditionMessage(e))
+  expect_match(err, "at least 1/3 (about 0.3333)", fixed = TRUE)
+  named <- as.numeric(sub(".*\\(about ([0-9.]+)\\).*", "\\1", err))
+  expect_identical(ss_buc_rm_anova(F_observed = 30, N = 30, levels_A = 4,
+                                   epsilon = named), at_bound)
+  for (k in 2:12) {
+    msg <- tryCatch(BUCSS:::.check_epsilon(1 / k - 1e-3, k), error = conditionMessage)
+    shown <- as.numeric(sub(".*\\(about ([0-9.]+)\\).*", "\\1", msg))
+    expect_identical(BUCSS:::.check_epsilon(shown, k), max(shown, 1 / k))
+  }
+  # the allowance never exceeds half the bound, so zero and negative values are
+  # refused however many degrees of freedom the effect has (with a fixed 5e-4
+  # they passed from 2,000 df on and were clamped to the bound)
+  for (k in c(1000, 2000, 3000)) {
+    expect_error(BUCSS:::.check_epsilon(0, k), paste0("at least 1/", k), fixed = TRUE)
+    expect_error(BUCSS:::.check_epsilon(-1e-4, k), paste0("at least 1/", k), fixed = TRUE)
+    expect_identical(BUCSS:::.check_epsilon(signif(1 / k, 4), k), 1 / k)
+  }
+  expect_error(ss_buc_rm_anova_general(F_observed = 30, N = 50, df_numerator = 3000,
+                                       epsilon = 0),
+               "at least 1/3000", fixed = TRUE)
 })
 
 test_that("the between-subjects effects ignore epsilon, with a warning", {

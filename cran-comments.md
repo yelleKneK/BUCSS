@@ -12,9 +12,12 @@ meaningless: degrees of freedom no design can have (`ss.power.ba.general`
 with a `df.denominator` above `N - cells` or a `df.numerator` above
 `cells - 1`, and the corresponding split-plot inputs to
 `ss.power.spa.general`), `ss.power.ba` or `ss.power.wa` asked for Factor B
-without `levels.B` (1.x silently returned the Factor A plan), an assurance or
-power of 0 or of 100 percent, and fractional or non-scalar counts. `NEWS.md`
-lists each.
+without `levels.B` (1.x silently returned the Factor A plan), an assurance of
+0 or a power of 0 or 100 percent, and fractional counts (1.x returned, for
+example, a sample size of 624.5). Two inputs 1.x already refused now get a
+message that names the problem: an assurance of 100 percent (1.x reported
+that the corrected noncentrality parameter was zero) and non-scalar counts
+(1.x stopped with an uninformative base R error). `NEWS.md` lists each.
 
 ## Why some results differ from 1.2.1
 
@@ -43,9 +46,10 @@ are fixed in 2.0.0.
 * New planners: `ss_buc_correlation`, `ss_buc_one_sample_t`, `ss_buc_ancova`,
   `ss_buc_manova`, `ss_buc_chisq_diff`, and `ss_buc_welch_t`, joining the
   twelve designs 1.2.1 covered.
-* Other new exported functions: `ss_buc_sensitivity` (a Monte Carlo audit of
-  a plan), a `plot` method, `planning_sentence`, and the re-exported `tidy()`
-  and `glance()`.
+* Other new exported functions: `ss_buc_smd` and `ss_buc_smd_paired`
+  (effect size aliases of the independent and paired *t* planners),
+  `ss_buc_sensitivity` (a Monte Carlo audit of a plan), a `plot` method,
+  `planning_sentence`, and the re-exported `tidy()` and `glance()`.
 * New arguments: `random_predictors` on `ss_buc_reg_coef`, `ss_buc_R2`, and
   `ss_buc_reg_joint` (predictors sampled rather than fixed by design), and
   `epsilon` on `ss_buc_rm_anova`, `ss_buc_rm_anova_general`,

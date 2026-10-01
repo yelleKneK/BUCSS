@@ -174,22 +174,31 @@
 # (whose numerator df is larger, but whose covariance is that of the
 # within-subjects contrasts, so a split-plot interaction with 4 groups and 3
 # occasions has df 6 and yet cannot go below 1/2). Box's (1954) lower bound
-# is 1/dim_within, and a one-dimensional effect (two levels) is always
-# spherical. A ratio of reported degrees of freedom can miss 1 or the bound by
-# a rounding error; within the tolerance it is read as the value it meant, so
-# 1 + 1e-12 gives exactly the plan that assumes sphericity.
+# is 1/dim_within, and a one-dimensional effect (a two-level factor or a
+# single contrast) is always spherical. A ratio of reported degrees of freedom
+# can miss 1 by a rounding error; within the tolerance it is read as exactly 1,
+# so 1 + 1e-12 and 1 - 1e-12 both give exactly the plan that assumes
+# sphericity. Below the lower bound the allowance is wider, half a unit in the
+# third decimal place, because the bound is usually a repeating decimal: an
+# estimate reported at the bound as .333 (or .3333) for 1/3 is read as the
+# bound, the value the error message below names. The allowance never exceeds
+# half the bound, so zero and negative values are refused even for an effect
+# of 1,000 or more within-subjects degrees of freedom, whose bound is .001 or
+# less.
 .check_epsilon <- function(epsilon, dim_within) {
   .check_scalar_finite(epsilon, "epsilon")
   tol <- sqrt(.Machine$double.eps)
   if (epsilon > 1 + tol)
     stop("'epsilon' must be at most 1 (1 assumes sphericity; a Huynh-Feldt ",
          "estimate above 1 is truncated to 1).", call. = FALSE)
-  if (dim_within == 1 && epsilon < 1 - tol)
-    stop("This effect has a single within-subjects degree of freedom (two ",
-         "levels), and such an effect always satisfies sphericity, so ",
-         "'epsilon' must be 1.", call. = FALSE)
+  if (epsilon >= 1 - tol) return(1)
+  if (dim_within == 1)
+    stop("This effect's within-subjects contrasts have a single degree of ",
+         "freedom (as for a two-level factor or a single contrast), and such ",
+         "an effect always satisfies sphericity, so 'epsilon' must be 1.",
+         call. = FALSE)
   lower <- 1 / dim_within
-  if (epsilon < lower - tol)
+  if (epsilon < lower - min(5e-4, lower / 2))
     stop("'epsilon' must be at least 1/", dim_within, " (about ",
          format(signif(lower, 4)), "), the lower bound for an effect whose ",
          "within-subjects contrasts have ", dim_within, " degrees of freedom. ",

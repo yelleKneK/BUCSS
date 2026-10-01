@@ -28,7 +28,7 @@ of Taylor and Muller (1996).
 
 ## What Assurance Means Here
 
-Assurance is the long-run proportion of planned studies whose power reaches the
+Assurance is the long run proportion of planned studies whose power reaches the
 target. Imagine the prior study drawn again and again from its literature, each
 draw seen only if it cleared the publication threshold that `alpha_prior`
 describes, and a new study planned from each one. At the true effect, some of

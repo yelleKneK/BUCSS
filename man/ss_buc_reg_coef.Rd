@@ -148,15 +148,18 @@ Researchers often use the sample effect size from a prior study as
   power, by about 1/\emph{n} for a plan of \emph{n} participants with one
   predictor, 1.9/\emph{n} with three, and 4/\emph{n} with eight (.010,
   .019, and .040 at \emph{n} = 100, and 4.8/\emph{n} with eight at
-  \emph{n} = 20), and the correction's coverage then departs from the
-  requested \code{assurance}. At an \code{assurance} of .80 and prior
-  studies with power .3 to .8 at the true effect, it stays just below .80
-  with one predictor (about .79 to .80 for prior studies of 20 to 100) and
-  rises above it with more, the more so the more predictors there are, the
-  smaller the prior study, and the better powered it was (about .80 to .82
-  for a coefficient among three predictors and prior studies of 20 to 100,
-  .81 to .82 among eight with a prior \emph{N} of 100, and .83 to .90
-  among eight with a prior \emph{N} of 20 or 25).
+  \emph{n} = 20), so the assurance the plans deliver can fall short of the
+  requested \code{assurance}. The delivered assurance is what
+  \code{assurance} promises: the proportion of plans, each made from its
+  own published prior study, whose power at the true effect reaches
+  \code{desired_power}, counting a refusal to plan as meeting the target.
+  In simulations with multivariate normal predictors, an \code{assurance}
+  of .80, and prior studies of 20 to 100 participants (25 to 100 with eight
+  predictors) with power .3 to .8 at the true effect, the fixed frame
+  delivered about .75 to .80 with one or three predictors and .75 to .82
+  with eight, the lowest values from small prior studies with power near .8;
+  \code{random_predictors = TRUE} delivered .79 to .82 in the same
+  configurations.
 
   Which frame plans the larger study depends on the other predictors and
   on how far the plan outgrows the prior study, because the fixed frame
@@ -167,13 +170,17 @@ Researchers often use the sample effect size from a prior study as
   predictors the two plans are within a few participants, the
   random-predictor plan usually the larger, when the plan is no more than
   about twice the prior \emph{N}; beyond that the random-predictor plan is
-  usually smaller, by up to about a quarter from prior studies of 20 or 30
-  (83 rather than 98 participants for \emph{t} = 2.5 from a prior study of
-  30 with eight predictors and \code{alpha_prior = 1}) and by at most about
-  5 percent from prior studies of 100 or more (623 rather than 624 in the
-  examples below). The largest assurance a prior result can support is
-  the same in both frames, because at a zero effect both are the central
-  \emph{F} distribution. With one predictor and \code{random_predictors = TRUE} this
+  usually smaller, and the more the plan outgrows the prior study, the
+  closer the ratio of the two plans comes to (\emph{N} -
+  \emph{p})/\emph{N}, so the random-predictor plan is smaller by at most
+  about \emph{p}/\emph{N}: about 15 percent with three predictors and 40
+  percent with eight from a prior study of 20, and 3 and 8 percent from a
+  prior study of 100 (83 rather than 98 participants for \emph{t} = 2.5
+  from a prior study of 30 with eight predictors and
+  \code{alpha_prior = 1}, and 623 rather than 624 in the examples below).
+  The largest assurance a prior result can support is the same in both
+  frames, because at a zero effect both are the central \emph{F}
+  distribution. With one predictor and \code{random_predictors = TRUE} this
   function returns exactly what \code{\link{ss_buc_correlation}} returns
   for the same prior \emph{t} and \emph{N}, for any prior \emph{N} of at
   least 4 (the correlation planner's minimum).

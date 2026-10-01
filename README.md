@@ -175,7 +175,12 @@ and the Welch *t* test. The Welch planner is an approximation, and a minimum
 planned sample size of 10 per group is imposed because of estimation accuracy
 issues at smaller sample sizes, where the approximation is not accurate
 enough. `vignette("worked-examples", package = "BUCSS")` walks through one
-example of each design.
+example of each design. Two new vignettes take up particular uses:
+`vignette("planning-replications", package = "BUCSS")` shows why a literature
+of underpowered studies inflates effect sizes and how the correction repairs
+the plan for a replication, and `vignette("correlation", package = "BUCSS")`
+explains when a correlation and a regression slope call for different
+planners.
 
 ### Sampled Predictors, Sphericity, and the Planning Effect Size
 
@@ -216,8 +221,11 @@ independent *t* planner rounds the harmonic mean of two prior group sizes in
 integer arithmetic, so a pair whose harmonic mean is a whole number no longer
 plans from a spurious rounding one unit off. A negative observed *t* is
 planned from its magnitude, and endpoint or malformed inputs stop with an
-explanation rather than returning a meaningless number. Several 1.2.1
-functions also fail on current R when `effect` is omitted; 2.0.0 fixes them.
+explanation rather than returning a meaningless number. Asked for the Factor B
+effect without `levels.B`, 1.2.1's `ss.power.ba()` and `ss.power.wa()`
+silently returned the Factor A plan; in 2.0.0 both stop and ask for the second
+factor's levels. Several 1.2.1 functions also fail on current R when `effect`
+is omitted; 2.0.0 fixes them.
 
 ### Clearer Refusals
 

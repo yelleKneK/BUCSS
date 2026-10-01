@@ -258,8 +258,10 @@ differ little: with `random_predictors = TRUE` the three plans above are 623,
 239, and 3,898 rather than 624, 234, and 3,960, the joint test's differing
 most because it is requested close to its assurance ceiling of .84. From a
 small prior study, with predictors left untested and a plan several times the
-prior *N*, the random-predictor plan can be as much as a quarter smaller (the
-help pages of `ss_buc_reg_coef()` and `ss_buc_reg_joint()` describe the
+prior *N*, the random-predictor plan can be smaller by up to about the number
+of untested predictors plus one, divided by the prior *N*: as much as 40
+percent for a coefficient among eight predictors from a prior study of 20
+(the help pages of `ss_buc_reg_coef()` and `ss_buc_reg_joint()` describe the
 pattern). With one predictor,
 `ss_buc_reg_coef(p = 1, random_predictors = TRUE)` returns exactly what
 `ss_buc_correlation()`, described in the next section, returns.
