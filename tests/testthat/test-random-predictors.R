@@ -38,6 +38,43 @@ test_that("one sampled predictor is exactly the correlation planner", {
             row(ss_buc_correlation(t_observed = 3.7, N = 100), "necessary_N"))
 })
 
+test_that("one sampled predictor, R2 and the joint test are also the correlation planner", {
+  # The help pages of ss_buc_R2() and ss_buc_reg_joint() say that with one
+  # predictor (p = 1; for the joint test, p = 1 and p_joint = 1) and
+  # random_predictors = TRUE they return exactly what ss_buc_correlation()
+  # returns. The computed rows (size, power, noncentrality parameter) and the
+  # ceiling and planned df are identical; the echoed input rows differ by
+  # design (F_observed, p, p_joint, and random_predictors against t_observed),
+  # and each states the planning effect size in its own metric, so those are
+  # checked as conversions of the same value rather than as identical rows.
+  for (t in c(2.5, 3.7, 8)) for (N in c(4, 6, 30, 100, 1000)) for (a in c(.5, .8, .9)) {
+    refusal <- function(expr) tryCatch(expr,
+      bucss_zero_ncp = function(e) "refused",
+      bucss_nonsignificant = function(e) "nonsignificant")
+    cor <- refusal(ss_buc_correlation(t_observed = t, N = N, assurance = a))
+    r2 <- refusal(ss_buc_R2(F_observed = t^2, N = N, p = 1, assurance = a,
+                            random_predictors = TRUE))
+    joint <- refusal(ss_buc_reg_joint(F_observed = t^2, N = N, p = 1,
+                                      p_joint = 1, assurance = a,
+                                      random_predictors = TRUE))
+    info <- paste(t, N, a)
+    if (is.character(cor)) {
+      expect_identical(r2, cor, info = info)
+      expect_identical(joint, cor, info = info)
+      next
+    }
+    for (reg in list(r2, joint)) {
+      expect_identical(computed(reg), computed(cor), info = info)
+      expect_identical(attr(reg, "df_error"), attr(cor, "df_error"), info = info)
+    }
+    expect_false(identical(r2$term, cor$term))
+    rho <- row(cor, "rho_planning")
+    expect_equal(row(r2, "R2_planning"), rho^2, tolerance = 1e-12, info = info)
+    expect_equal(row(joint, "f2_planning"), rho^2 / (1 - rho^2),
+                 tolerance = 1e-12, info = info)
+  }
+})
+
 test_that("the three regression planners agree where their tests coincide", {
   for (rp in c(FALSE, TRUE)) {
     expect_identical(

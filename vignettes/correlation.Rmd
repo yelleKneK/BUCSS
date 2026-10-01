@@ -40,7 +40,9 @@ first_plan
 
 The returned `necessary_N` is the total sample size and `ncp_adjusted` the
 bias and uncertainty adjusted noncentrality parameter. `rho_planning` is the
-planning effect size, the correlation the plan is built on,
+planning effect size, the adjusted correlation the plan is built on given the
+prior result, `alpha_prior`, and `assurance` (not an estimate of the
+population correlation to report),
 `sqrt(ncp_adjusted / (ncp_adjusted + N))` with the prior study's *N*: here
 `r apa(row_value(first_plan, "rho_planning"))`, against the published .35. A
 study of `r row_value(first_plan, "necessary_N")` participants has exactly
@@ -120,12 +122,14 @@ its *t* statistic `t_observed`; the two are equivalent.
 
 ## Assuming Less Publication Bias
 
-`alpha_prior` encodes how strongly publication bias is assumed to have shaped
-the prior literature. The default of .05 assumes the field publishes results
-significant at the .05 level; a larger value assumes a more permissive
+`alpha_prior` is the significance level a prior result had to reach to be
+published, so it encodes how strongly publication bias is assumed to have
+shaped the prior literature. The default of .05 assumes the field publishes
+results significant at the .05 level; a larger value assumes a more permissive
 literature and therefore a smaller correction. A prior study that escaped the
 file drawer entirely, such as a registered report or a pilot, is described by
-`alpha_prior = 1`.
+`alpha_prior = 1`: no *p* value exceeds 1, so that means no publication filter
+at all, and only the correction for uncertainty, set by `assurance`, remains.
 
 ```{r}
 alphas <- c(.05, .20, 1)

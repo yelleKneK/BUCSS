@@ -28,9 +28,17 @@ from a previous study. Supply either \code{F_observed} or
 \item{T2_observed}{Observed Hotelling's \eqn{T^2} from the previous study,
 an alternative to \code{F_observed}.}
 
-\item{alpha_prior}{Alpha level \eqn{\alpha} for the previous study or the
-assumed statistical significance necessary for publishing in the field; to
-assume no publication bias, a value of 1 can be entered.}
+\item{alpha_prior}{The significance level \eqn{\alpha} a prior result had
+to reach to be published (more generally, to reach you): the correction
+assumes you see only results with \emph{p} below \code{alpha_prior}. A
+value of 1 means no publication filter: every \emph{p} value is at most
+1, so any result would have been published whatever its \emph{p} value,
+there is no publication bias to correct, and only the correction for
+uncertainty (set by \code{assurance}) remains, as for a pilot study. The
+planners compute with .999 in place of 1, as BUCSS 1.x did, so plans
+match earlier versions; that filter is so lenient (it drops only results
+with \emph{p} above .999) that it changes the plan negligibly, and the
+result echoes the 1 you entered.}
 
 \item{alpha_planned}{Alpha level \eqn{\alpha} assumed for the planned study.}
 
@@ -46,9 +54,11 @@ larger value adds the correction for uncertainty, and a value below .5 is
 not recommended. The term follows Kelley and Maxwell (2003), who used
 assurance in sample size planning for the probability that a confidence
 interval will be no wider than desired. With \code{alpha_prior = 1} and
-\code{assurance = .80} the plan corresponds to safeguard power, a special
-case (see \code{\link{BUCSS-package}} for how, and for where the two
-differ). Enter it as a proportion in (0, 1) or as a percentage greater
+\code{assurance = .80} the plan corresponds to safeguard power, which
+plans for the lower limit of a two-sided 60 percent confidence interval
+around the prior effect size rather than for the effect size itself (see
+\code{\link{BUCSS-package}} for how, and for where the two differ).
+Enter it as a proportion in (0, 1) or as a percentage greater
 than 1 (for example, 80 is read as .80); a value of exactly 1 is read as
 1 percent. A percentage is echoed in the result's planning-input rows as
 the coerced proportion (80 is echoed as .80); the same applies to
@@ -70,19 +80,30 @@ An object of class \code{bucss_plan}: a \code{data.frame} with a
   returned sample size at the returned noncentrality parameter (see
   Details); \code{ncp_adjusted}, the publication bias and uncertainty
   adjusted prior study noncentrality parameter, on the scale of the \emph{F} statistic, at the prior study's sample size (for an odd prior \emph{N}, at the balanced sample size the planner substitutes for it; with one outcome variable it is the square of the independent \emph{t} planner's); and the
-  planning effect size, the effect size the plan is built on, which is
-  \code{ncp_adjusted} restated in the design's usual metric:
-  \code{D2_planning}, the squared Mahalanobis distance between the two population mean vectors, \eqn{2\lambda/n}{2 lambda/n}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted} and \emph{n} the per-group size of the balanced prior design it belongs to (see Details); with one outcome variable it is the square of the \code{smd_planning} of \code{\link{ss_buc_independent_t}}. Because it restates \code{ncp_adjusted},
+  planning effect size, \code{D2_planning}, the squared Mahalanobis distance between the two population mean vectors, \eqn{2\lambda/n}{2 lambda/n}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted} and \emph{n} the per-group size of the balanced prior design it belongs to (see Details); with one outcome variable it is the square of the \code{smd_planning} of \code{\link{ss_buc_independent_t}}.
+
+  A planning effect size (the row whose name ends in \code{_planning}) is
+  an adjusted effect size: the value, in the design's usual effect size
+  metric, used to plan the sample size given the situation at hand (the
+  prior study's result, the publication bias assumed through
+  \code{alpha_prior}, and the uncertainty allowed for through
+  \code{assurance}). It is \code{ncp_adjusted} restated in that metric
+  and is what the plan is built on, not an estimate of the population
+  effect to report: above an assurance of .5 it is deliberately
+  conservative (a lower confidence limit), and at .5 it is the median
+  unbiased estimate. Because it restates \code{ncp_adjusted},
   \code{actual_power} is the ordinary power of a study of the returned
-  sample size when the population effect is the planning effect size. Rows
-  echoing the planning inputs follow, so the assumptions travel with the
-  result. The design, the unit the sample size is counted in, the largest
-  assurance this prior can support (the assurance ceiling), and the
-  planned test's degrees of freedom (\code{df_effect}, and \code{df_error}
-  where the test has a denominator) travel on attributes.
-  \code{print.bucss_plan} shows the design, for the regression planners
-  the predictor frame, the unit, and the ceiling beneath the table; \code{tidy()} and \code{glance()} give the compact and
-  wide views, the latter with every attribute as a column.
+  sample size when the population effect is the planning effect size.
+
+  Rows echoing the planning inputs follow the design results, so the
+  assumptions travel with the result. The design, the unit the sample size
+  is counted in, the largest assurance this prior can support (the assurance
+  ceiling), and the planned test's degrees of freedom (\code{df_effect}, and
+  \code{df_error} where the test has a denominator) travel on attributes.
+  \code{print.bucss_plan} shows the design, for the regression planners the
+  predictor frame, the unit, and the ceiling beneath the table;
+  \code{tidy()} and \code{glance()} give the compact and wide views, the
+  latter with every attribute as a column.
 }
 \description{
 \code{ss_buc_manova} returns the necessary per-group sample size
@@ -140,14 +161,20 @@ Researchers often use the sample effect size from a prior study as
   noncentrality parameter associated with the (1 - assurance) quantile of the
   likelihood distribution.
 
-  If the previous study of interest has not been subjected to publication
-  bias (e.g., a pilot study), \code{alpha_prior} can be set to 1 to indicate
-  no publication bias. Alternative \eqn{\alpha} levels can also be
-  accommodated to represent differing amounts of publication bias. For
-  example, setting \code{alpha_prior = .20} would reflect less severe
-  publication bias than the default of .05. In essence, setting
-  \code{alpha_prior} at .20 assumes that studies with \emph{p} values less
-  than .20 are published, whereas those with larger \emph{p} values are not.
+  \code{alpha_prior} is the significance level a prior result had to reach
+  to be published: the correction assumes that only results with \emph{p}
+  values below \code{alpha_prior} reach the literature, and so reach you.
+  Different \eqn{\alpha} levels represent differing amounts of publication
+  bias. For example, setting \code{alpha_prior = .20} assumes that studies
+  with \emph{p} values less than .20 are published, whereas those with
+  larger \emph{p} values are not, which reflects less severe publication
+  bias than the default of .05. If the previous study of interest has not
+  been subjected to publication bias (e.g., a pilot study), set
+  \code{alpha_prior = 1}. Because no \emph{p} value exceeds 1, this means
+  no publication filter at all: any result would have been published
+  whatever its \emph{p} value, so there is no publication bias to correct,
+  and only the correction for uncertainty, set by \code{assurance},
+  remains.
 
   In some cases, the corrected noncentrality parameter for a given level of
   assurance will be estimated to be zero. This is an indication that, at the

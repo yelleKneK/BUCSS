@@ -72,12 +72,16 @@ This yields a necessary sample size of 1,485 per group (a total of 2,970).
 BUCSS 1.x reported 1,482 for this example under its grid search; as of BUCSS
 2.0.0 the bias and uncertainty adjusted noncentrality parameter is found by
 direct root finding, which gives 1,485 (see `NEWS.md`). The row
-`smd_planning` is the planning effect size, the effect size the plan is built
-on: the adjusted noncentrality parameter restated as a standardized mean
+`smd_planning` is the planning effect size, an adjusted effect size: the value,
+in the design's usual effect size metric, used to plan the sample size given
+the situation at hand (the prior study's result, the publication bias assumed
+through `alpha_prior`, and the uncertainty allowed for through `assurance`).
+Here it is the adjusted noncentrality parameter restated as a standardized mean
 difference, 0.103, where the prior study's *t* taken at face value
-corresponds to 0.586. A study of 1,485 per group has exactly the
-`actual_power` shown when the population standardized mean difference equals
-the planning effect size.
+corresponds to 0.586. It is what the plan is built on, not an estimate of the
+effect to report. A study of 1,485 per group has exactly the `actual_power`
+shown when the population standardized mean difference equals the planning
+effect size.
 
 Assurance is the long run proportion of studies planned this way, each from
 its own published prior study, whose power at the true effect reaches the
@@ -89,6 +93,17 @@ of the prior statistic truncated at the publication threshold. An assurance of
 only; above .5 it also corrects for uncertainty. The term follows Kelley and
 Maxwell (2003), who used assurance in sample size planning for the
 probability that a confidence interval will be no wider than desired.
+
+The publication threshold is `alpha_prior`: the significance level a prior
+result had to reach to be published (more generally, to reach you). The
+correction assumes you see only results with *p* below `alpha_prior`, .05 by
+default. Setting `alpha_prior = 1` means no publication filter: every *p*
+value is at most 1, so any result would have been published whatever its *p*
+value, there is no publication bias to correct, and only the correction for
+uncertainty, set by `assurance`, remains, as for a pilot study. (The planners
+compute with .999 in place of exactly 1, as BUCSS 1.x did, so plans match
+earlier versions; a filter that drops only results with *p* above .999 changes
+the plan negligibly.)
 
 For this prior study, the plan grows with the assurance requested: 60 per group
 at an assurance of .50, 233 at .80, and 1,485 at .90. Taking *t* = 3.00 at face
@@ -193,21 +208,30 @@ planners.
   when the effect is not zero (Sampson, 1974; Gatsonis & Sampson, 1989).
   With sampled predictors the planners use the exact distribution of the
   statistic when the predictors are multivariate normal, for both the
-  correction and the planned study's power; with one predictor this is the
-  distribution the correlation planner uses.
+  correction and the planned study's power. With one predictor they return
+  exactly what the correlation planner, `ss_buc_correlation()`, returns.
 * The within-subjects and split-plot planners take an `epsilon` argument, a
   Greenhouse-Geisser or Huynh-Feldt sphericity correction, so a prior study
   reported with corrected degrees of freedom can be planned from. The default,
   1, assumes sphericity. Like the Welch planner, the correction is documented
   as an approximation, with its accuracy in simulation.
-* Every plan reports its planning effect size, the effect size the plan is
-  built on: the adjusted noncentrality parameter restated in the design's
-  usual metric, so the plan can be reported in the units readers know. The
-  row is named for its metric: `smd_planning`, `dz_planning`,
-  `std_mean_planning`, `f_planning` (Cohen's *f*), `f2_planning` (Cohen's *f*
-  squared), `R2_planning`, `rho_planning`, `D2_planning` (the squared
-  Mahalanobis distance), or `rmsea_d_planning` (the RMSEA of a chi square
-  difference test).
+* Every plan reports its planning effect size, an adjusted effect size: the
+  value, in the design's usual effect size metric, used to plan the sample
+  size given the situation at hand (the prior study's result, the publication
+  bias assumed through `alpha_prior`, and the uncertainty allowed for through
+  `assurance`). It is the adjusted noncentrality parameter restated in units
+  readers know, and it is what the plan is built on, not an estimate of the
+  effect to report: above an assurance of .5 it is deliberately conservative
+  (a lower confidence limit), and at .5 it is the median unbiased estimate.
+  The row is named for its metric: `smd_planning`, `dz_planning` (Cohen's
+  *d_z*, the mean of the paired differences divided by their standard
+  deviation; the *z* names the difference score, which Cohen, 1988, writes
+  Z = X - Y), `std_mean_planning`, `f_planning` (Cohen's *f*), `f2_planning`
+  (Cohen's *f* squared), `R2_planning`, `rho_planning`, `D2_planning` (the
+  squared Mahalanobis distance), or `rmsea_d_planning` (RMSEA_D, with D for
+  difference: the root mean square error of approximation of the chi square
+  difference test between two nested models, as distinct from the RMSEA of
+  either model's fit; Savalei, Brace, & Fouladi, 2024).
 
 ### More Accurate Numbers
 
@@ -245,11 +269,15 @@ and renaming a plan's columns returns an ordinary data frame.
 
 The help pages and `vignette("understanding-assurance", package = "BUCSS")`
 now spell out how assurance is used, as described above, and show that
-safeguard power (Perugini, Gallucci, & Costantini, 2014) is the special case
-`alpha_prior = 1`, `assurance = .80`: with no publication bias, the adjusted
-parameter is the lower limit of a two-sided 60% confidence interval, and in
-general a two-sided confidence level *C* corresponds to an assurance of
-(1 + *C*)/2. The package help page explains where the two differ; every
+safeguard power (Perugini, Gallucci, & Costantini, 2014) is a special case.
+Safeguard power guards against a prior effect size that is too large by
+planning for the lower limit of a two-sided 60% confidence interval around it
+rather than for the effect size itself; it allows for uncertainty but not for
+publication bias. It is BUCSS with `alpha_prior = 1` and `assurance = .80`,
+that is, without the publication bias correction: with no publication filter,
+the adjusted parameter is the lower limit of a two-sided 60% confidence
+interval, and in general a two-sided confidence level *C* corresponds to an
+assurance of (1 + *C*)/2. The package help page explains where the two differ; every
 difference makes the plan here the same as the safeguard plan or larger (for
 the regression planners, within the predictor frame `random_predictors`
 names).
@@ -309,6 +337,9 @@ for more accurate statistical power: A method adjusting sample effect sizes for
 publication bias and uncertainty. *Psychological Science, 28*, 1547--1562.
 doi:10.1177/0956797617723724
 
+Cohen, J. (1988). *Statistical power analysis for the behavioral sciences* (2nd
+ed.). Lawrence Erlbaum Associates.
+
 Gatsonis, C., &amp; Sampson, A. R. (1989). Multiple correlation: Exact power and
 sample size calculations. *Psychological Bulletin, 106*, 516--524.
 doi:10.1037/0033-2909.106.3.516
@@ -323,3 +354,7 @@ Science, 9*, 319--332. doi:10.1177/1745691614528519
 
 Sampson, A. R. (1974). A tale of two regressions. *Journal of the American
 Statistical Association, 69*, 682--689. doi:10.1080/01621459.1974.10480189
+
+Savalei, V., Brace, J. C., &amp; Fouladi, R. T. (2024). We need to change how
+we compute RMSEA for nested model comparisons in structural equation modeling.
+*Psychological Methods, 29*, 480--493. doi:10.1037/met0000537

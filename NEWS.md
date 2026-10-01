@@ -303,20 +303,22 @@ previously handle.
   noncentral *F* distributions. The mixture has an exact closed form (the
   Poisson weights of the noncentral *F* become negative binomial weights),
   used for both the correction and the planned study's power; it is the
-  distribution `ss_buc_correlation()` uses, and
-  `ss_buc_reg_coef(p = 1, random_predictors = TRUE)` returns exactly what
-  `ss_buc_correlation()` returns for the same prior *t* and *N*. Treating
-  sampled predictors as fixed overstates the planned study's power, by about
-  1/*n* for a plan of *n* participants with one predictor and about 4/*n* for
-  a coefficient among eight (1/*n* to 1.4/*n* for the squared multiple
-  correlation). Which frame plans the larger study depends on the other
-  predictors and on how far the plan outgrows the prior study; the help
-  pages give the pattern. The largest supportable assurance is the same in
-  both frames. The frame is echoed as a `random_predictors` row (1 or 0) on
-  every regression plan, named in the printed footer, and followed by
-  `ss_buc_sensitivity()` and `plot()`. The deprecated `ss.power.reg1()`,
-  `ss.power.reg.all()`, and `ss.power.reg.joint()` keep the fixed-predictor
-  computation of 1.x.
+  distribution `ss_buc_correlation()` uses: with one predictor each of the
+  three returns exactly what `ss_buc_correlation()` returns for the same prior
+  study (`ss_buc_reg_coef(p = 1)` for the same *t* and *N*, and
+  `ss_buc_R2(p = 1)` and `ss_buc_reg_joint(p = 1, p_joint = 1)` for an
+  `F_observed` equal to *t* squared), with the planning effect size stated in
+  each planner's own metric. Treating sampled predictors as fixed overstates
+  the planned study's power, by about 1/*n* for a plan of *n* participants
+  with one predictor and about 4/*n* for a coefficient among eight (1/*n* to
+  1.4/*n* for the squared multiple correlation). Which frame plans the larger
+  study depends on the other predictors and on how far the plan outgrows the
+  prior study; the help pages give the pattern. The largest supportable
+  assurance is the same in both frames. The frame is echoed as a
+  `random_predictors` row (1 or 0) on every regression plan, named in the
+  printed footer, and followed by `ss_buc_sensitivity()` and `plot()`. The
+  deprecated `ss.power.reg1()`, `ss.power.reg.all()`, and
+  `ss.power.reg.joint()` keep the fixed-predictor computation of 1.x.
 
 * The within-subjects and split-plot planners, `ss_buc_rm_anova()`,
   `ss_buc_rm_anova_general()`, `ss_buc_mixed_anova()`, and
@@ -342,33 +344,42 @@ previously handle.
   within-subjects component echoes `epsilon` as a row (1 under sphericity),
   and `ss_buc_sensitivity()`, `plot()`, and `planning_sentence()` follow it.
 
-* Every plan reports its planning effect size, the effect size the plan is
-  built on: `ncp_adjusted` restated in the design's usual metric, as a row
-  directly after `ncp_adjusted`. The rows are `smd_planning` (the
-  independent *t* planner and its alias `ss_buc_smd()`, and the Welch *t*
-  planner, which standardizes by the root mean square of the two standard
-  deviations, following Bonett, 2008), `dz_planning` (the paired *t* planner
-  and its alias), `std_mean_planning` (the one-sample *t*), `f_planning`
-  (Cohen's *f* relative to the effect's own error term, for all eight
-  analysis of variance and covariance planners, so that *f* squared over 1
-  plus *f* squared is the population partial eta squared for the effect),
+* Every plan reports its planning effect size, an adjusted effect size: the
+  value, in the design's usual effect size metric, used to plan the sample
+  size given the situation at hand (the prior study's result, the publication
+  bias assumed through `alpha_prior`, and the uncertainty allowed for through
+  `assurance`). It is `ncp_adjusted` restated in that metric, as a row
+  directly after `ncp_adjusted`, and it is what the plan is built on, not an
+  estimate of the population effect to report: above an assurance of .5 it is
+  deliberately conservative (a lower confidence limit), and at .5 it is the
+  median unbiased estimate. The rows are `smd_planning` (the independent *t*
+  planner and its alias `ss_buc_smd()`, and the Welch *t* planner, which
+  standardizes by the root mean square of the two standard deviations,
+  following Bonett, 2008), `dz_planning` (the paired *t* planner and its
+  alias; Cohen's *d_z*, the mean of the paired differences divided by their
+  standard deviation, where the *z* names the difference score, which Cohen,
+  1988, writes Z = X - Y), `std_mean_planning` (the one-sample *t*),
+  `f_planning` (Cohen's *f* relative to the effect's own error term, for all
+  eight analysis of variance and covariance planners, so that *f* squared over
+  1 plus *f* squared is the population partial eta squared for the effect),
   `f2_planning` (Cohen's *f* squared, for a regression coefficient and for a
   subset of predictors), `R2_planning` (the squared multiple correlation),
   `rho_planning` (the correlation), `D2_planning` (the squared Mahalanobis
-  distance, for the two-group multivariate comparison), and
-  `rmsea_d_planning` (the RMSEA of the chi square difference test, following
-  Savalei, Brace, & Fouladi, 2024). `actual_power` is exactly the ordinary
-  power of a study of the returned sample size when the population effect is
-  the planning effect size, in the plan's own frame (with sampled predictors,
-  the random-predictor power; with `epsilon` below 1, the Muller and Barton
-  approximation, the effect staying on the sphericity scale). For an
-  unbalanced prior study the row belongs to the same balanced design as
-  `ncp_adjusted`. `planning_sentence()` names it in a second sentence and
-  `glance()` gives it a column; `tidy()` and the 1.x `[[1]]`/`[[2]]`
-  positions are unchanged. For the within-subjects and split-plot planners,
-  `f_planning` is not the raw-score *f* that repeated measures power
-  functions such as `DMAR`'s `ss_power_rm_anova()` take; the help pages give
-  the conversion.
+  distance, for the two-group multivariate comparison), and `rmsea_d_planning`
+  (RMSEA_D, with D for difference: the root mean square error of approximation
+  of the chi square difference test between the two nested models, as distinct
+  from the RMSEA of either model's fit, following Savalei, Brace, & Fouladi,
+  2024). `actual_power` is exactly the ordinary power of a study of the
+  returned sample size when the population effect is the planning effect size,
+  in the plan's own frame (with sampled predictors, the random-predictor
+  power; with `epsilon` below 1, the Muller and Barton approximation, the
+  effect staying on the sphericity scale). For an unbalanced prior study the
+  row belongs to the same balanced design as `ncp_adjusted`.
+  `planning_sentence()` names it in a second sentence and `glance()` gives it
+  a column; `tidy()` and the 1.x `[[1]]`/`[[2]]` positions are unchanged. For
+  the within-subjects and split-plot planners, `f_planning` is not the
+  raw-score *f* that repeated measures power functions such as `DMAR`'s
+  `ss_power_rm_anova()` take; the help pages give the conversion.
 
 ## New Features
 
@@ -592,16 +603,29 @@ previously handle.
   the probability that a confidence interval will be no wider than desired;
   that reference joins every planner's help page.
 
-* Safeguard power (Perugini, Gallucci, & Costantini, 2014) is shown to be a
-  special case of the method: with `alpha_prior = 1` and `assurance = .80`,
-  the adjusted noncentrality parameter is the lower limit of the two-sided
-  60% confidence interval that safeguard power plans from, and in general a
-  two-sided confidence level *C* corresponds to `assurance = (1 + C)/2`. The
-  package help page and the assurance vignette explain how, and where the
-  two differ: every difference makes the plan here the same as the safeguard
-  plan or larger, never smaller (for the regression planners, within the
-  frame `random_predictors` names). `tests/testthat/test-safeguard-power.R`
-  pins the equivalence.
+* Safeguard power (Perugini, Gallucci, & Costantini, 2014) guards against a
+  prior effect size that is too large by planning for the lower limit of a
+  two-sided 60% confidence interval around it rather than for the effect size
+  itself; it allows for uncertainty but not for publication bias. It is shown
+  to be a special case of the method: with `alpha_prior = 1` and
+  `assurance = .80`, the adjusted noncentrality parameter is the lower limit
+  of the two-sided 60% confidence interval that safeguard power plans from,
+  and in general a two-sided confidence level *C* corresponds to
+  `assurance = (1 + C)/2`. The package help page and the assurance vignette
+  explain how, and where the two differ: every difference makes the plan here
+  the same as the safeguard plan or larger, never smaller (for the regression
+  planners, within the frame `random_predictors` names).
+  `tests/testthat/test-safeguard-power.R` pins the equivalence.
+
+* Every planner's `alpha_prior` argument and Details say plainly what the
+  value means: the significance level a prior result had to reach to be
+  published, so the correction assumes you see only results with *p* below
+  it. `alpha_prior = 1` means no publication filter, since no *p* value
+  exceeds 1, so there is no publication bias to correct and only the
+  correction for uncertainty, set by `assurance`, remains. The planners
+  compute with .999 in place of exactly 1, as BUCSS 1.x did, so plans match
+  earlier versions; the argument's help and the package help page say so,
+  and that the difference is negligible.
 
 * The regression planners' help pages describe both predictor frames, what
   treating sampled predictors as fixed costs, and which frame plans the

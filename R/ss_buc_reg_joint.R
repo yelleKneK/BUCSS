@@ -91,7 +91,15 @@
 #'   because at a zero effect both are the central \emph{F} distribution. With
 #'   \code{p_joint = p} this function returns what \code{\link{ss_buc_R2}}
 #'   returns, and with \code{p_joint = 1} what \code{\link{ss_buc_reg_coef}}
-#'   returns for the square root of \code{F_observed}, in either frame.
+#'   returns for the square root of \code{F_observed}, in either frame. So
+#'   with one predictor, tested (\code{p = 1}, \code{p_joint = 1}), and
+#'   \code{random_predictors = TRUE}, it returns exactly what
+#'   \code{\link{ss_buc_correlation}} returns for the same prior \emph{t}
+#'   (the square root of \code{F_observed}) and \emph{N} (the same sample
+#'   size, power, noncentrality parameter, and ceiling, with the planning
+#'   effect size stated as \eqn{f^2}{f^2} rather than as the correlation),
+#'   for any prior \emph{N} of at least 4 (the correlation planner's
+#'   minimum).
 #'
 #'   The approach uses a likelihood function of a truncated noncentral
 #'   \emph{F} distribution, where the truncation occurs due to small effect
@@ -116,14 +124,20 @@
 #'   noncentrality parameter associated with the (1 - assurance) quantile of the
 #'   likelihood distribution.
 #'
-#'   If the previous study of interest has not been subjected to publication
-#'   bias (e.g., a pilot study), \code{alpha_prior} can be set to 1 to indicate
-#'   no publication bias. Alternative \eqn{\alpha} levels can also be
-#'   accommodated to represent differing amounts of publication bias. For
-#'   example, setting \code{alpha_prior = .20} would reflect less severe
-#'   publication bias than the default of .05. In essence, setting
-#'   \code{alpha_prior} at .20 assumes that studies with \emph{p} values less
-#'   than .20 are published, whereas those with larger \emph{p} values are not.
+#'   \code{alpha_prior} is the significance level a prior result had to reach
+#'   to be published: the correction assumes that only results with \emph{p}
+#'   values below \code{alpha_prior} reach the literature, and so reach you.
+#'   Different \eqn{\alpha} levels represent differing amounts of publication
+#'   bias. For example, setting \code{alpha_prior = .20} assumes that studies
+#'   with \emph{p} values less than .20 are published, whereas those with
+#'   larger \emph{p} values are not, which reflects less severe publication
+#'   bias than the default of .05. If the previous study of interest has not
+#'   been subjected to publication bias (e.g., a pilot study), set
+#'   \code{alpha_prior = 1}. Because no \emph{p} value exceeds 1, this means
+#'   no publication filter at all: any result would have been published
+#'   whatever its \emph{p} value, so there is no publication bias to correct,
+#'   and only the correction for uncertainty, set by \code{assurance},
+#'   remains.
 #'
 #'   In some cases, the corrected noncentrality parameter for a given level of
 #'   assurance will be estimated to be zero. This is an indication that, at the
@@ -172,9 +186,14 @@
 #' @param random_predictors \code{TRUE} if the predictors are sampled along
 #'   with the outcome, as in most observational research, and \code{FALSE} if
 #'   their values are fixed by design, as in an experiment that assigns them.
-#'   The default is \code{FALSE}, the frame of BUCSS 1.x; see Details. The
-#'   choice is echoed in the result as a \code{random_predictors} row valued 1
-#'   (\code{TRUE}) or 0 (\code{FALSE}) and named in the printed footer.
+#'   The default is \code{FALSE}, the frame of BUCSS 1.x; see Details. With
+#'   random predictors (\code{TRUE}) the planner uses the exact distribution
+#'   for sampled predictors that the correlation planner also uses: with one
+#'   predictor, tested (\code{p = 1}, \code{p_joint = 1}), it returns
+#'   exactly what the correlation planner, \code{\link{ss_buc_correlation}},
+#'   returns. The choice is echoed in the result as a
+#'   \code{random_predictors} row valued 1 (\code{TRUE}) or 0
+#'   (\code{FALSE}) and named in the printed footer.
 #'
 #' @templateVar size_phrase total sample size
 #' @templateVar ncp_scale on the scale of the \emph{F} statistic at the prior study's sample size

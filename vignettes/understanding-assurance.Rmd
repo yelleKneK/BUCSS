@@ -195,13 +195,21 @@ head(curve_values, 4)
 
 ## alpha_prior: Modeling Publication Bias
 
-`alpha_prior` is the significance threshold that governs publication in the
-prior study's literature. Setting `alpha_prior = .05` assumes the field
-publishes results with *p* < .05 and truncates the likelihood at that point. A
-larger value assumes a more permissive literature and therefore less severe
-bias; `alpha_prior = 1` assumes no publication bias at all, which is appropriate
+`alpha_prior` is the significance level a prior result had to reach to be
+published (more generally, to reach you): the correction assumes you see only
+results with *p* below `alpha_prior`, and it undoes the selection that
+assumption implies. Setting `alpha_prior = .05` assumes the field publishes
+results with *p* < .05 and truncates the likelihood at that point. A larger
+value assumes a more permissive literature and therefore less severe bias.
+
+Setting `alpha_prior = 1` means there is no publication filter at all. Every
+*p* value is at most 1, so any result would have been published whatever its
+*p* value; there is then no publication bias to correct, and only the
+correction for uncertainty, set by `assurance`, remains. That is appropriate
 for a prior study that was never subject to the file drawer, such as a pilot
-study.
+study. (BUCSS computes with .999 in place of exactly 1, as BUCSS 1.x did, so
+plans match earlier versions; the section on safeguard power below shows that
+the difference is negligible.)
 
 A dissertation study is a similar case, since it is typically completed and
 defended regardless of how the results turn out. Even a pilot study is not
@@ -234,16 +242,26 @@ assuming none (`alpha_prior = 1`) calls for 37.
 
 ## Safeguard Power as a Special Case
 
-Perugini, Gallucci, and Costantini (2014) proposed safeguard power: plan the
-new study for the lower limit of a two-sided 60% confidence interval for the
-prior effect rather than for the effect itself. That is BUCSS with
-`alpha_prior = 1` and `assurance = .80`, and seeing why shows what each
-setting does.
+Safeguard power (Perugini, Gallucci, & Costantini, 2014) is a way of planning
+a new study from a prior study's effect size that guards against the prior
+estimate being too large. Instead of planning for the effect size the prior
+study observed, the researcher plans for the lower limit of a two-sided 60%
+confidence interval around it, a limit that, in repeated sampling, falls below
+the true effect 80% of the time. The new study then keeps its intended power
+even if the true effect is somewhat smaller than the one observed. Safeguard
+power allows for uncertainty in the prior estimate but not for publication
+bias.
 
-* With `alpha_prior = 1` there is no publication threshold, so the truncation
-  disappears and the truncated distribution of the prior statistic is its
-  ordinary distribution. (BUCSS reads 1 as .999, which leaves a slight
-  truncation; its size is given below.)
+It is BUCSS with `alpha_prior = 1` and `assurance = .80`, that is, BUCSS
+without the publication bias correction, at an assurance of .80, and seeing
+why shows what each setting does.
+
+* With `alpha_prior = 1` there is no publication filter, since no *p* value
+  exceeds 1, so the truncation disappears and the truncated distribution of
+  the prior statistic is its ordinary distribution. BUCSS computes with .999
+  in place of exactly 1, as BUCSS 1.x did, so plans match earlier versions.
+  That is a filter so lenient, dropping only results with *p* above .999, that
+  it changes the plan negligibly; its size is given below.
 * At `assurance = .80` the adjusted noncentrality parameter is then the value
   at which the observed statistic sits at the .80 quantile of that
   distribution: the lower limit of a one-sided 80% confidence interval, which
@@ -305,8 +323,9 @@ data.frame(
 ```
 
 The differences that remain all make the BUCSS plan the same as the safeguard
-plan or larger, never smaller. The first is the .999, which leaves a slight
-truncation. The second applies to the *t* tests and to every effect on one
+plan or larger, never smaller. The first is the .999: a filter that hides only
+results with *p* above .999 removes almost nothing, but it is not quite no
+filter at all. The second applies to the *t* tests and to every effect on one
 degree of freedom: BUCSS bounds the size of the effect whatever its sign, so
 its interval is computed from the magnitude of *t*, where the signed interval
 that safeguard power describes is computed from *t* itself. The difference is
@@ -314,17 +333,17 @@ the chance of a *t* at least as extreme in the opposite direction, which is
 negligible for a convincing prior result and not for a weak one. For *F* and
 chi square statistics on more than one degree of freedom there is no sign, and
 the .999 is the only one of these two. Both lower the adjusted noncentrality
-parameter, and both grow as the prior result weakens. As percentages of the
-parameter on the *F* and chi square scale (on the *t* scale that the *t*
-planners report, each percentage is about half as large), the .999 lowers it by
-0.02% or less for a prior significant at .01, by up to about 0.07% at the .05
-threshold, by up to about 0.15% at .10, and by about 0.3% at .15. The magnitude
-of *t* lowers it by less than 0.005% at .01, by 0.3% to 0.7% at .05 (0.6% to
-0.7% for a prior on 5 or more degrees of freedom), by 6% to 7% at .10, and by
-about 30% at .15. A *t* test whose two-sided *p* value is about .20 or more is
-declined by BUCSS at `assurance = .80`, while the signed interval's lower limit
-stays above zero until *p* reaches .40, with plans that run to thousands of
-participants.
+parameter, and both grow as the prior result weakens. At the safeguard
+`assurance = .80`, as percentages of the parameter on the *F* and chi square
+scale (on the *t* scale that the *t* planners report, each percentage is about
+half as large), the .999 lowers it by 0.02% or less for a prior significant at
+.01, by up to about 0.07% at the .05 threshold, by up to about 0.15% at .10,
+and by about 0.3% at .15. The magnitude of *t* lowers it by less than 0.005% at
+.01, by 0.3% to 0.7% at .05 (0.6% to 0.7% for a prior on 5 or more degrees of
+freedom), by 6% to 7% at .10, and by about 30% at .15. A *t* test whose
+two-sided *p* value is about .20 or more is declined by BUCSS at
+`assurance = .80`, while the signed interval's lower limit stays above zero
+until *p* reaches .40, with plans that run to thousands of participants.
 
 The sample size a plan needs is close to inversely proportional to the
 parameter on the *F* and chi square scale, so the plan grows by about the same

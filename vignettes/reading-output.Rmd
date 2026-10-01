@@ -111,23 +111,27 @@ planning_sentence(result)
 
 The noncentrality parameter is the natural scale for the correction, but it is
 not the scale a paper reports an effect on, and it grows with the sample size.
-So every plan also carries its **planning effect size**: the effect size the
-plan is built on, which is `ncp_adjusted` restated in the design's usual
-metric. It sits directly after `ncp_adjusted`, and its name says which metric
-it is:
+So every plan also carries its **planning effect size**, an adjusted effect
+size: the value, in the design's usual effect size metric, used to plan the
+sample size given the situation at hand (the prior study's result, the
+publication bias assumed through `alpha_prior`, and the uncertainty allowed for
+through `assurance`). It is `ncp_adjusted` restated in that metric, and it is
+what the plan is built on, not an estimate of the population effect to report.
+It sits directly after `ncp_adjusted`, and its name, which always ends in
+`_planning`, says which metric it is:
 
 | Planner | Row | Metric |
 |---------|-----|--------|
 | `ss_buc_independent_t` (`ss_buc_smd`) | `smd_planning` | standardized mean difference |
 | `ss_buc_welch_t` | `smd_planning` | standardized mean difference, standardized by the root mean square of the two standard deviations |
-| `ss_buc_paired_t` (`ss_buc_smd_paired`) | `dz_planning` | standardized mean of the paired differences |
+| `ss_buc_paired_t` (`ss_buc_smd_paired`) | `dz_planning` | Cohen's (1988) *d_z*: the mean of the paired differences divided by their standard deviation (the *z* names the difference score, which Cohen writes Z = X - Y) |
 | `ss_buc_one_sample_t` | `std_mean_planning` | standardized mean |
 | the eight ANOVA and ANCOVA planners | `f_planning` | Cohen's *f* for the effect, relative to its own error term |
 | `ss_buc_reg_coef`, `ss_buc_reg_joint` | `f2_planning` | Cohen's *f* squared |
 | `ss_buc_R2` | `R2_planning` | squared multiple correlation |
 | `ss_buc_correlation` | `rho_planning` | correlation |
 | `ss_buc_manova` | `D2_planning` | squared Mahalanobis distance |
-| `ss_buc_chisq_diff` | `rmsea_d_planning` | root mean square error of approximation of the difference test |
+| `ss_buc_chisq_diff` | `rmsea_d_planning` | RMSEA_D, with D for difference: the root mean square error of approximation of the chi square difference test between the two nested models (Savalei, Brace, & Fouladi, 2024), not the RMSEA of either model's fit |
 
 For the example above, the published result was *F*(2, 114) = 5, whose sample
 Cohen's *f* is `sqrt(5 * 2/114)`, about `r format(signif(sqrt(10 / 114), 3))`.
@@ -155,10 +159,11 @@ result$value[result$term == "actual_power"]
 A few things to know when you carry the planning effect size elsewhere:
 
 * **It is the value the plan is built on, not a better estimate of the
-  effect.** With `alpha_prior = 1` and `assurance = .5` it is a median
-  unbiased estimate; at a higher assurance it is deliberately smaller, an
-  effect the plan must still be powered for, so report it as the planning
-  effect size rather than as the size of the effect.
+  effect.** At `assurance = .5` it is the median unbiased estimate (with
+  `alpha_prior` below 1, after the correction for publication bias); above .5
+  it is deliberately conservative, a lower confidence limit, an effect the
+  plan must still be powered for, so report it as the planning effect size
+  rather than as the size of the effect.
 * **Within-subjects and split-plot designs.** There `f_planning` is relative
   to the effect's own error term, which already reflects the correlation among
   the repeated measures. Power functions that take an *f* standardized by the
@@ -207,3 +212,10 @@ Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample-size planning for
 more accurate statistical power: A method adjusting sample effect sizes for
 publication bias and uncertainty. *Psychological Science, 28*, 1547--1562.
 https://doi.org/10.1177/0956797617723724
+
+Cohen, J. (1988). *Statistical power analysis for the behavioral sciences* (2nd
+ed.). Lawrence Erlbaum Associates.
+
+Savalei, V., Brace, J. C., & Fouladi, R. T. (2024). We need to change how we
+compute RMSEA for nested model comparisons in structural equation modeling.
+*Psychological Methods, 29*, 480--493. https://doi.org/10.1037/met0000537

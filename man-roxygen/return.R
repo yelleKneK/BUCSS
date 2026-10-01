@@ -9,16 +9,27 @@
 #'   returned sample size at the returned noncentrality parameter (see
 #'   Details); \code{ncp_adjusted}, the publication bias and uncertainty
 #'   adjusted prior study noncentrality parameter, <%= ncp_scale %>; and the
-#'   planning effect size, the effect size the plan is built on, which is
-#'   \code{ncp_adjusted} restated in the design's usual metric:
-#'   <%= effect_phrase %>. Because it restates \code{ncp_adjusted},
+#'   planning effect size, <%= effect_phrase %>.
+#'
+#'   A planning effect size (the row whose name ends in \code{_planning}) is
+#'   an adjusted effect size: the value, in the design's usual effect size
+#'   metric, used to plan the sample size given the situation at hand (the
+#'   prior study's result, the publication bias assumed through
+#'   \code{alpha_prior}, and the uncertainty allowed for through
+#'   \code{assurance}). It is \code{ncp_adjusted} restated in that metric
+#'   and is what the plan is built on, not an estimate of the population
+#'   effect to report: above an assurance of .5 it is deliberately
+#'   conservative (a lower confidence limit), and at .5 it is the median
+#'   unbiased estimate. Because it restates \code{ncp_adjusted},
 #'   \code{actual_power} is the ordinary power of a study of the returned
-#'   sample size when the population effect is the planning effect size. Rows
-#'   echoing the planning inputs follow, so the assumptions travel with the
-#'   result. The design, the unit the sample size is counted in, the largest
-#'   assurance this prior can support (the assurance ceiling), and the
-#'   planned test's degrees of freedom (\code{df_effect}, and \code{df_error}
-#'   where the test has a denominator) travel on attributes.
-#'   \code{print.bucss_plan} shows the design, for the regression planners
-#'   the predictor frame, the unit, and the ceiling beneath the table; \code{tidy()} and \code{glance()} give the compact and
-#'   wide views, the latter with every attribute as a column.
+#'   sample size when the population effect is the planning effect size.
+#'
+#'   Rows echoing the planning inputs follow the design results, so the
+#'   assumptions travel with the result. The design, the unit the sample size
+#'   is counted in, the largest assurance this prior can support (the assurance
+#'   ceiling), and the planned test's degrees of freedom (\code{df_effect}, and
+#'   \code{df_error} where the test has a denominator) travel on attributes.
+#'   \code{print.bucss_plan} shows the design, for the regression planners the
+#'   predictor frame, the unit, and the ceiling beneath the table;
+#'   \code{tidy()} and \code{glance()} give the compact and wide views, the
+#'   latter with every attribute as a column.

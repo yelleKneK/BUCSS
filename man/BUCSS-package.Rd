@@ -76,28 +76,56 @@ power. \code{\link{ss_buc_sensitivity}} checks the proportion by simulation
 for any plan, counting a refusal to plan as meeting the target, as the
 guarantee does, and also reporting the rate among the plans issued.
 
+\strong{The planning effect size.} Every plan also reports a planning
+effect size, in a row whose name ends in \code{_planning}
+(\code{smd_planning}, \code{f_planning}, \code{rho_planning}, and so on).
+It is an adjusted effect size: the value, in the design's usual effect size
+metric, used to plan the sample size given the situation at hand (the prior
+study's result, the publication bias assumed through \code{alpha_prior},
+and the uncertainty allowed for through \code{assurance}). It is
+\code{ncp_adjusted} restated in that metric and is what the plan is built
+on, not an estimate of the population effect to report: above an assurance
+of .5 it is deliberately conservative (a lower confidence limit), and at .5
+it is the median unbiased estimate. Each planner's Value section names its
+metric.
+
 \strong{Safeguard power is a special case.} Safeguard power (Perugini,
-Gallucci, & Costantini, 2014) plans from the lower limit of a two-sided 60
-percent confidence interval for the prior study's effect, running the
-ordinary power analysis at that value. It is the special case
-\code{alpha_prior = 1} and \code{assurance = .80} of the method here. With
-\code{alpha_prior = 1} there is no publication threshold, so the truncation
-is removed and the prior statistic has its ordinary distribution. At
-\code{assurance = .80} the adjusted noncentrality parameter is then the
-lower limit of a one-sided 80 percent confidence interval, which is the
-lower limit of the two-sided 60 percent interval (either way, 20 percent
-lies below it), and the plan is the smallest sample size whose ordinary
-power at that value reaches \code{desired_power}. In general, the lower
-limit of a two-sided interval at confidence level \emph{C} is
-\code{assurance = (1 + C)/2}, so a two-sided 80 percent interval is
-\code{assurance = .90}. A few differences remain, and each can only make
-the plan here the same as the safeguard plan or larger: the planners read
-\code{alpha_prior = 1} as .999, which leaves a slight truncation; for the
-\emph{t} tests and every other effect on one degree of freedom the interval
-bounds the size of the effect whatever its sign, because the publication
-rule is two-sided; an unbalanced prior design is read as a balanced one;
-and the Welch planner returns at least 10 per group. They are negligible for
-a convincing prior result and grow as the prior result weakens;
+Gallucci, & Costantini, 2014) is a way of planning a new study from a prior
+study's effect size that guards against the prior estimate being too large.
+Instead of planning for the effect size the prior study observed, the
+researcher plans for the lower limit of a two-sided 60 percent confidence
+interval around it (a limit that, in repeated sampling, falls below the
+true effect 80 percent of the time), so the new study keeps its intended
+power even if the true effect is somewhat smaller than the one observed. It
+allows for uncertainty in the prior estimate but not for publication bias.
+
+It is the special case \code{alpha_prior = 1} and \code{assurance = .80}
+of the method here, that is, BUCSS without the publication bias correction,
+at an assurance of .80. \code{alpha_prior} is the significance level a
+prior result had to reach to be published, and no \emph{p} value exceeds 1,
+so \code{alpha_prior = 1} means no publication filter: any result would
+have been published, the truncation is removed, and the prior statistic has
+its ordinary distribution. At \code{assurance = .80} the adjusted
+noncentrality parameter is then the lower limit of a one-sided 80 percent
+confidence interval, which is the lower limit of the two-sided 60 percent
+interval (either way, 20 percent lies below it), and the plan is the
+smallest sample size whose ordinary power at that value reaches
+\code{desired_power}. In general, the lower limit of a two-sided interval
+at confidence level \emph{C} is \code{assurance = (1 + C)/2}, so a
+two-sided 80 percent interval is \code{assurance = .90}.
+
+A few differences remain, and each can only make the plan here the same as
+the safeguard plan or larger. First, the planners compute with .999 in
+place of an \code{alpha_prior} of exactly 1, as BUCSS 1.x did, so plans
+match earlier versions; that filter is so lenient (it drops only results
+with \emph{p} above .999) that at an assurance of .80 it lowers the
+adjusted noncentrality parameter by less than 0.1 percent for a prior
+significant at .05. Second, for the \emph{t} tests and every other effect
+on one degree of freedom the interval bounds the size of the effect
+whatever its sign, because the publication rule is two-sided. Third, an
+unbalanced prior design is read as a balanced one, and the Welch planner
+returns at least 10 per group. All of the differences are negligible for a
+convincing prior result and grow as the prior result weakens;
 \code{vignette("understanding-assurance", package = "BUCSS")} measures
 them. For the regression planners the equivalence holds in the frame
 \code{random_predictors} names. With \code{alpha_prior} below 1 the same

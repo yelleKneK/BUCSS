@@ -99,14 +99,20 @@
 #'   noncentrality parameter associated with the (1 - assurance) quantile of the
 #'   likelihood distribution.
 #'
-#'   If the previous study of interest has not been subjected to publication
-#'   bias (e.g., a pilot study), \code{alpha_prior} can be set to 1 to indicate
-#'   no publication bias. Alternative \eqn{\alpha} levels can also be
-#'   accommodated to represent differing amounts of publication bias. For
-#'   example, setting \code{alpha_prior = .20} would reflect less severe
-#'   publication bias than the default of .05. In essence, setting
-#'   \code{alpha_prior} at .20 assumes that studies with \emph{p} values less
-#'   than .20 are published, whereas those with larger \emph{p} values are not.
+#'   \code{alpha_prior} is the significance level a prior result had to reach
+#'   to be published: the correction assumes that only results with \emph{p}
+#'   values below \code{alpha_prior} reach the literature, and so reach you.
+#'   Different \eqn{\alpha} levels represent differing amounts of publication
+#'   bias. For example, setting \code{alpha_prior = .20} assumes that studies
+#'   with \emph{p} values less than .20 are published, whereas those with
+#'   larger \emph{p} values are not, which reflects less severe publication
+#'   bias than the default of .05. If the previous study of interest has not
+#'   been subjected to publication bias (e.g., a pilot study), set
+#'   \code{alpha_prior = 1}. Because no \emph{p} value exceeds 1, this means
+#'   no publication filter at all: any result would have been published
+#'   whatever its \emph{p} value, so there is no publication bias to correct,
+#'   and only the correction for uncertainty, set by \code{assurance},
+#'   remains.
 #'
 #'   In some cases, the corrected noncentrality parameter for a given level of
 #'   assurance will be estimated to be zero. This is an indication that, at the

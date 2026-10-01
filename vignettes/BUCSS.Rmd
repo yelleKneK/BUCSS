@@ -90,11 +90,16 @@ result$value[result$term == "ncp_adjusted"]
 result$value[result$term == "smd_planning"]
 ```
 
-The last of these, `smd_planning`, is the **planning effect size**: the
-adjusted noncentrality parameter restated as a standardized mean difference,
-the metric this design is usually reported in. It is the effect size the plan
-is built on, so a study of 130 per group has exactly the returned
-`actual_power` when the standardized mean difference is
+The last of these, `smd_planning`, is the **planning effect size**, an
+adjusted effect size: the value, in the design's usual effect size metric (here
+a standardized mean difference), used to plan the sample size given the
+situation at hand (the prior study's result, the publication bias assumed
+through `alpha_prior`, and the uncertainty allowed for through `assurance`). It
+is the adjusted noncentrality parameter restated in that metric, and it is what
+the plan is built on, not an estimate of the population effect to report: above
+an assurance of .5 it is deliberately conservative (a lower confidence limit),
+and at .5 it is the median unbiased estimate. A study of 130 per group has
+exactly the returned `actual_power` when the standardized mean difference is
 `r format(signif(result$value[result$term == "smd_planning"], 3))`. The prior
 study's own standardized mean difference was 3 * sqrt(2/20), about
 `r format(signif(3 * sqrt(2 / 20), 3))`. Each planner names the row for its
