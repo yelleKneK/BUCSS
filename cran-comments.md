@@ -82,7 +82,9 @@ as they were, and is not run by the examples, tests, or vignettes.
 
 ## Test environments
 
-* local: macOS 27 (arm64), R 4.6.1 (2026-06-24), 2026-09-30.
+* local: macOS 27 (arm64), R 4.6.1 (2026-06-24), 2026-10-01.
+* win-builder: Windows Server 2022 x64, R-devel (2026-09-30 r90605 ucrt),
+  2026-10-01.
 
 ## R CMD check results
 
@@ -93,6 +95,20 @@ as they were, and is not run by the examples, tests, or vignettes.
 * "Skipping checking HTML validation: 'tidy' doesn't look like recent enough
   HTML Tidy." The local copy of HTML Tidy is too old; this note is specific to
   the local machine.
+
+### win-builder (R-devel)
+
+    Status: 1 NOTE
+
+The NOTE is from the CRAN incoming feasibility check:
+
+* "Possibly misspelled words in DESCRIPTION: sphericity". The word is spelled
+  correctly: it names the sphericity assumption of repeated measures analysis
+  of variance, which the new `epsilon` argument relaxes.
+* "Found the following (possibly) invalid URLs": a README link to a PDF of
+  Anderson, Kelley, and Maxwell (2017) on the maintainer's website, which
+  reset the connection from the check machine although it resolves
+  elsewhere. The link now points to the article's DOI.
 
 ## Reverse dependencies
 

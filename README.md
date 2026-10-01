@@ -10,7 +10,7 @@
 BUCSS is an R package for implementing Bias and Uncertainty Corrected Sample
 Size planning. BUCSS implements a method of correcting for publication bias and
 uncertainty when planning the sample size of a future study from an original
-study. See [Anderson, Kelley, &amp; Maxwell (2017; *Psychological Science*, *28*, 1547--1562)](https://kenkelley.org/wp-content/uploads/articles/Anderson_Kelley_Maxwell_Psychological_Science_2017.pdf).
+study. See [Anderson, Kelley, &amp; Maxwell (2017; *Psychological Science*, *28*, 1547--1562)](https://doi.org/10.1177/0956797617723724).
 
 ## Installing `BUCSS`
 
