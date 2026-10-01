@@ -51,7 +51,8 @@
 #' glance(result)$total_N
 #'
 #' @name bucss_tidiers
-#' @author Ken Kelley (\email{kkelley@@nd.edu})
+#' @author Ken Kelley (\email{kkelley@@nd.edu}) and
+#'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 NULL
 
 #' @title Objects Exported From Other Packages

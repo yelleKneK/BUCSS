@@ -331,5 +331,6 @@ Bonett, D. G. (2008). Confidence intervals for standardized
 \code{\link{ss_buc_independent_t}} for the equal-variance test.
 }
 \author{
-Ken Kelley (\email{kkelley@nd.edu})
+Ken Kelley (\email{kkelley@nd.edu}) and
+  Samantha F. Anderson (\email{samantha.f.anderson@asu.edu})
 }

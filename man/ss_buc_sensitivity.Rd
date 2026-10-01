@@ -166,5 +166,6 @@ Anderson, S. F., & Kelley, K. (2024). Sample size planning for
   planners, whose results this function takes as input.
 }
 \author{
-Ken Kelley (\email{kkelley@nd.edu})
+Ken Kelley (\email{kkelley@nd.edu}) and
+  Samantha F. Anderson (\email{samantha.f.anderson@asu.edu})
 }

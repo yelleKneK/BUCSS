@@ -192,7 +192,8 @@
 #'   more than one predictor (with \code{random_predictors = TRUE} for
 #'   sampled predictors).
 #'
-#' @author Ken Kelley (\email{kkelley@@nd.edu})
+#' @author Ken Kelley (\email{kkelley@@nd.edu}) and
+#'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'
 #' @template references
 #' @references Gatsonis, C., & Sampson, A. R. (1989). Multiple correlation:

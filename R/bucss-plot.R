@@ -104,7 +104,8 @@
 #'   \code{vignette("understanding-assurance", package = "BUCSS")} for what the
 #'   ceiling means.
 #'
-#' @author Ken Kelley (\email{kkelley@@nd.edu})
+#' @author Ken Kelley (\email{kkelley@@nd.edu}) and
+#'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'
 #' @template references
 #'

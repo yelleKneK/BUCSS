@@ -105,7 +105,8 @@ knit_print.bucss_plan <- function(x, ...) {
 #' planning_sentence(ss_buc_independent_t(t_observed = 3, n = 20,
 #'   alpha_prior = 1))
 #'
-#' @author Ken Kelley (\email{kkelley@@nd.edu})
+#' @author Ken Kelley (\email{kkelley@@nd.edu}) and
+#'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 planning_sentence <- function(x) {
   if (!inherits(x, "bucss_plan")) {
     stop("'x' must be a bucss_plan result from an ss_buc_* function.",

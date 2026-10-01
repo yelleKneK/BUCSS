@@ -173,7 +173,8 @@
 #' try(ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42,
 #'   df_restricted = 43, assurance = .99))
 #'
-#' @author Ken Kelley (\email{kkelley@@nd.edu})
+#' @author Ken Kelley (\email{kkelley@@nd.edu}) and
+#'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'
 #' @template references
 #' @references Savalei, V., Brace, J. C., & Fouladi, R. T. (2024). We need to

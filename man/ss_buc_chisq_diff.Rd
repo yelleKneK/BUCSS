@@ -299,5 +299,6 @@ Savalei, V., Brace, J. C., & Fouladi, R. T. (2024). We need to
   \doi{10.1037/met0000537}
 }
 \author{
-Ken Kelley (\email{kkelley@nd.edu})
+Ken Kelley (\email{kkelley@nd.edu}) and
+  Samantha F. Anderson (\email{samantha.f.anderson@asu.edu})
 }

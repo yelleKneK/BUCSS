@@ -320,5 +320,6 @@ Gatsonis, C., & Sampson, A. R. (1989). Multiple correlation:
   sampled predictors).
 }
 \author{
-Ken Kelley (\email{kkelley@nd.edu})
+Ken Kelley (\email{kkelley@nd.edu}) and
+  Samantha F. Anderson (\email{samantha.f.anderson@asu.edu})
 }

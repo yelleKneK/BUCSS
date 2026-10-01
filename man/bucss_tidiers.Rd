@@ -61,5 +61,6 @@ glance(result)$total_N
 
 }
 \author{
-Ken Kelley (\email{kkelley@nd.edu})
+Ken Kelley (\email{kkelley@nd.edu}) and
+  Samantha F. Anderson (\email{samantha.f.anderson@asu.edu})
 }
