@@ -72,7 +72,7 @@ calculation from *t* = 3.00 would suggest.
 
 ## Reading the Result
 
-Every `ss_buc_*` function returns a tidy object shaped like the result tables
+Every `ss_buc_*` planner returns a tidy object shaped like the result tables
 in the **DMAR** package: `term`/`value` rows holding the design results first
 (the necessary sample size, named for its unit; the implied total sample size
 where the unit is per group or per cell; the achieved power at the returned
@@ -230,3 +230,4 @@ https://doi.org/10.1177/0956797617723724
 Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and sample
 size calculation due to estimating noncentrality. *Communications in
 Statistics: Theory and Methods, 25*, 1595--1610.
+https://doi.org/10.1080/03610929608831787

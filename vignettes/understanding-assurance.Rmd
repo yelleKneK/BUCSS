@@ -131,8 +131,9 @@ ss_buc_independent_t(t_observed = 3, n = 20, assurance = .95, desired_power = .8
 #> Anderson and Kelley (2024).
 ```
 
-That last sentence is worth dwelling on, because the first remedy looks
-cheaper than it is. Assurance is a promise about the long run: at .90, nine
+The sentence about re-running at a lower assurance is worth dwelling on,
+because the first remedy looks cheaper than it is. Assurance is a promise
+about the long run: at .90, nine
 replications in ten reach your target power. If the prior result cannot
 support .90 and you re-run at .80, the plan you get is a perfectly good .80
 plan, but it is an .80 plan. You have not recovered the guarantee you wanted;
@@ -142,9 +143,10 @@ it changes an assumption about the literature the prior study came from, and
 it is defensible exactly to the extent that the assumption is.
 
 The reported ceiling is exact: the largest assurance a prior result can support
-is `1 - p/alpha_prior`, where *p* is the prior study's *p* value. Here that is
-about .90, so .95 is out of reach but .90 or below is fine. The two remedies are
-exactly the two knobs: lower the assurance to at or below the reported ceiling,
+is `1 - p/alpha_prior`, where *p* is the prior study's *p* value (taken at the
+balanced design the planner plans from, when the prior study's groups were
+unequal). Here that is about .90, so .95 is out of reach but .90 or below is
+fine. The two remedies are exactly the two knobs: lower the assurance to at or below the reported ceiling,
 or assume less publication bias by raising `alpha_prior`, which lifts the
 ceiling. When the ceiling is already at or below the .5 floor, only raising
 `alpha_prior` can help.
@@ -471,9 +473,11 @@ declining to plan is the limiting case of an arbitrarily conservative plan.
 issued, and it is lower, often much lower: here
 `r apa(row_value(audit, "attainment"))` (Monte Carlo standard error
 `r apa(row_value(audit, "attainment_mcse"), 2)`), because the method refuses
-`r apa(row_value(audit, "refusal_rate"))` of the simulated published prior
-results as too weak to plan from. That is what a user experiences, and it is
-the visible price of a method that refuses rather than guesses. Its expected value is
+`r apa(row_value(audit, "refusal_rate"))` (Monte Carlo standard error
+`r apa(sqrt(row_value(audit, "refusal_rate") * (1 - row_value(audit, "refusal_rate")) / row_value(audit, "replications")), 2)`)
+of the simulated published prior results as too weak to plan from. That is
+what a user experiences, and it is the visible price of a method that refuses
+rather than guesses. Its expected value is
 `(assurance - refusal_rate)/(1 - refusal_rate)`.
 
 The most useful thing to do with this function is to run it more than once,
@@ -516,3 +520,4 @@ Science, 9*, 319--332. https://doi.org/10.1177/1745691614528519
 Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and sample
 size calculation due to estimating noncentrality. *Communications in
 Statistics: Theory and Methods, 25*, 1595--1610.
+https://doi.org/10.1080/03610929608831787

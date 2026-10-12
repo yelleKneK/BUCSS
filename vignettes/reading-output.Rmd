@@ -15,7 +15,7 @@ library(BUCSS)
 
 Once a planner has returned, how do you read the plan, pull the one number you
 need out of it, or collect it into a table or a manuscript? Every `ss_buc_*`
-function returns the same kind of object: a tidy result of class `bucss_plan`,
+planner returns the same kind of object: a tidy result of class `bucss_plan`,
 holding a bias and uncertainty corrected plan (Anderson, Kelley, & Maxwell,
 2017). This vignette shows the three ways to read it, which follow the same
 conventions as the **DMAR** package, so the habits carry over.
@@ -44,9 +44,10 @@ result
 ```
 
 Displayed values are rounded for reading (whole numbers print clean; other
-values print at three significant figures); the stored values keep full
-precision. Change the display with `options(bucss.digits = )`, and put back
-whatever was set before when you are done:
+values print at three significant figures, and a value below 1 is given more
+figures rather than shown as 1); the stored values keep full precision.
+Change the display with `options(bucss.digits = )`, and put back whatever was
+set before when you are done:
 
 ```{r}
 old <- options(bucss.digits = 5)

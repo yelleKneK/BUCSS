@@ -189,11 +189,13 @@ The two are linked by the refusal rate reported alongside them:
 Here that is `r apa(row_value(audit, "refusal_rate"))` + (1 -
 `r apa(row_value(audit, "refusal_rate"))`) times
 `r apa(row_value(audit, "attainment"))`, or
-`r apa(row_value(audit, "attainment_with_refusals"))`. The two rates coincide
-when nothing is refused and separate as refusals rise. That separation is not
-a flaw in the method; it is the visible price of a method that refuses to plan
-from a prior result too weak to support the request, rather than returning a
-confident but hollow number. `size_at_true_effect` is the sample size the true
+`r apa(row_value(audit, "attainment_with_refusals"))`; the refusal rate's own
+Monte Carlo standard error is
+`r apa(sqrt(row_value(audit, "refusal_rate") * (1 - row_value(audit, "refusal_rate")) / row_value(audit, "replications")), 2)`.
+The two rates coincide when nothing is refused and separate as refusals rise.
+That separation is not a flaw in the method; it is the visible price of a
+method that refuses to plan from a prior result too weak to support the
+request, rather than returning a confident but hollow number. `size_at_true_effect` is the sample size the true
 effect really requires, the benchmark each simulated plan is measured against,
 and the quartiles show how widely the plans scatter around it.
 
@@ -217,8 +219,10 @@ error `r apa(row_value(smaller, "attainment_with_refusals_mcse"), 2)`): the
 guarantee does not depend on the corrected estimate being right. What changes
 is how it is kept. More of the published prior results are now too weak to
 plan from, so the refusal rate rises to
-`r apa(row_value(smaller, "refusal_rate"))`, and among the plans actually
-issued only `r apa(row_value(smaller, "attainment"))` reach the target (Monte
+`r apa(row_value(smaller, "refusal_rate"))` (Monte Carlo standard error
+`r apa(sqrt(row_value(smaller, "refusal_rate") * (1 - row_value(smaller, "refusal_rate")) / row_value(smaller, "replications")), 2)`),
+and among the plans actually issued only
+`r apa(row_value(smaller, "attainment"))` reach the target (Monte
 Carlo standard error `r apa(row_value(smaller, "attainment_mcse"), 2)`).
 
 ## When the Prior Result Cannot Support the Request
@@ -264,3 +268,4 @@ https://doi.org/10.1080/01621459.1974.10480189
 Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and sample
 size calculation due to estimating noncentrality. *Communications in
 Statistics: Theory and Methods, 25*, 1595--1610.
+https://doi.org/10.1080/03610929608831787

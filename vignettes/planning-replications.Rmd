@@ -189,12 +189,12 @@ high-assurance replication. It tells you the largest assurance this prior can
 support and the two levers you can pull (lower the assurance, or raise
 `alpha_prior` to assume the literature filtered less aggressively), so you can
 make an informed, minimal adjustment rather than a blind one. A well-powered
-original study would support assurance of .80 or .95 comfortably; this one does
-not, and that is worth knowing before you collect data.
+original study usually supports an assurance of .80, and often .95; this one
+cannot support .80, and that is worth knowing before you collect data.
 
 ## Reading and Using the Result
 
-Every `ss_buc_*` function returns a tidy object. Print it for a readable
+Every `ss_buc_*` planner returns a tidy object. Print it for a readable
 summary, or pull the pieces out programmatically:
 
 ```{r}
@@ -237,6 +237,7 @@ https://doi.org/10.1037/met0000520
 Anderson, S. F., & Maxwell, S. E. (2017). Addressing the "replication crisis":
 Using original studies to design replication studies with appropriate
 statistical power. *Multivariate Behavioral Research, 52*, 305--324.
+https://doi.org/10.1080/00273171.2017.1289361
 
 Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample-size planning for
 more accurate statistical power: A method adjusting sample effect sizes for
@@ -249,3 +250,4 @@ analyzing data: A model comparison perspective* (4th ed.). Routledge.
 Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and sample
 size calculation due to estimating noncentrality. *Communications in Statistics:
 Theory and Methods, 25*, 1595--1610.
+https://doi.org/10.1080/03610929608831787
