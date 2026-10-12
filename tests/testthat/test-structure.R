@@ -219,6 +219,10 @@ test_that("planning_sentence() writes the manuscript sentence", {
   expect_match(s, "80% power", fixed = TRUE)
   expect_match(s, "90% assurance", fixed = TRUE)
   expect_error(planning_sentence(1), "bucss_plan", fixed = TRUE)
+  # Called with nothing, the same message, not R's 'argument "x" is missing'
+  # (GF-12 of the 2026-10-12 triage).
+  expect_error(planning_sentence(),
+               "'x' must be a bucss_plan result from an ss_buc_* function.", fixed = TRUE)
 })
 
 test_that("row and column subsetting is not hijacked by the legacy [[ method", {

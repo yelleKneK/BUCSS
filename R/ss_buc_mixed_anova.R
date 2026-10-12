@@ -107,9 +107,13 @@
 #'   to the same balanced design as the reported noncentrality parameter, so an
 #'   ordinary power analysis at it can return a sample size a little smaller
 #'   than the one reported here (never a larger one), because the reported size
-#'   is the larger of the two rounded designs' requirements. Although
-#'   equal-\emph{n} previous studies are preferable, this approach will work
-#'   well as long as the cell sizes are only slightly discrepant.
+#'   is the larger of the two rounded designs' requirements. For a prior study
+#'   with unequal group sizes, or a total sample size that does not divide
+#'   evenly, the largest supportable assurance is computed at the balanced
+#'   design the planner plans from, so it can be below
+#'   \eqn{1 - p/\alpha}{1 - p/alpha} at the study's own \emph{p} value.
+#'   Although equal-\emph{n} previous studies are preferable, this approach
+#'   will work well as long as the cell sizes are only slightly discrepant.
 #'
 #'   \strong{Sphericity.} The default \code{epsilon = 1} assumes sphericity, as
 #'   the uncorrected within-subjects test does. When a prior study reports
@@ -227,7 +231,7 @@
 #'   other than 1 is ignored with a warning, and the result has no
 #'   \code{epsilon} row. See Details.
 #'
-#' @templateVar size_phrase per between-subjects cell sample size
+#' @templateVar size_phrase per-group sample size (per between-subjects cell; the row is \code{necessary_n_per_group})
 #' @templateVar ncp_scale on the scale of the \emph{F} statistic, at the prior study's sample size (for a prior \emph{N} that does not divide evenly, at the balanced sample size the planner substitutes for it), and on the sphericity scale for every \code{epsilon} (see Details)
 #' @templateVar effect_phrase \code{f_planning}, Cohen's \emph{f} for the effect tested, relative to its own error term, \eqn{\sqrt{\lambda/(kN)}}{sqrt(lambda/(k N))}, where \eqn{\lambda}{lambda} is \code{ncp_adjusted}, \emph{N} the total of the balanced prior design it belongs to, and \emph{k} the error degrees of freedom per subject, 1 for the between-subjects effect and \code{levels_within} - 1 for the within-subjects effect and the interaction, so \eqn{f^2/(1 + f^2)}{f^2/(1 + f^2)} is the population partial eta squared for the effect; like \code{ncp_adjusted} it is on the sphericity scale, and for \code{epsilon} below 1 the power statement that follows holds under the same Muller and Barton (1989) approximation, with the corrected degrees of freedom and noncentrality parameter; it is not the \emph{f} that power functions for repeated measures take (see Details)
 #' @template return-effect

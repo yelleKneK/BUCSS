@@ -139,11 +139,15 @@
 #'   to the same balanced design as the reported noncentrality parameter, so an
 #'   ordinary power analysis at it can return a sample size a little smaller
 #'   than the one reported here (never a larger one), because the reported size
-#'   is the larger of the two rounded designs' requirements. When the
-#'   individual group sizes of an unequal-\emph{n} previous study are known, we
-#'   highly encourage entering these explicitly, especially if the sample sizes
-#'   are quite discrepant, as this allows for the greatest precision in
-#'   estimating an appropriate planned study \emph{n}.
+#'   is the larger of the two rounded designs' requirements. For a prior study
+#'   with unequal group sizes, or a total sample size that does not divide
+#'   evenly, the largest supportable assurance is computed at the balanced
+#'   design the planner plans from, so it can be below
+#'   \eqn{1 - p/\alpha}{1 - p/alpha} at the study's own \emph{p} value. When
+#'   the individual group sizes of an unequal-\emph{n} previous study are
+#'   known, we highly encourage entering these explicitly, especially if the
+#'   sample sizes are quite discrepant, as this allows for the greatest
+#'   precision in estimating an appropriate planned study \emph{n}.
 #'
 #' @param t_observed Observed \emph{t} value from a previous study used to plan
 #'   sample size for a planned study. Either sign is accepted: the
@@ -190,9 +194,12 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
 
   .check_scalar_finite(t_observed, "t_observed")
 
-  # Treat N = NULL as absent so both no-size paths get the friendly error
-  # rather than a cryptic missing-argument or undefined-object failure.
-  if ((missing(N) || is.null(N)) && missing(n)) {
+  # Treat N = NULL, and n = NULL, as absent, so every no-size path gets the
+  # friendly error rather than a cryptic missing-argument or undefined-object
+  # failure, and so 'n = NULL' with 'N' plans exactly as 'N' alone does (as
+  # 'N = NULL' with 'n' always has).
+  no_n <- missing(n) || is.null(n)
+  if ((missing(N) || is.null(N)) && no_n) {
     stop("You must specify the prior study's sample size: either 'n' (the per group size, or the two group sizes as a length-2 vector) or 'N' (the total).", call. = FALSE)
   }
 
@@ -207,22 +214,31 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
       # The round-down branch has df = 2 * floor(N / 2) - 2, so N = 3 would
       # already drive the error df to 0; the smallest workable total is 4.
       .check_count(N, "N", min = 4)
-      if (!missing(n)) stop("Because you specified 'N' you should not specify 'n'.", call. = FALSE)
-      if (missing(n)) {
-        n_ru <- ceiling(N / 2)
-        N_ru <- 2 * n_ru
-        DF_ru <- N_ru - 2
+      if (!no_n) stop("Because you specified 'N' you should not specify 'n'.", call. = FALSE)
+      n_ru <- ceiling(N / 2)
+      N_ru <- 2 * n_ru
+      DF_ru <- N_ru - 2
 
-        n_rd <- floor(N / 2)
-        N_rd <- 2 * n_rd
-        DF_rd <- N_rd - 2
-      }
+      n_rd <- floor(N / 2)
+      N_rd <- 2 * n_rd
+      DF_rd <- N_rd - 2
     }
   }
 
   if (missing(N) || is.null(N)) {
     if (!(length(n) %in% c(1, 2))) stop("The value of 'n' should be a vector of length two or a single value (for equal group sample sizes).", call. = FALSE)
-    for (n_i in n) .check_count(n_i, "n", min = 2)
+    # A single size is checked as any count is. Two sizes get a message of
+    # their own: the count check's "must be a single whole number" is wrong
+    # for an argument that may hold two.
+    if (length(n) == 1L) {
+      for (n_i in n) .check_count(n_i, "n", min = 2)
+    } else {
+      for (n_i in n) {
+        if (!is.numeric(n_i) || length(n_i) != 1L || !is.finite(n_i) ||
+            n_i != floor(n_i) || n_i < 2)
+          stop("Each of the two group sizes in 'n' must be a whole number of at least 2.", call. = FALSE)
+      }
+    }
     n <- as.numeric(n)  # integer sizes overflow R's integer range in n_1 + n_2
     if (length(n) == 2) {
       n_1 <- n[1]
@@ -319,7 +335,7 @@ ss_buc_independent_t <- function(t_observed, n, N, alpha_prior = .05, alpha_plan
     assurance_ceiling = min(solution_ru$ceiling, solution_rd$ceiling),
     total_n = 2 * output_n,
     inputs = list(t_observed = t_observed,
-                  n = if (missing(n)) NULL else n,
+                  n = if (no_n) NULL else n,
                   N = if (missing(N) || is.null(N)) NULL else N,
                   alpha_prior = alpha_prior_input,
                   alpha_planned = alpha_planned, assurance = assurance,

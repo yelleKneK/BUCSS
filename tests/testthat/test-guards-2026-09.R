@@ -82,7 +82,7 @@ test_that("argument checks the audit found never fire now fire", {
          "'df_numerator' must be at least 1"),
     # within subjects
     list(quote(ss_buc_rm_anova(F_observed = 5, N = 60, levels_A = 3, effect = "bogus")),
-         "should be one of"),
+         "'effect' should be one of"),
     list(quote(ss_buc_rm_anova(F_observed = NA, N = 60, levels_A = 3)),
          "'F_observed' must be a single finite numeric value"),
     list(quote(ss_buc_rm_anova(F_observed = 5, N = 60, levels_A = 1)),
@@ -97,7 +97,7 @@ test_that("argument checks the audit found never fire now fire", {
     # split plot
     list(quote(ss_buc_mixed_anova(F_observed = 5, N = 60, levels_between = 2,
                                   levels_within = 3, effect = "bogus")),
-         "should be one of"),
+         "'effect' should be one of"),
     list(quote(ss_buc_mixed_anova(F_observed = NA, N = 60, levels_between = 2,
                                   levels_within = 3)),
          "'F_observed' must be a single finite numeric value"),
@@ -180,10 +180,10 @@ test_that("argument checks the audit found never fire now fire", {
          "'F_observed' must be a single finite numeric value"),
     list(quote(ss_buc_manova(F_observed = 4.5, N = 5, p_variables = 4)),
          "leaves no error degrees of freedom"),
-    # an odd N passes the check above (5 - 3 - 1 = 1) and reaches the one
-    # inside the rounding branches, where 2 * floor(5 / 2) - 3 - 1 = 0
+    # an odd N passes the check above (5 - 3 - 1 = 1) and reaches the one for
+    # the rounded-down balanced design, where 2 * floor(5 / 2) - 3 - 1 = 0
     list(quote(ss_buc_manova(F_observed = 40, N = 5, p_variables = 3)),
-         "leaves no error degrees of freedom"),
+         "leaves no error degrees of freedom once an odd 'N' is rounded down"),
     # chi square difference
     list(quote(ss_buc_chisq_diff(chisq_observed = 9.5, df_full = 42, df_restricted = 43)),
          "You must specify 'N'"),
@@ -522,4 +522,289 @@ test_that("the split-plot planners' round-up nonsignificance checks fire", {
   for (call in cases)
     expect_error(eval(call), class = "bucss_nonsignificant",
                  label = paste(deparse(call, width.cutoff = 500L), collapse = " "))
+})
+
+# Guards added 2026-10-12, from the triage of the unfinished 2026-09-29
+# review. Each block names its finding and fails without the guard it covers.
+
+# Evaluate 'code', returning the error it raises (NULL if none) and the text
+# of every warning raised on the way.
+conditions_of <- function(code) {
+  record <- new.env(parent = emptyenv())
+  record$warnings <- character(0)
+  error <- tryCatch(
+    withCallingHandlers({
+      code
+      NULL
+    }, warning = function(w) {
+      record$warnings <- c(record$warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }),
+    error = function(e) e)
+  list(error = error, warnings = record$warnings)
+}
+
+test_that("GF-1: a MANOVA prior with no error df once balanced stops cleanly, with no stray warning", {
+  # N = 5 with three outcomes has 5 - 3 - 1 = 1 error df, but the rounded-down
+  # balanced design, 2 * floor(5 / 2) cases, has 4 - 3 - 1 = 0. A statistic
+  # short of the round-up branch's critical value used to be called
+  # nonsignificant, with R's "NaNs produced" beside the error (the message
+  # evaluated pf() at 0 df); a larger one reached the df message alone.
+  stopifnot(2 * floor(5 / 2) - 3 - 1 == 0)
+  no_df <- "leaves no error degrees of freedom once an odd 'N' is rounded down to two equal groups"
+  cases <- list(
+    quote(ss_buc_manova(F_observed = 5, N = 5, p_variables = 3)),
+    quote(ss_buc_manova(F_observed = 5, N = 7, p_variables = 5)),
+    quote(ss_buc_manova(F_observed = 5, N = 9, p_variables = 7)),
+    quote(ss_buc_manova(T2_observed = 50, N = 5, p_variables = 3)),
+    quote(ss_buc_manova(F_observed = 40, N = 5, p_variables = 3)))
+  for (call in cases) {
+    label <- paste(deparse(call, width.cutoff = 500L), collapse = " ")
+    seen <- conditions_of(eval(call))
+    expect_s3_class(seen$error, "error")
+    expect_false(inherits(seen$error, "bucss_nonsignificant"), label = label)
+    expect_match(conditionMessage(seen$error), no_df, fixed = TRUE, label = label)
+    expect_identical(seen$warnings, character(0), label = label)
+  }
+  # One error df in the rounded-down design is enough (N = 7 with four
+  # outcomes: 6 - 4 - 1 = 1), so the guard does not reach a design that plans.
+  expect_s3_class(ss_buc_manova(F_observed = 500, N = 7, p_variables = 4, alpha_prior = 1,
+                                assurance = .5), "bucss_plan")
+})
+
+test_that("GF-3: a malformed 'effect' gets one message naming the argument and its choices", {
+  # NULL used to end in "missing value where TRUE/FALSE needed" (or, in the
+  # general split-plot planner, to plan the first choice); a number or NA in
+  # match.arg()'s "'arg' must be NULL or a character vector"; and a vector of
+  # two effects planned the first with no notice.
+  planners <- list(
+    list(choices = c("factor_A", "factor_B", "interaction"),
+         run = function(e) ss_buc_factorial_anova(F_observed = 12, N = 120, levels_A = 2,
+                                                  levels_B = 3, effect = e)),
+    list(choices = c("factor_A", "factor_B", "interaction"),
+         run = function(e) ss_buc_rm_anova(F_observed = 12, N = 60, levels_A = 2,
+                                           levels_B = 3, effect = e)),
+    list(choices = c("between", "within", "interaction"),
+         run = function(e) ss_buc_mixed_anova(F_observed = 12, N = 60, levels_between = 2,
+                                              levels_within = 3, effect = e)),
+    list(choices = c("between_only", "within_only", "between_within"),
+         run = function(e) ss_buc_mixed_anova_general(F_observed = 12, N = 90,
+                                                      df_numerator = 2, num_groups = 3,
+                                                      effect = e)))
+  for (p in planners) {
+    msg <- paste0("'effect' should be one of \"", p$choices[1], "\", \"", p$choices[2],
+                  "\", or \"", p$choices[3], "\", given as a single character string.")
+    malformed <- list(NULL, 2, NA, NA_character_, TRUE, character(0), "bogus", "",
+                      p$choices[2:1], rev(p$choices), list("bogus"))
+    for (bad in malformed)
+      expect_error(p$run(bad), msg, fixed = TRUE,
+                   label = paste(p$choices[1], paste(deparse(bad), collapse = " ")))
+    # The untouched default, the whole vector of choices, still means the
+    # first; a single value, an unambiguous prefix, and a one-element factor
+    # (a row of expand.grid(), say) are read as before.
+    expect_identical(p$run(p$choices), p$run(p$choices[1]))
+    expect_identical(attr(p$run(p$choices), "effect"), p$choices[1])
+    expect_identical(attr(p$run(p$choices[2]), "effect"), p$choices[2])
+    expect_identical(p$run(factor(p$choices[2])), p$run(p$choices[2]))
+  }
+  expect_identical(
+    attr(ss_buc_factorial_anova(F_observed = 12, N = 120, levels_A = 2, levels_B = 3,
+                                effect = "inter"), "effect"), "interaction")
+})
+
+test_that("GF-5: a spread too extreme to compute with is refused in the terms the user gave", {
+  # A ratio near 1e77 or more overflows the squares in the Welch-Satterthwaite
+  # degrees of freedom and used to end in "missing value where TRUE/FALSE
+  # needed"; a pair of standard deviations or variances whose ratio overflows
+  # or underflows was reported as a bad 'sd_ratio', which the user had not
+  # given.
+  w <- function(...) ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, ...)
+  too_far <- paste0("The two groups' spread differs by too many orders of magnitude to plan ",
+                    "from: the Welch-Satterthwaite degrees of freedom cannot be computed. ",
+                    "Please check ")
+  for (r in c(1e78, 1e100, 1e150, 1e200))
+    expect_error(w(sd_ratio = r), paste0(too_far, "'sd_ratio'."), fixed = TRUE)
+  pairs <- list(list(sd_1 = 1e-200, sd_2 = 1e200),      # the ratio is Inf
+                list(sd_1 = 1e200, sd_2 = 1e-200),      # the ratio is 0
+                list(sd_1 = 1e-100, sd_2 = 1))          # a finite ratio of 1e100
+  for (p in pairs) {
+    msg <- tryCatch(do.call(w, p), error = conditionMessage)
+    expect_identical(msg, paste0(too_far, "'sd_1' and 'sd_2'."))
+  }
+  msg <- tryCatch(w(var_1 = 1e-320, var_2 = 1), error = conditionMessage)
+  expect_identical(msg, paste0(too_far, "'var_1' and 'var_2'."))
+
+  # Extreme ratios that can be computed still plan, at the limit they
+  # approach: with one group's variance negligible the test is a one-sample t
+  # on the other group, so the plan is the paired t planner's from that
+  # group's size (df n - 1, and the noncentrality scaling as n).
+  one_sample <- function(N) ss_buc_paired_t(t_observed = 3, N = N)
+  computed <- c("actual_power", "ncp_adjusted")
+  for (case in list(list(ratio = 1e-150, N = 40), list(ratio = 1e-200, N = 40),
+                    list(ratio = 1e77, N = 55))) {
+    plan <- w(sd_ratio = case$ratio)
+    limit <- one_sample(case$N)
+    expect_identical(plan$value[plan$term == "necessary_n_per_group"],
+                     limit$value[limit$term == "necessary_N"])
+    expect_equal(plan$value[plan$term %in% computed], limit$value[limit$term %in% computed],
+                 tolerance = 1e-12)
+  }
+})
+
+test_that("GF-6: 'n = NULL' with 'N' is 'N' alone, and two group sizes get their own message", {
+  # 'N = NULL' with 'n' always planned; 'n = NULL' with 'N' stopped with
+  # "Because you specified 'N' you should not specify 'n'."
+  expect_identical(ss_buc_independent_t(t_observed = 3, n = NULL, N = 40),
+                   ss_buc_independent_t(t_observed = 3, N = 40))
+  expect_identical(ss_buc_independent_t(t_observed = 3, N = NULL, n = 20),
+                   ss_buc_independent_t(t_observed = 3, n = 20))
+  expect_identical(ss_buc_independent_t(t_observed = 3, n = NULL, N = 41),
+                   ss_buc_independent_t(t_observed = 3, N = 41))
+  # Neither size, however it is spelled, and both sizes are still refused.
+  expect_error(ss_buc_independent_t(t_observed = 3, n = NULL), "either 'n'", fixed = TRUE)
+  expect_error(ss_buc_independent_t(t_observed = 3, n = NULL, N = NULL), "either 'n'",
+               fixed = TRUE)
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, N = 40),
+               "should not specify 'n'", fixed = TRUE)
+  # Two sizes were told "'n' must be a single whole number.", which 'n' need
+  # not be.
+  two <- "Each of the two group sizes in 'n' must be a whole number of at least 2."
+  for (bad in list(c(20, NA), c(20, 2.5), c(1, 20), c(20, Inf), list(20, "a")))
+    expect_error(ss_buc_independent_t(t_observed = 3, n = bad), two, fixed = TRUE,
+                 label = paste(deparse(bad), collapse = " "))
+  # A single size keeps the count check's own messages.
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20.5),
+               "'n' must be a single whole number.", fixed = TRUE)
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 1), "'n' must be at least 2.",
+               fixed = TRUE)
+})
+
+test_that("GF-7: an alpha_planned too small to compute with is refused by the validator", {
+  # At 1e-17 the confidence level 1 - alpha_planned is exactly 1, the critical
+  # value is infinite, and the planned power is 0 or not a number at every
+  # sample size: the random-predictor planners ended in "missing value where
+  # TRUE/FALSE needed", and the others in the 2^52 stop, which blamed the
+  # assurance.
+  stopifnot(1 - 1e-17 == 1)
+  small <- paste0("'alpha_planned' is too small to plan with: 1 - 'alpha_planned' cannot be ",
+                  "told apart from 1 in double precision arithmetic")
+  cases <- list(
+    quote(ss_buc_correlation(r_observed = .35, N = 100, alpha_planned = 1e-17)),
+    quote(ss_buc_R2(F_observed = 5, N = 150, p = 4, alpha_planned = 1e-17,
+                    random_predictors = TRUE)),
+    quote(ss_buc_reg_coef(t_observed = 3, N = 150, p = 3, alpha_planned = 1e-17,
+                          random_predictors = TRUE)),
+    quote(ss_buc_R2(F_observed = 5, N = 150, p = 4, alpha_planned = 1e-17)),
+    quote(ss_buc_paired_t(t_observed = 3, N = 40, alpha_planned = 1e-17)),
+    quote(ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42, df_restricted = 43,
+                            alpha_planned = 1e-300)))
+  for (call in cases) expect_guard(call, small)
+  # The smallest values for which 1 - alpha_planned is below 1 are untouched:
+  # the correlation planner still plans there.
+  stopifnot(1 - 1e-16 < 1)
+  expect_s3_class(ss_buc_correlation(r_observed = .35, N = 100, alpha_planned = 1e-16),
+                  "bucss_plan")
+})
+
+test_that("ENG-3 and CL-33: the 2^52 stop names every cause, and a power that is not a number has its own message", {
+  # A prior N of 4e15 at the default assurance of .80, nowhere near this
+  # prior's ceiling (about .95): the stop used to say only that the assurance
+  # was essentially at its ceiling and should be lowered. The same prior at
+  # N = 1e15 plans, so the sample size is the cause.
+  msg <- tryCatch(ss_buc_paired_t(t_observed = 3, N = 4e15), error = conditionMessage)
+  expect_match(msg, "The planned sample size would exceed about 4.5e15 (2^52). Either",
+               fixed = TRUE)
+  expect_match(msg, paste0("the requested 'assurance' is essentially at the largest value ",
+                           "the prior result can support (lower 'assurance' a little)"),
+               fixed = TRUE)
+  expect_match(msg, "or the prior study's sample size is implausibly large", fixed = TRUE)
+  expect_match(msg, "or 'alpha_planned' is too small to compute with", fixed = TRUE)
+  expect_s3_class(ss_buc_paired_t(t_observed = 3, N = 1e15), "bucss_plan")
+  # The third cause: for a t planner the two-sided critical value is already
+  # infinite a little above what the validator refuses.
+  stopifnot(1 - 1e-16 < 1, 1 - 1e-16 / 2 == 1)
+  expect_error(ss_buc_paired_t(t_observed = 3, N = 40, alpha_planned = 1e-16),
+               "or 'alpha_planned' is too small to compute with", fixed = TRUE)
+
+  # A power that is not a finite number used to end the search with base R's
+  # "missing value where TRUE/FALSE needed", wherever it was met: at the
+  # start, while the bracket doubles, or while it is bisected.
+  search <- BUCSS:::.smallest_n_for_power
+  not_a_number <- "The planned study's power could not be computed (it is not a finite number)"
+  expect_error(search(function(n) NaN, .5), not_a_number, fixed = TRUE)
+  expect_error(search(function(n) if (n > 8) NA_real_ else 0, .5), not_a_number, fixed = TRUE)
+  expect_error(search(function(n) if (n == 6) NaN else as.numeric(n >= 8), .5), not_a_number,
+               fixed = TRUE)
+  # Reached through a planner (the nuisance degrees of freedom of this
+  # impossible prior study overflow the planned study's).
+  expect_guard(quote(ss_buc_factorial_anova_general(F_observed = 12, N = 1e17, cells = 2,
+                                                    df_numerator = 1, df_denominator = 1000)),
+               not_a_number)
+})
+
+test_that("ENG-9: a user already at alpha_prior = 1 is not told to increase it", {
+  # 'alpha_prior = 1' is read as .999, so only a statistic with p above .999
+  # is refused there, and "Please increase 'alpha_prior'" could not be
+  # followed. One case per planner; each premise is from qt(), qf(), and
+  # qchisq() alone.
+  stopifnot(.0005 < qt(1 - .999 / 2, 19), 1e-9 < qf(1 - .999, 1, 1e6),
+            1e-9 < qchisq(1 - .999, 1))
+  too_small <- paste0(" An 'alpha_prior' that large already assumes no publication bias, so ",
+                      "increasing it cannot help: ")
+  ending <- " is too small to plan from even with no publication bias assumed."
+  cases <- list(
+    list(quote(ss_buc_independent_t(t_observed = .0005, n = 20, alpha_prior = 1)),
+         "'t_observed'"),
+    list(quote(ss_buc_paired_t(t_observed = .0005, N = 30, alpha_prior = 1)), "'t_observed'"),
+    list(quote(ss_buc_one_sample_t(t_observed = .0005, N = 30, alpha_prior = 1)),
+         "'t_observed'"),
+    list(quote(ss_buc_welch_t(t_observed = .0005, n_1 = 20, n_2 = 30, alpha_prior = 1)),
+         "'t_observed'"),
+    list(quote(ss_buc_one_way_anova(F_observed = 1e-9, N = 41, levels_A = 4, alpha_prior = 1)),
+         "'F_observed'"),
+    list(quote(ss_buc_factorial_anova(F_observed = 1e-9, N = 120, levels_A = 2, levels_B = 3,
+                                      alpha_prior = 1)), "'F_observed'"),
+    list(quote(ss_buc_factorial_anova_general(F_observed = 1e-9, N = 120, cells = 6,
+                                              df_numerator = 2, df_denominator = 114,
+                                              alpha_prior = 1)), "'F_observed'"),
+    list(quote(ss_buc_ancova(F_observed = 1e-9, N = 120, cells = 3, n_covariates = 2,
+                             alpha_prior = 1)), "'F_observed'"),
+    list(quote(ss_buc_rm_anova(F_observed = 1e-9, N = 60, levels_A = 3, alpha_prior = 1)),
+         "'F_observed'"),
+    list(quote(ss_buc_rm_anova_general(F_observed = 1e-9, N = 60, df_numerator = 2,
+                                       alpha_prior = 1)), "'F_observed'"),
+    list(quote(ss_buc_mixed_anova(F_observed = 1e-9, N = 60, levels_between = 2,
+                                  levels_within = 3, alpha_prior = 1)), "'F_observed'"),
+    list(quote(ss_buc_mixed_anova_general(F_observed = 1e-9, N = 60, df_numerator = 1,
+                                          num_groups = 2, alpha_prior = 1)), "'F_observed'"),
+    list(quote(ss_buc_reg_coef(t_observed = .0005, N = 150, p = 3, alpha_prior = 1)),
+         "'t_observed'"),
+    list(quote(ss_buc_R2(F_observed = 1e-9, N = 150, p = 3, alpha_prior = 1)), "'F_observed'"),
+    list(quote(ss_buc_reg_joint(F_observed = 1e-9, N = 150, p = 4, p_joint = 2,
+                                alpha_prior = 1)), "'F_observed'"),
+    list(quote(ss_buc_correlation(r_observed = 1e-6, N = 100, alpha_prior = 1)),
+         "the prior result"),
+    list(quote(ss_buc_manova(F_observed = 1e-9, N = 80, p_variables = 3, alpha_prior = 1)),
+         "the prior result"),
+    list(quote(ss_buc_chisq_diff(chisq_observed = 1e-9, N = 250, df_full = 42,
+                                 df_restricted = 43, alpha_prior = 1)), "the prior result"))
+  expect_length(cases, 18L)
+  for (case in cases) {
+    label <- paste(deparse(case[[1]], width.cutoff = 500L), collapse = " ")
+    err <- tryCatch(eval(case[[1]]), error = function(e) e)
+    expect_s3_class(err, "bucss_nonsignificant")
+    expect_match(conditionMessage(err), paste0(too_small, case[[2]], ending), fixed = TRUE,
+                 label = label)
+    expect_match(conditionMessage(err), "is nonsignificant based on your specified 'alpha_prior'",
+                 fixed = TRUE, label = label)
+    expect_no_match(conditionMessage(err), "Please increase", fixed = TRUE, label = label)
+  }
+  # Below .999 the advice can be followed, and is still given.
+  expect_error(ss_buc_paired_t(t_observed = 1, N = 40),
+               "Please increase 'alpha_prior' so 't_observed' exceeds the critical value.",
+               fixed = TRUE, class = "bucss_nonsignificant")
+  stopifnot(pf(.5, 3, 116, lower.tail = FALSE) > .5)
+  expect_error(ss_buc_one_way_anova(F_observed = .5, N = 120, levels_A = 4, alpha_prior = .5),
+               "Please increase 'alpha_prior' so 'F_observed' exceeds the critical value.",
+               fixed = TRUE, class = "bucss_nonsignificant")
 })

@@ -215,6 +215,10 @@ Researchers often use the sample effect size from a prior study as
   parameter, so an ordinary power analysis at it can return a sample size a
   little smaller than the one reported here (never a larger one), because
   the reported size is the larger of the two rounded designs' requirements.
+  For a prior study with unequal group sizes, or a total sample size that
+  does not divide evenly, the largest supportable assurance is computed at
+  the balanced design the planner plans from, so it can be below
+  \eqn{1 - p/\alpha}{1 - p/alpha} at the study's own \emph{p} value.
 }
 \examples{
 result <- ss_buc_manova(F_observed = 4.5, N = 80, p_variables = 3,

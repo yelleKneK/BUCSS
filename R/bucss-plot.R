@@ -38,9 +38,13 @@
 #'   \emph{p} value and \eqn{\alpha} is \code{alpha_prior}. Request more than
 #'   that and the corrected noncentrality parameter is driven to zero, no
 #'   sample size attains the target power, and the planner stops. The ceiling
-#'   is reported in the printed footer of every plan and named in that error,
-#'   but its shape is the point: assurance does not degrade gracefully as it
-#'   rises, it hits a wall.
+#'   is reported in the printed footer of every plan and, when it is above .5,
+#'   named in that error, but its shape is the point: assurance does not
+#'   degrade gracefully as it rises, it hits a wall. For a planner that
+#'   reduces a prior study with unequal group sizes, or a total sample size
+#'   that does not divide evenly, to a balanced design, the largest
+#'   supportable assurance is computed at that design, so it can be below
+#'   \eqn{1 - p/\alpha}{1 - p/alpha} at the study's own \emph{p} value.
 #'
 #'   Two panels are drawn, sharing an assurance axis.
 #'
@@ -55,8 +59,10 @@
 #'   }
 #'
 #'   The ceiling is drawn as a dashed vertical line in both panels and the
-#'   plan's own assurance is marked with a filled point, so a reader can see at
-#'   a glance how much headroom their prior result has left.
+#'   plan's own assurance is marked with a filled point when it lies in the
+#'   plotted range (a plan made at an assurance below \code{lower} is marked
+#'   once \code{lower} is set at or below it), so a reader can see at a
+#'   glance how much headroom their prior result has left.
 #'
 #'   The grid is spaced evenly in the logarithm of the remaining headroom
 #'   rather than in assurance, so that roughly half the plotted points fall in

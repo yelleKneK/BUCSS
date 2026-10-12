@@ -216,8 +216,8 @@ The dot-named functions from BUCSS 1.x are \strong{deprecated} as
 
   Calling one of these functions issues a deprecation warning that names its
   replacement, once per function per session; the \code{ss_buc_*} functions
-  themselves never warn. New code should call the \code{ss_buc_*} functions
-  directly.
+  themselves never issue this deprecation warning. New code should call the
+  \code{ss_buc_*} functions directly.
 }
 \details{
 The replacements are:
@@ -260,9 +260,10 @@ The replacements are:
   the split plot, above \code{num.groups - 1} for the between-subjects
   effect, or not a multiple of \code{df.num.within} within that bound for
   the interaction). Non-scalar, non-finite, and fractional inputs are
-  rejected with a message naming the argument. Errors raised through these
-  wrappers come from the \code{ss_buc_*} planners and name their
-  arguments (\code{t_observed} for \code{t.observed}, and so on). The
+  rejected with a message naming the argument. Most errors raised through
+  these wrappers come from the \code{ss_buc_*} planners and name their
+  arguments (\code{t_observed} for \code{t.observed}, and so on); an
+  unrecognized \code{effect} is rejected by the wrapper itself. The
   regression wrappers keep the 1.x fixed-predictor computation
   (\code{random_predictors = FALSE}); call \code{\link{ss_buc_reg_coef}},
   \code{\link{ss_buc_R2}}, or \code{\link{ss_buc_reg_joint}} directly for

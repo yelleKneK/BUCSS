@@ -24,7 +24,8 @@ prior studies are refused.}
 from the caller's own random number stream, advancing it as any
 simulation does. When a seed is supplied, the caller's random number state
 and generator are restored on exit (and no state is left behind if the
-caller had none).}
+caller had none). A seed reproduces a result only under the same random
+number generators (see \code{\link{RNGkind}}).}
 }
 \value{
 An object of class \code{bucss_sensitivity}, a \code{data.frame}
@@ -83,13 +84,17 @@ The bias and uncertainty correction rests on a claim about the long
       degrees of freedom) as attaining, because declining to plan
       is the limiting case of an arbitrarily conservative plan. This is the
       quantity the assurance guarantee is about, and it should land on
-      \code{assurance}.
+      \code{assurance}. For a prior study that the planner reduces to a
+      balanced design it can land above, because the planner is then
+      conservative: about .84 at an \code{assurance} of .80 for prior
+      groups of 10 and 90 in the independent \emph{t} test.
   }
 
   When the refusal rate is high the first number sits well below
   \code{assurance}, and that is not a defect: it is the visible price of the
   method refusing rather than guessing. Its expected value is
-  \code{(assurance - refusal_rate)/(1 - refusal_rate)}.
+  \code{(assurance - refusal_rate)/(1 - refusal_rate)}, or more when
+  \code{attainment_with_refusals} lands above \code{assurance}.
 
   \strong{What this can and cannot detect.} The prior studies are drawn from
   the sampling distribution the method assumes for that design, so this is a

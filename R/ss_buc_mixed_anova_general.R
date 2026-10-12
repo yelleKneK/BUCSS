@@ -108,9 +108,13 @@
 #'   to the same balanced design as the reported noncentrality parameter, so an
 #'   ordinary power analysis at it can return a sample size a little smaller
 #'   than the one reported here (never a larger one), because the reported size
-#'   is the larger of the two rounded designs' requirements. Although
-#'   equal-\emph{n} previous studies are preferable, this approach will work
-#'   well as long as the cell sizes are only slightly discrepant.
+#'   is the larger of the two rounded designs' requirements. For a prior study
+#'   with unequal group sizes, or a total sample size that does not divide
+#'   evenly, the largest supportable assurance is computed at the balanced
+#'   design the planner plans from, so it can be below
+#'   \eqn{1 - p/\alpha}{1 - p/alpha} at the study's own \emph{p} value.
+#'   Although equal-\emph{n} previous studies are preferable, this approach
+#'   will work well as long as the cell sizes are only slightly discrepant.
 #'
 #'   \strong{Sphericity.} The default \code{epsilon = 1} assumes sphericity, as
 #'   the uncorrected within-subjects test does. When a prior study reports
@@ -283,7 +287,7 @@ ss_buc_mixed_anova_general <- function(F_observed, N, df_numerator, num_groups,
                                  df_num_within, alpha_prior = .05,
                                  alpha_planned = .05, assurance = .80,
                                  desired_power = .80, epsilon = 1) {
-  effect <- match.arg(effect)
+  effect <- .check_effect(effect, c("between_only", "within_only", "between_within"))
 
   v <- .validate_planning_inputs(alpha_prior, alpha_planned, assurance, desired_power)
   alpha_prior <- v$alpha_prior

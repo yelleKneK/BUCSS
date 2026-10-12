@@ -13,8 +13,11 @@
 # BUCSS, from the method's definition (bisection for the corrected parameter,
 # a linear walk for the planned n, the two-sided rounding rule re-derived from
 # its description), marked "independent check 2026-09-28". The two agree to
-# about 1e-9; the tolerances leave room only for platform differences in pt(),
-# pf(), and pchisq().
+# about 1e-9 when both use stats::pf(); a root from an exact series for the
+# noncentral F (Poisson-weighted central beta tails) differs by up to about
+# 7e-8 (relative) in ncp_adjusted, which is the accuracy of R's noncentral
+# pf(), and gives the same sizes, with powers within about 2e-8. The tolerances
+# leave room only for platform differences in pt(), pf(), and pchisq().
 
 size <- function(x) x$value[x$term %in% BUCSS:::.BUCSS_SIZE_TERMS]
 val <- function(x, term) x$value[x$term == term]
@@ -314,4 +317,124 @@ test_that("CC-01: the Welch planned df depend on the sd ratio", {
   expect_equal(attr(r, "df_error"), ws_df(236, 236, 2))
   expect_plan(ss_buc_welch_t(t_observed = 3.2, n_1 = 20, n_2 = 30, sd_ratio = 2),
               81, 1.6493043975, 0.8048639379)
+})
+
+# Pins added 2026-10-12, from the triage of the unfinished 2026-09-29 review.
+# The same rule holds: every expected value was first computed without BUCSS
+# (bisection for the corrected parameter and a linear walk for the planned n,
+# from the method's definition; scratch script recompute_pins.R of that
+# date), and agrees with what the package returns to the digits shown.
+
+test_that("WEL-4: the Welch planned study's critical value uses alpha_planned", {
+  # The surviving mutant builds the planned study's critical t from
+  # 'alpha_prior' in place of 'alpha_planned'. No Welch test set the two
+  # apart, so it passed the whole suite while returning 222 for the first
+  # call below and 107 for the second (independent check 2026-10-12 gives 331
+  # and 136, and 222 and 107 under the mutant).
+  ws_df <- function(a, b, r) {
+    v1 <- 1 / a
+    v2 <- r^2 / b
+    (v1 + v2)^2 / (v1^2 / (a - 1) + v2^2 / (b - 1))
+  }
+  scale <- function(n) sqrt((1 / 40 + 1.5^2 / 55) / ((1 + 1.5^2) / n))
+  strict <- ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1.5,
+                           alpha_planned = .01)
+  expect_plan(strict, 331, 1.3246896477, 0.8013231680)
+  expect_equal(val(strict, "actual_power"),
+               power_t2(ws_df(331, 331, 1.5), scale(331) * val(strict, "ncp_adjusted"), .01))
+  expect_lt(power_t2(ws_df(330, 330, 1.5), scale(330) * val(strict, "ncp_adjusted"), .01), .8)
+  # alpha_planned leaves the correction alone: the parameter is the default
+  # call's (pinned in test-engine-fixes.R).
+  expect_identical(val(strict, "ncp_adjusted"),
+                   val(ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1.5),
+                       "ncp_adjusted"))
+  # The other direction: a lenient alpha_prior with the planned study at .05.
+  lenient <- ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1.5,
+                            alpha_prior = .10)
+  expect_plan(lenient, 136, 1.6995658132, 0.8026224932)
+  expect_equal(val(lenient, "actual_power"),
+               power_t2(ws_df(136, 136, 1.5), scale(136) * val(lenient, "ncp_adjusted")))
+  expect_lt(power_t2(ws_df(135, 135, 1.5), scale(135) * val(lenient, "ncp_adjusted")), .8)
+})
+
+test_that("VIG-5: the Welch page's '.76 rather than .80' and '.43' are what the plan delivers", {
+  # The help page and the worked-examples vignette say that the plan built
+  # assuming equal variances (213 per group) delivers about .76 power if the
+  # ratio is in fact 2 in both studies, and about .43 if the prior study's
+  # groups were equally variable but the planned study's ratio is 2, with the
+  # mean difference fixed in units of the first group's standard deviation.
+  # Neither figure was computed or pinned anywhere. Recomputed 2026-10-12
+  # without BUCSS: .759520 and .425674 by the noncentral t on the population
+  # Welch-Satterthwaite df, .759517 and .425673 for the real Welch test (its
+  # df estimated from the two sample variances, by quadrature over them), and
+  # .7606 (SE .0010) and .4271 (SE .0011) in 200,000 real tests on raw data.
+  ws_df <- function(a, b, r) {
+    v1 <- 1 / a
+    v2 <- r^2 / b
+    (v1 + v2)^2 / (v1^2 / (a - 1) + v2^2 / (b - 1))
+  }
+  # Power of the real Welch test with n per group and ratio r, at the
+  # noncentrality 'ncp' of the mean difference over its true standard error:
+  # a midpoint rule over the two sample variances, each a scaled chi square.
+  real_welch_power <- function(n, r, ncp, K = 300L) {
+    u <- (seq_len(K) - .5) / K
+    g <- expand.grid(a = qchisq(u, n - 1) / (n - 1), b = r^2 * qchisq(u, n - 1) / (n - 1))
+    df_hat <- (g$a + g$b)^2 * (n - 1) / (g$a^2 + g$b^2)
+    k <- qt(.975, df_hat) * sqrt((g$a + g$b) / (1 + r^2))
+    mean(pnorm(-k + ncp) + pnorm(-k - ncp))
+  }
+  equal <- ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1)
+  unequal <- ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 2)
+  n <- size(equal)
+  expect_identical(n, 213)
+
+  # The ratio is 2 in both studies: the parameter is the ratio-2 plan's,
+  # rescaled to 213 per group at a ratio of 2.
+  ncp_both <- val(unequal, "ncp_adjusted") * sqrt((1 / 40 + 4 / 55) / ((1 + 4) / n))
+  expect_equal(power_t2(ws_df(n, n, 2), ncp_both), 0.7595196888, tolerance = 1e-8)
+  expect_lt(abs(real_welch_power(n, 2, ncp_both) - .759517), 2e-5)
+  expect_equal(round(real_welch_power(n, 2, ncp_both), 2), .76)
+
+  # Equal variances in the prior study, a ratio of 2 in the planned one: the
+  # mean difference in units of the first group's standard deviation is the
+  # ratio-1 plan's parameter times the prior standard error.
+  difference <- val(equal, "ncp_adjusted") * sqrt(1 / 40 + 1 / 55)
+  ncp_planned <- difference / sqrt((1 + 4) / n)
+  expect_equal(power_t2(ws_df(n, n, 2), ncp_planned), 0.4256736461, tolerance = 1e-8)
+  expect_lt(abs(real_welch_power(n, 2, ncp_planned) - .425673), 2e-5)
+  expect_equal(round(real_welch_power(n, 2, ncp_planned), 2), .43)
+})
+
+test_that("TQ-5: every planner page states the scale of ncp_adjusted", {
+  # The returned value's scale differs by planner (t, F, or chi square), and
+  # only the help page says which. With the statement on the regression
+  # coefficient page changed to "the t statistic" (in the roxygen source and
+  # the Rd together, so the release gate's documentation check saw nothing)
+  # the whole suite passed. The statement is pinned here, with the fact it
+  # states for that page: the coefficient planner's parameter is on the F
+  # scale, equal to the R2 planner's for one predictor.
+  man <- file.path("..", "..", "man")
+  db <- if (dir.exists(man)) tools::Rd_db(dir = file.path("..", "..")) else tools::Rd_db("BUCSS")
+  skip_if(length(db) == 0L, "no Rd sources available")
+  names(db) <- basename(names(db))
+  value_text <- function(rd) {
+    v <- Filter(function(x) identical(attr(x, "Rd_tag"), "\\value"), rd)
+    gsub("\\s+", " ", paste(unlist(v), collapse = ""))
+  }
+  t_pages <- c("ss_buc_independent_t.Rd", "ss_buc_paired_t.Rd", "ss_buc_one_sample_t.Rd",
+               "ss_buc_welch_t.Rd")
+  pages <- setdiff(grep("^ss_buc_.*[.]Rd$", names(db), value = TRUE), "ss_buc_sensitivity.Rd")
+  expect_length(pages, 18L)
+  for (nm in pages) {
+    scale <- if (nm %in% t_pages) "on the scale of the t statistic" else
+      if (nm == "ss_buc_chisq_diff.Rd") "on the scale of the chi square statistic" else
+        "on the scale of the F statistic"
+    expect_match(value_text(db[[nm]]), paste0("noncentrality parameter, ", scale),
+                 fixed = TRUE, info = nm)
+  }
+  expect_match(value_text(db[["ss_buc_reg_coef.Rd"]]), "(the square of the prior t)",
+               fixed = TRUE)
+  expect_equal(val(ss_buc_reg_coef(t_observed = 3, N = 100, p = 1), "ncp_adjusted"),
+               val(ss_buc_R2(F_observed = 9, N = 100, p = 1), "ncp_adjusted"),
+               tolerance = 1e-10)
 })

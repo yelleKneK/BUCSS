@@ -35,22 +35,35 @@
 #'   observations for the noncentral \emph{t} to describe it, and the
 #'   approximation overstates its power, badly so for the smallest (a plan of
 #'   2 per group that it puts at .82 has real power near .50). From 10 per
-#'   group the approximation is accurate: across ratios from 1 to 5, the power
-#'   of the real Welch test is within .006 of what this function reports for
-#'   every plan it returns, and within .003 from about 12 per group at a
-#'   target power of .80, and its Type I error stays between .047 and .054
-#'   against a nominal .05 across ratios from 1 to 3. When the target power is
-#'   reached with fewer than 10 per group, the planner returns 10, whose power
-#'   exceeds the target. The correction of the prior study's statistic uses
-#'   the same approximation and holds up well: simulating prior studies of 5
-#'   to 20 per group as raw data, published by the real Welch test, the
-#'   corrected parameter fell at or below the truth in about .79 to .82 of
-#'   them at an \code{assurance} of .80 (a refusal counted as at or below).
+#'   group, at an \code{alpha_planned} of .05, the approximation is accurate:
+#'   across ratios from 1 to 5, the power of the real Welch test is within
+#'   .006 of what this function reports for every plan it returns, and within
+#'   .003 from about 12 per group at a target power of .80, and its Type I
+#'   error stays between .047 and .054 against a nominal .05 across ratios
+#'   from 1 to 3. At a stricter \code{alpha_planned} the approximation
+#'   overstates the power of the smallest plans by more, at 10 per group by
+#'   up to about .012 at .01, .016 at .005, and .025 at .001, and it is
+#'   within .006 again from 14, 16, and 20 per group, respectively. When the
+#'   target power is reached with fewer than 10 per group, the planner returns
+#'   10, whose power exceeds the target.
+#'
+#'   The correction of the prior study's statistic uses the same approximation
+#'   and holds up well unless a prior group is very small. Simulating prior
+#'   studies as raw data, published by the real Welch test, the corrected
+#'   parameter fell at or below the truth in about .79 to .81 of them at an
+#'   \code{assurance} of .80 when each prior group had 10 to 20 participants
+#'   (a refusal counted as at or below). With 5 to 8 in the smaller prior
+#'   group it ranged from about .78 to .86 when the true ratio was supplied,
+#'   and fell as low as about .73 when the ratio was taken from the prior
+#'   study's own standard deviations.
 #'   One consequence of reading the prior study on the Welch-Satterthwaite
 #'   degrees of freedom the supplied ratio implies, rather than on those its
-#'   data produced: with very small groups and a large ratio, a prior result
-#'   its paper reported as significant can fall short of the critical value
-#'   here and be refused as nonsignificant.
+#'   data produced: when the prior groups are small and unequal in size or in
+#'   spread, including at the default ratio of 1, a prior result its paper
+#'   reported as significant can fall short of the critical value here and be
+#'   refused as nonsignificant. Such a result is typically close to the
+#'   publication threshold, where it could support little assurance in any
+#'   case.
 #'
 #'   \strong{The assumption that matters is the ratio itself.} One
 #'   \code{sd_ratio} describes both studies: the prior study, whose statistic
@@ -65,8 +78,9 @@
 #'   credible, guards against the first kind of error. The second, a planned
 #'   study more unequal than the prior one, is not something the prior result
 #'   can speak to, and needs its own allowance. The required sample size does
-#'   not always rise with the ratio: it falls when the group assumed to be
-#'   more variable is the smaller one.
+#'   not always rise as the two standard deviations move apart: when the group
+#'   assumed to be more variable is the smaller one it often falls, though
+#'   not always (for the prior study of the example below it rises).
 #'
 #'   When the ratio is 1 and the prior groups were the same size, this planner
 #'   returns what \code{\link{ss_buc_independent_t}} returns, except for the
@@ -75,7 +89,12 @@
 #'   planner reduces the prior study to an equivalent equal-\emph{n} design at
 #'   the harmonic mean, while this one uses the actual Welch-Satterthwaite
 #'   degrees of freedom, which are smaller when the groups are unbalanced. The
-#'   same prior \emph{t} is then less compelling and the plan is larger.
+#'   same prior \emph{t} is then less compelling, and the plan is usually
+#'   larger when one prior group is more than about twice the size of the
+#'   other; when the two sizes are close it is more often the same, and it
+#'   can be smaller, because the equal-variance planner rounds the harmonic
+#'   mean down and up to whole group sizes and returns the larger of the two
+#'   plans.
 #'
 #'   The approach uses a likelihood function of a truncated noncentral
 #'   \emph{F} distribution, where the truncation occurs due to small effect
@@ -232,18 +251,28 @@ ss_buc_welch_t <- function(t_observed, n_1, n_2, sd_ratio = 1,
   if (sum(c(!missing(sd_ratio), gave_sd, gave_var)) > 1L) {
     stop("Describe the groups' spread one way only: 'sd_ratio', or 'sd_1' and 'sd_2', or 'var_1' and 'var_2'.", call. = FALSE)
   }
+  # A spread too extreme to compute with is reported in terms of what the
+  # user supplied: a pair whose ratio overflows or underflows (it used to be
+  # reported as a bad 'sd_ratio', an argument the user had not given), and,
+  # below, a ratio whose fourth power overflows in the degrees of freedom (it
+  # used to end in base R's "missing value where TRUE/FALSE needed").
+  spread_given <- if (gave_sd) "'sd_1' and 'sd_2'" else if (gave_var) "'var_1' and 'var_2'" else "'sd_ratio'"
+  stop_spread <- function()
+    stop("The two groups' spread differs by too many orders of magnitude to plan from: the Welch-Satterthwaite degrees of freedom cannot be computed. Please check ", spread_given, ".", call. = FALSE)
   if (gave_sd) {
     if (missing(sd_1) || missing(sd_2)) stop("You must specify both 'sd_1' and 'sd_2', the group standard deviations of the previous study.", call. = FALSE)
     .check_scalar_finite(sd_1, "sd_1")
     .check_scalar_finite(sd_2, "sd_2")
     if (sd_1 <= 0 || sd_2 <= 0) stop("'sd_1' and 'sd_2' must be positive numbers.", call. = FALSE)
     sd_ratio <- sd_2 / sd_1
+    if (!is.finite(sd_ratio) || sd_ratio <= 0) stop_spread()
   } else if (gave_var) {
     if (missing(var_1) || missing(var_2)) stop("You must specify both 'var_1' and 'var_2', the group variances of the previous study.", call. = FALSE)
     .check_scalar_finite(var_1, "var_1")
     .check_scalar_finite(var_2, "var_2")
     if (var_1 <= 0 || var_2 <= 0) stop("'var_1' and 'var_2' must be positive numbers.", call. = FALSE)
     sd_ratio <- sqrt(var_2 / var_1)
+    if (!is.finite(sd_ratio) || sd_ratio <= 0) stop_spread()
   }
   .check_scalar_finite(sd_ratio, "sd_ratio")
   if (sd_ratio <= 0) stop("'sd_ratio' must be a positive number.", call. = FALSE)
@@ -258,10 +287,16 @@ ss_buc_welch_t <- function(t_observed, n_1, n_2, sd_ratio = 1,
     (v1 + v2)^2 / (v1^2 / (a - 1) + v2^2 / (b - 1))
   }
   df_prior <- welch_df(n_1, n_2, sd_ratio)
+  # The squares in the degrees of freedom overflow for a ratio near 1e77 or
+  # more (where exactly depends on the group sizes), in the prior study or at
+  # the smallest planned study; larger planned studies are further from it. A
+  # very small ratio underflows harmlessly to the limiting degrees of freedom.
+  if (!is.finite(df_prior) ||
+      !is.finite(welch_df(.welch_min_n, .welch_min_n, sd_ratio))) stop_spread()
 
   value_critical <- qt(1 - alpha_prior / 2, df = df_prior)
 
-  if (t_stat <= value_critical) .stop_nonsignificant("t statistic", "'t_observed'")
+  if (t_stat <= value_critical) .stop_nonsignificant("t statistic", "'t_observed'", alpha_prior = alpha_prior)
 
   ncp_solution <- .solve_ncp_assurance(
     .tm_t(t_stat, value_critical, df_prior), assurance)
@@ -288,8 +323,13 @@ ss_buc_welch_t <- function(t_observed, n_1, n_2, sd_ratio = 1,
   # test, whose degrees of freedom are estimated from the planned study's data:
   # by up to about .33 at 2 per group, and by more than .006 below 10 per group
   # (exact power of the real test, checked against 400,000-replicate
-  # simulation, 2026-09-28). From 10 per group the two agree within .006, so a
-  # plan that reaches its target sooner is raised to 10.
+  # simulation, 2026-09-28). From 10 per group the two agree within .006 at an
+  # alpha_planned of .05, so a plan that reaches its target sooner is raised
+  # to 10. The figure is for .05 only: at a stricter alpha_planned the
+  # overstatement at 10 per group reaches about .012 (.01), .016 (.005), and
+  # .025 (.001), and is within .006 from 14, 16, and 20 per group (exact
+  # power of the real test over ratios 1 to 5, recomputed 2026-10-12). The
+  # minimum itself does not depend on alpha_planned.
   output_n <- .smallest_n_for_power(power_at, desired_power, start = .welch_min_n)
 
   actual_power <- power_at(output_n)

@@ -152,22 +152,35 @@ Researchers often use the sample effect size from a prior study as
   observations for the noncentral \emph{t} to describe it, and the
   approximation overstates its power, badly so for the smallest (a plan of
   2 per group that it puts at .82 has real power near .50). From 10 per
-  group the approximation is accurate: across ratios from 1 to 5, the power
-  of the real Welch test is within .006 of what this function reports for
-  every plan it returns, and within .003 from about 12 per group at a
-  target power of .80, and its Type I error stays between .047 and .054
-  against a nominal .05 across ratios from 1 to 3. When the target power is
-  reached with fewer than 10 per group, the planner returns 10, whose power
-  exceeds the target. The correction of the prior study's statistic uses
-  the same approximation and holds up well: simulating prior studies of 5
-  to 20 per group as raw data, published by the real Welch test, the
-  corrected parameter fell at or below the truth in about .79 to .82 of
-  them at an \code{assurance} of .80 (a refusal counted as at or below).
+  group, at an \code{alpha_planned} of .05, the approximation is accurate:
+  across ratios from 1 to 5, the power of the real Welch test is within
+  .006 of what this function reports for every plan it returns, and within
+  .003 from about 12 per group at a target power of .80, and its Type I
+  error stays between .047 and .054 against a nominal .05 across ratios
+  from 1 to 3. At a stricter \code{alpha_planned} the approximation
+  overstates the power of the smallest plans by more, at 10 per group by
+  up to about .012 at .01, .016 at .005, and .025 at .001, and it is
+  within .006 again from 14, 16, and 20 per group, respectively. When the
+  target power is reached with fewer than 10 per group, the planner returns
+  10, whose power exceeds the target.
+
+  The correction of the prior study's statistic uses the same approximation
+  and holds up well unless a prior group is very small. Simulating prior
+  studies as raw data, published by the real Welch test, the corrected
+  parameter fell at or below the truth in about .79 to .81 of them at an
+  \code{assurance} of .80 when each prior group had 10 to 20 participants
+  (a refusal counted as at or below). With 5 to 8 in the smaller prior
+  group it ranged from about .78 to .86 when the true ratio was supplied,
+  and fell as low as about .73 when the ratio was taken from the prior
+  study's own standard deviations.
   One consequence of reading the prior study on the Welch-Satterthwaite
   degrees of freedom the supplied ratio implies, rather than on those its
-  data produced: with very small groups and a large ratio, a prior result
-  its paper reported as significant can fall short of the critical value
-  here and be refused as nonsignificant.
+  data produced: when the prior groups are small and unequal in size or in
+  spread, including at the default ratio of 1, a prior result its paper
+  reported as significant can fall short of the critical value here and be
+  refused as nonsignificant. Such a result is typically close to the
+  publication threshold, where it could support little assurance in any
+  case.
 
   \strong{The assumption that matters is the ratio itself.} One
   \code{sd_ratio} describes both studies: the prior study, whose statistic
@@ -182,8 +195,9 @@ Researchers often use the sample effect size from a prior study as
   credible, guards against the first kind of error. The second, a planned
   study more unequal than the prior one, is not something the prior result
   can speak to, and needs its own allowance. The required sample size does
-  not always rise with the ratio: it falls when the group assumed to be
-  more variable is the smaller one.
+  not always rise as the two standard deviations move apart: when the group
+  assumed to be more variable is the smaller one it often falls, though
+  not always (for the prior study of the example below it rises).
 
   When the ratio is 1 and the prior groups were the same size, this planner
   returns what \code{\link{ss_buc_independent_t}} returns, except for the
@@ -192,7 +206,12 @@ Researchers often use the sample effect size from a prior study as
   planner reduces the prior study to an equivalent equal-\emph{n} design at
   the harmonic mean, while this one uses the actual Welch-Satterthwaite
   degrees of freedom, which are smaller when the groups are unbalanced. The
-  same prior \emph{t} is then less compelling and the plan is larger.
+  same prior \emph{t} is then less compelling, and the plan is usually
+  larger when one prior group is more than about twice the size of the
+  other; when the two sizes are close it is more often the same, and it
+  can be smaller, because the equal-variance planner rounds the harmonic
+  mean down and up to whole group sizes and returns the larger of the two
+  plans.
 
   The approach uses a likelihood function of a truncated noncentral
   \emph{F} distribution, where the truncation occurs due to small effect

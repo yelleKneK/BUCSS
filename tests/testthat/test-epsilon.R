@@ -333,6 +333,30 @@ test_that("an unbalanced split-plot prior is judged at its own corrected degrees
   }
 })
 
+test_that("the general split-plot planner judges a within effect at its own error df", {
+  # TQ-1 of the 2026-10-12 triage. A within-subjects or interaction effect of
+  # a split-plot design has (N - groups) times the within df as error df, so
+  # the prior study's own p value uses that multiple. With the multiplier
+  # dropped from the own-df p value the whole suite passed, and a statistic in
+  # the rounding band was called plainly nonsignificant. N = 61 in 2 groups
+  # (own error df 2 * 59 = 118, rounded down to 2 * 58 = 116) and in 3 groups
+  # with a 2-df within factor (own 2 * 58 = 116, rounded down 2 * 57 = 114).
+  aware <- "significant at the prior study's own degrees of freedom"
+  f_w <- (qf(.95, 2, 118) + qf(.95, 2, 116)) / 2
+  stopifnot(pf(f_w, 2, 118, lower.tail = FALSE) < .05,
+            pf(f_w, 2, 116, lower.tail = FALSE) > .05)
+  expect_error(ss_buc_mixed_anova_general(F_observed = f_w, N = 61, df_numerator = 2,
+                                          num_groups = 2, effect = "within_only"),
+               aware, fixed = TRUE, class = "bucss_nonsignificant")
+  f_bw <- (qf(.95, 4, 116) + qf(.95, 4, 114)) / 2
+  stopifnot(pf(f_bw, 4, 116, lower.tail = FALSE) < .05,
+            pf(f_bw, 4, 114, lower.tail = FALSE) > .05)
+  expect_error(ss_buc_mixed_anova_general(F_observed = f_bw, N = 61, df_numerator = 4,
+                                          num_groups = 3, effect = "between_within",
+                                          df_num_within = 2),
+               aware, fixed = TRUE, class = "bucss_nonsignificant")
+})
+
 test_that("the registry scales df by epsilon and reproduces the ceiling", {
   plans <- list(
     ss_buc_rm_anova(F_observed = 8, N = 30, levels_A = 3, epsilon = .7),

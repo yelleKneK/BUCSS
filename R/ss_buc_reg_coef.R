@@ -257,7 +257,7 @@ ss_buc_reg_coef <- function(t_observed, N, p, alpha_prior = .05,
 
   value_critical <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator)
 
-  if (t_observed^2 <= value_critical) .stop_nonsignificant("t statistic", "'t_observed'")
+  if (t_observed^2 <= value_critical) .stop_nonsignificant("t statistic", "'t_observed'", alpha_prior = alpha_prior)
 
   ncp_solution <- .solve_ncp_assurance(
     .tm_regression(t_observed^2, value_critical, df_numerator, N, p,

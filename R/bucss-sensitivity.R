@@ -133,13 +133,17 @@
 #'       degrees of freedom) as attaining, because declining to plan
 #'       is the limiting case of an arbitrarily conservative plan. This is the
 #'       quantity the assurance guarantee is about, and it should land on
-#'       \code{assurance}.
+#'       \code{assurance}. For a prior study that the planner reduces to a
+#'       balanced design it can land above, because the planner is then
+#'       conservative: about .84 at an \code{assurance} of .80 for prior
+#'       groups of 10 and 90 in the independent \emph{t} test.
 #'   }
 #'
 #'   When the refusal rate is high the first number sits well below
 #'   \code{assurance}, and that is not a defect: it is the visible price of the
 #'   method refusing rather than guessing. Its expected value is
-#'   \code{(assurance - refusal_rate)/(1 - refusal_rate)}.
+#'   \code{(assurance - refusal_rate)/(1 - refusal_rate)}, or more when
+#'   \code{attainment_with_refusals} lands above \code{assurance}.
 #'
 #'   \strong{What this can and cannot detect.} The prior studies are drawn from
 #'   the sampling distribution the method assumes for that design, so this is a
@@ -182,7 +186,8 @@
 #'   from the caller's own random number stream, advancing it as any
 #'   simulation does. When a seed is supplied, the caller's random number state
 #'   and generator are restored on exit (and no state is left behind if the
-#'   caller had none).
+#'   caller had none). A seed reproduces a result only under the same random
+#'   number generators (see \code{\link{RNGkind}}).
 #'
 #' @return An object of class \code{bucss_sensitivity}, a \code{data.frame}
 #'   with columns \code{term} and \code{value} carrying the assumed true
@@ -220,7 +225,7 @@
 #' @template references
 ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
                                seed = NULL) {
-  if (!inherits(object, "bucss_plan"))
+  if (missing(object) || !inherits(object, "bucss_plan"))
     stop("'object' must be a plan returned by one of the ss_buc_* functions.", call. = FALSE)
   if (missing(true_ncp))
     stop("You must specify 'true_ncp', the assumed true noncentrality parameter of the prior study's design. It is on the same scale as the 'ncp_adjusted' row of 'object'; there is deliberately no default, because defaulting to the corrected estimate would ask the method to grade its own answer.", call. = FALSE)
@@ -279,7 +284,11 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
   # Warnings are counted separately for the search for the sample size the
   # true effect requires and for the simulated prior studies themselves, and
   # a planner run that raises several warnings is counted once, so the count
-  # is of runs (studies), never more than there were.
+  # is of runs (studies), never more than there were. The one warning left
+  # out is the planners' own for an assurance below .5: every run repeats the
+  # plan's assurance, so it is the warning the user saw when the plan was
+  # built, raised again by each run, and says nothing about the audit. It is
+  # muffled without being counted, matched on the same fixed text plot() uses.
   warned <- new.env(parent = emptyenv())
   warned$phase <- "search"
   warned$n <- c(search = 0L, studies = 0L)
@@ -295,6 +304,9 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
                error = function(e) stop("While replaying the planner: ",
                                         conditionMessage(e), call. = FALSE)),
       warning = function(w) {
+        if (grepl("'assurance' you have entered is < .5", conditionMessage(w),
+                  fixed = TRUE))
+          invokeRestart("muffleWarning")
         if (!warned$this_run) {
           warned$this_run <- TRUE
           warned$n[[warned$phase]] <- warned$n[[warned$phase]] + 1L
@@ -405,6 +417,8 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
 #' @export
 #' @keywords internal
 print.bucss_sensitivity <- function(x, digits = getOption("bucss.digits", 3L), ...) {
+  if (!is.numeric(digits) || length(digits) != 1L || is.na(digits) || digits < 1)
+    stop("'digits' must be a single positive number.", call. = FALSE)
   # An object that is no longer one audit (a subset, or two audits stacked,
   # which keep the class) prints as the plain data frame it is, without footers
   # describing only one of them.
@@ -427,9 +441,9 @@ print.bucss_sensitivity <- function(x, digits = getOption("bucss.digits", 3L), .
   cat("Design: ", design,
       if (!is.null(effect)) paste0(" (", effect, ")"), "\n", sep = "")
   cat("Sample size unit: ", attr(x, "sample_size_unit"), "\n", sep = "")
-  cat("Requested assurance: ",
-      sub("^0", "", sprintf("%.2f", attr(x, "assurance"))), "\n", sep = "")
-  cat("Target power: ",
-      sub("^0", "", sprintf("%.2f", attr(x, "desired_power"))), "\n", sep = "")
+  cat("Requested assurance: ", .format_proportion(attr(x, "assurance")), "\n",
+      sep = "")
+  cat("Target power: ", .format_proportion(attr(x, "desired_power")), "\n",
+      sep = "")
   invisible(x)
 }

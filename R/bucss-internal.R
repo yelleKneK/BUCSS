@@ -234,9 +234,15 @@
 # had none, so a reproducible call does not perturb the script around it. The
 # saving and restoring is delegated to withr::local_seed(), which is why
 # withr (>= 3.0.3) is in Imports: in withr 3.0.2 and earlier, local_seed()
-# called from inside a function did not restore anything. BUCSS itself never
-# reads or writes the random number state. Call this from the body of the
-# function whose exit should restore the state (the default 'envir').
+# called from inside a function did not restore anything. The floor is
+# enforced when BUCSS loads only because NAMESPACE imports local_seed from
+# withr (the @importFrom in R/BUCSS.R): R applies a version requirement in
+# Imports to the namespaces it imports from at load, and a '::' call alone
+# imports nothing, so an older withr already loaded, or earlier on the
+# library path, would otherwise be used without complaint. Keep the import.
+# BUCSS itself never reads or writes the random number state. Call this from
+# the body of the function whose exit should restore the state (the default
+# 'envir').
 .bucss_local_seed <- function(seed, envir = parent.frame()) {
   if (is.null(seed)) return(invisible(NULL))
   .check_count(seed, "seed")
@@ -267,6 +273,10 @@
   if (alpha_prior == 1) alpha_prior <- .999
 
   if (alpha_planned >= 1 | alpha_planned <= 0) stop("There is a problem with 'alpha_planned' of the planned study (i.e., the Type I error rate), please specify as a value between 0 and 1 (the default is .05).", call. = FALSE)
+  # Below about 5.6e-17, 1 - alpha_planned is exactly 1 in double precision:
+  # the planned study's critical value is then infinite and its power is 0, or
+  # not a number, at every sample size, so there is nothing to plan.
+  if (1 - alpha_planned == 1) stop("'alpha_planned' is too small to plan with: 1 - 'alpha_planned' cannot be told apart from 1 in double precision arithmetic, so the planned study has no finite critical value. Please specify a larger 'alpha_planned' (the default is .05).", call. = FALSE)
 
   if (assurance >= 1) assurance <- assurance / 100
   if (assurance <= 0 | assurance >= 1) stop("There is a problem with 'assurance' (i.e., the proportion of times statistical power is at or above the desired value), please specify as a value strictly between 0 and 1 (the default is .80). An 'assurance' of exactly 0 or 1 does not define a plannable study; note that 100 entered as a percentage means 1.", call. = FALSE)
@@ -283,26 +293,53 @@
 # user may type "A", "b", or "AxB" instead of the documented
 # "factor_A"/"factor_B"/"interaction" (or "between"/"within"/"interaction").
 # Case- and separator-insensitive: "A x B", "axb", and "AB" all reach
-# "interaction". Anything not in the shorthand table falls through to
-# match.arg(), which accepts the canonical values (and their unambiguous
-# prefixes) and otherwise errors helpfully. The canonical forms stay the ones
-# the documentation suggests; the shorthand is accepted, not advertised.
+# "interaction". Anything not in the shorthand table goes to .check_effect(),
+# which accepts the canonical values (and their unambiguous prefixes) and
+# otherwise stops with the message that names them. The canonical forms stay
+# the ones the documentation suggests; the shorthand is accepted, not
+# advertised.
 .match_effect <- function(effect, choices) {
-  raw <- effect[1]
-  key <- tolower(gsub("[^[:alnum:]]", "", raw))
-  syn <- switch(
-    paste(choices, collapse = "|"),
-    "factor_A|factor_B|interaction" = c(
-      a = "factor_A", factora = "factor_A",
-      b = "factor_B", factorb = "factor_B",
-      axb = "interaction", ab = "interaction", int = "interaction"),
-    "between|within|interaction" = c(
-      bs = "between", betweensubjects = "between",
-      ws = "within", withinsubjects = "within",
-      bxw = "interaction", wxb = "interaction", int = "interaction"),
-    NULL)
-  if (!is.null(syn) && key %in% names(syn)) return(syn[[key]])
-  match.arg(raw, choices)
+  if (is.factor(effect)) effect <- as.character(effect)
+  if (is.character(effect) && length(effect) == 1L && !is.na(effect)) {
+    key <- tolower(gsub("[^[:alnum:]]", "", effect))
+    syn <- switch(
+      paste(choices, collapse = "|"),
+      "factor_A|factor_B|interaction" = c(
+        a = "factor_A", factora = "factor_A",
+        b = "factor_B", factorb = "factor_B",
+        axb = "interaction", ab = "interaction", int = "interaction"),
+      "between|within|interaction" = c(
+        bs = "between", betweensubjects = "between",
+        ws = "within", withinsubjects = "within",
+        bxw = "interaction", wxb = "interaction", int = "interaction"),
+      NULL)
+    if (!is.null(syn) && key %in% names(syn)) return(syn[[key]])
+  }
+  .check_effect(effect, choices)
+}
+
+# The canonical value of an `effect` argument, checked. The untouched default
+# (the whole vector of choices) means the first choice, as in match.arg(); a
+# single character string is matched as match.arg() matches it (exactly, or
+# by an unambiguous prefix); a one-element factor is read as its label.
+# Anything else gets one message that names the argument and its choices:
+# NULL, a value that is not character, a missing value, an unrecognized
+# string, and a vector of any other length. Those used to reach an if() or
+# match.arg() and fail with base R's message about 'arg', and a longer vector
+# was read as its first element with no notice. The deprecated wrappers pass
+# their dotted 1.x choices, so the message names the spelling the user typed.
+.check_effect <- function(effect, choices) {
+  if (identical(effect, choices)) return(choices[1L])
+  if (is.factor(effect)) effect <- as.character(effect)
+  if (is.character(effect) && length(effect) == 1L && !is.na(effect)) {
+    matched <- tryCatch(match.arg(effect, choices), error = function(e) NULL)
+    if (!is.null(matched)) return(matched)
+  }
+  quoted <- paste0("\"", choices, "\"")
+  stop("'effect' should be one of ",
+       paste(quoted[-length(quoted)], collapse = ", "), ", or ",
+       quoted[length(quoted)], ", given as a single character string.",
+       call. = FALSE)
 }
 
 # Rebuild a planner's result under a different design label, size-row name,
@@ -630,24 +667,43 @@
 # once it has passed 2^52 without reaching the target, so it never extends past
 # 2^53, and the search stops with a message instead: the answer then exceeds
 # 2^52 (about 4.5e15). Answers below that are always found exactly. Such a plan
-# only arises with an assurance a hair's breadth below the ceiling.
+# arises with an assurance a hair's breadth below the ceiling, with a prior
+# sample size in the quadrillions (the planned size scales with it), or with
+# an 'alpha_planned' so small that the two-sided critical value is infinite
+# (up to about 1.1e-16 for the t planners, twice what the validator refuses
+# for every planner), and the message names all three. A power that is
+# not a finite number (degrees of freedom or a noncentrality parameter beyond
+# what R's distribution functions evaluate) cannot be compared with the
+# target; it stops with a message of its own rather than with base R's
+# "missing value where TRUE/FALSE needed".
 .smallest_n_for_power <- function(power_at, target, start = 2L) {
+  power <- function(n) {
+    value <- power_at(n)
+    if (!is.finite(value))
+      stop("The planned study's power could not be computed (it is not a ",
+           "finite number), which happens only with inputs far outside the ",
+           "range of real studies. Please check the prior study's statistic ",
+           "and sample size and the other planning inputs.", call. = FALSE)
+    value
+  }
   lo <- as.numeric(start)
-  if (power_at(lo) >= target) return(lo)
-  hi <- lo * 2                       # invariant: power_at(lo) < target
-  while (power_at(hi) < target) {
+  if (power(lo) >= target) return(lo)
+  hi <- lo * 2                       # invariant: power(lo) < target
+  while (power(hi) < target) {
     if (hi > 2^52)
-      stop("The planned sample size would exceed about 4.5e15 (2^52), because ",
+      stop("The planned sample size would exceed about 4.5e15 (2^52). Either ",
            "the requested 'assurance' is essentially at the largest value the ",
-           "prior result can support. Please lower 'assurance' a little.",
+           "prior result can support (lower 'assurance' a little), or the ",
+           "prior study's sample size is implausibly large, or 'alpha_planned' ",
+           "is too small to compute with; please check those inputs.",
            call. = FALSE)
     lo <- hi
     hi <- hi * 2
   }
-  while (hi - lo > 1) {              # invariant: power_at(hi) >= target
+  while (hi - lo > 1) {              # invariant: power(hi) >= target
     mid <- floor((lo + hi) / 2)
     if (mid <= lo || mid >= hi) break
-    if (power_at(mid) < target) lo <- mid else hi <- mid
+    if (power(mid) < target) lo <- mid else hi <- mid
   }
   hi
 }
@@ -669,13 +725,19 @@
 # .format_alpha_above()) and says that plans near it are very large; when the
 # threshold is .999 or more it says instead that no practical 'alpha_prior'
 # will do ('alpha_prior = 1' is read as .999). It mentions the recommended
-# floor of .5 only when the own-df ceiling is below it. The condition carries
-# the class 'bucss_nonsignificant' so code that loops over plans can catch it
-# alone.
+# floor of .5 only when the own-df ceiling is below it, and words a ceiling
+# that floors to less than .01 as "below .01" (it printed "at most about
+# .00"). Each p value is printed by .format_p_value(), so it reads on the
+# side of 'alpha_prior' it is on. Every planner passes 'alpha_prior' (the
+# value in use, so .999 for an entered 1): when it is .999 or more the plain
+# message does not ask the user to increase it, which cannot help, and says
+# instead that the statistic is too small to plan from even with no
+# publication bias assumed. The condition carries the class
+# 'bucss_nonsignificant' so code that loops over plans can catch it alone.
 .stop_nonsignificant <- function(what, arg, p_own = NULL, alpha_prior = NULL,
                                  p_balanced = NULL, assurance = NULL) {
   fmt2 <- function(p) sub("^0", "", sprintf("%.2f", p))
-  fmtp <- function(p) sub("^0", "", format(signif(p, 3), scientific = FALSE))
+  fmtp <- function(p) .format_p_value(p, alpha_prior)
   # The rounding explanation applies only when the prior study is significant
   # at its own degrees of freedom and less so at the balanced design.
   if (!is.null(p_own) && !is.null(alpha_prior) && !is.null(p_balanced) &&
@@ -702,17 +764,40 @@
                "(no publication bias) is treated as .999, so no practical ",
                "'alpha_prior' allows it; a lower 'assurance' lowers the ",
                "'alpha_prior' needed. "),
-      if (ceiling_own < .5)
+      if (ceiling_own < .01)
+        paste0("Even at its own degrees of freedom the result supports an ",
+               "assurance below .01, far below the recommended floor of .5.")
+      else if (ceiling_own < .5)
         paste0("Even at its own degrees of freedom the result supports an ",
                "assurance of at most about ", fmt2(ceiling_own), ", below the ",
                "recommended floor of .5."))
   } else {
     msg <- paste0(
       "Your observed ", what, " is nonsignificant based on your specified ",
-      "'alpha_prior' of the prior study. Please increase 'alpha_prior' so ",
-      arg, " exceeds the critical value.")
+      "'alpha_prior' of the prior study. ",
+      if (!is.null(alpha_prior) && alpha_prior >= .999)
+        paste0("An 'alpha_prior' that large already assumes no publication ",
+               "bias, so increasing it cannot help: ", arg, " is too small to ",
+               "plan from even with no publication bias assumed.")
+      else
+        paste0("Please increase 'alpha_prior' so ", arg,
+               " exceeds the critical value."))
   }
   stop(errorCondition(msg, class = "bucss_nonsignificant", call = NULL))
+}
+
+# A p value as .stop_nonsignificant() writes it: three significant digits and
+# no leading zero, with as many more digits as it takes for the printed value
+# to fall on the same side of 'alpha' as the p value itself. Three digits
+# printed a p of .04997 as ".05" in a sentence calling it significant at .05,
+# and one of .05005 as ".05" in a clause placing it above. 'alpha' is NULL
+# where no threshold is being compared. Display only.
+.format_p_value <- function(p, alpha = NULL) {
+  digits <- 3L
+  while (!is.null(alpha) && digits < 15L &&
+         sign(signif(p, digits) - alpha) != sign(p - alpha)) digits <- digits + 1L
+  sub("^0", "", format(signif(p, digits), digits = max(digits, 7L),
+                       scientific = FALSE))
 }
 
 # The 'alpha_prior' .stop_nonsignificant() names, as text: the threshold 'x',
@@ -846,10 +931,11 @@
   if (!.is_plan_shape(x))
     stop("This object no longer has the shape of a single plan (one sample ",
          "size row, and one row each of the results and of the planning ",
-         "inputs its planner echoed, such as 'alpha_prior' and 'assurance'); ",
-         "it may be several plans stacked together or a plan with rows ",
-         "removed. Apply this function to each plan separately, as its ",
-         "planner returned it.", call. = FALSE)
+         "inputs its planner echoed, such as 'alpha_prior' and 'assurance', ",
+         "in the two columns 'term' and 'value'); it may be several plans ",
+         "stacked together, a plan with rows removed, or a plan with columns ",
+         "added or renamed. Apply this function to each plan separately, as ",
+         "its planner returned it.", call. = FALSE)
   invisible(x)
 }
 
@@ -865,17 +951,51 @@
 
 # Format a value column for display the way DMAR's dmar_tbl print does: whole
 # numbers print clean (no decimal part), everything else at 'digits'
-# significant figures, never scientific notation. Display only; the stored
-# values keep full precision.
+# significant figures (see .format_signif()), never scientific notation.
+# Display only; the stored values keep full precision.
 .format_bucss_value <- function(v, digits) {
   vapply(v, function(x) {
     if (is.na(x)) return(NA_character_)
     if (is.finite(x) && x == floor(x) && abs(x) < 1e15) {
       return(format(x, scientific = FALSE))
     }
-    format(signif(x, digits), scientific = FALSE)
+    .format_signif(x, digits)
   }, character(1))
 }
+
+# One value at 'digits' significant figures, as text, never in scientific
+# notation. A value below 1 in magnitude that would round to 1 at that many
+# figures gets as many more as it takes to stay below 1 (.99957 at three
+# figures is 0.9996, not 1), the rule .format_pct() and .format_epsilon()
+# apply in the sentence: whole numbers print clean, so a printed 1 reads as
+# exactly 1, which a power, an assurance, a rate, or a correlation short of 1
+# is not. The test reads the text and never parses it back to a number
+# (.reads_as_one()): it covers a 'digits' above the session's own print
+# precision, it cannot depend on how a platform parses a 16-figure decimal
+# (R reads one with extended precision where the platform has it), and it
+# works under options(OutDec = ","), where the text is not a number R can
+# parse at all. From the sixteenth figure on the value is printed as stored,
+# at the 17 figures that identify a double, so the rule has no exception.
+# Every other value prints exactly as before, and so does whatever a 'digits'
+# that is no single number (NA, a vector) gave before the rule existed:
+# print() validates its 'digits' itself, and the option reaches knit_print()
+# and planning_sentence() unvalidated, where a bad value must not become one
+# of base R's internal errors. Display only.
+.format_signif <- function(x, digits) {
+  shown <- format(signif(x, digits), scientific = FALSE)
+  if (length(shown) != 1L || !is.finite(x) || abs(x) >= 1 || !.reads_as_one(shown))
+    return(shown)
+  d <- as.integer(ceiling(max(1, min(digits, 16))))
+  repeat {
+    if (d >= 16L) return(format(x, digits = 17L, scientific = FALSE))
+    shown <- format(signif(x, d), digits = d, scientific = FALSE)
+    if (!.reads_as_one(shown)) return(shown)
+    d <- d + 1L
+  }
+}
+
+# Whether formatted text reads as exactly 1 in magnitude ("1", "-1", "1.00").
+.reads_as_one <- function(text) grepl("^-?1(\\D0*)?$", text)
 
 #' Print a Bias and Uncertainty Corrected Sample Size Result
 #'
@@ -885,8 +1005,10 @@
 #' frame (\code{random_predictors}), the unit the sample size is counted in,
 #' and the largest assurance the prior result can support. Whole numbers
 #' print clean; other values print at \code{getOption("bucss.digits", 3)}
-#' significant figures. Only the display is rounded; the stored values keep
-#' full precision.
+#' significant figures, except that a value below 1 is never shown as 1: it
+#' is given as many more figures as it takes to stay below 1 (a power of
+#' .99957 prints as 0.9996). Only the display is rounded; the stored values
+#' keep full precision.
 #'
 #' @param x An object of class \code{bucss_plan}.
 #' @param digits Significant figures for non-integer values; defaults to

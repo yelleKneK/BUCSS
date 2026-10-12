@@ -91,7 +91,7 @@ other than 1 is ignored with a warning, and the result has no
 An object of class \code{bucss_plan}: a \code{data.frame} with a
   character \code{term} column and a numeric \code{value} column, in the
   same shape as the sibling package \code{DMAR}'s planners. The design
-  results come first: the necessary per between-subjects cell sample size for the planned
+  results come first: the necessary per-group sample size (per between-subjects cell; the row is \code{necessary_n_per_group}) for the planned
   study, named for its unit (\code{necessary_n_per_group},
   \code{necessary_n_per_cell}, or \code{necessary_N}); for the per-group
   and per-cell designs, \code{total_N}, the implied total sample size;
@@ -231,9 +231,13 @@ Researchers often use the sample effect size from a prior study as
   to the same balanced design as the reported noncentrality parameter, so an
   ordinary power analysis at it can return a sample size a little smaller
   than the one reported here (never a larger one), because the reported size
-  is the larger of the two rounded designs' requirements. Although
-  equal-\emph{n} previous studies are preferable, this approach will work
-  well as long as the cell sizes are only slightly discrepant.
+  is the larger of the two rounded designs' requirements. For a prior study
+  with unequal group sizes, or a total sample size that does not divide
+  evenly, the largest supportable assurance is computed at the balanced
+  design the planner plans from, so it can be below
+  \eqn{1 - p/\alpha}{1 - p/alpha} at the study's own \emph{p} value.
+  Although equal-\emph{n} previous studies are preferable, this approach
+  will work well as long as the cell sizes are only slightly discrepant.
 
   \strong{Sphericity.} The default \code{epsilon = 1} assumes sphericity, as
   the uncorrected within-subjects test does. When a prior study reports

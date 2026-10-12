@@ -214,7 +214,7 @@ ss_buc_chisq_diff <- function(chisq_observed, N, df_full, df_restricted,
 
   value_critical <- qchisq(1 - alpha_prior, df = df_difference)
 
-  if (chisq_observed <= value_critical) .stop_nonsignificant("chi square difference", "the prior result")
+  if (chisq_observed <= value_critical) .stop_nonsignificant("chi square difference", "the prior result", alpha_prior = alpha_prior)
 
   ncp_solution <- .solve_ncp_assurance(
     .tm_chisq(chisq_observed, value_critical, df_difference), assurance)

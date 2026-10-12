@@ -255,11 +255,15 @@ Researchers often use the sample effect size from a prior study as
   to the same balanced design as the reported noncentrality parameter, so an
   ordinary power analysis at it can return a sample size a little smaller
   than the one reported here (never a larger one), because the reported size
-  is the larger of the two rounded designs' requirements. When the
-  individual group sizes of an unequal-\emph{n} previous study are known, we
-  highly encourage entering these explicitly, especially if the sample sizes
-  are quite discrepant, as this allows for the greatest precision in
-  estimating an appropriate planned study \emph{n}.
+  is the larger of the two rounded designs' requirements. For a prior study
+  with unequal group sizes, or a total sample size that does not divide
+  evenly, the largest supportable assurance is computed at the balanced
+  design the planner plans from, so it can be below
+  \eqn{1 - p/\alpha}{1 - p/alpha} at the study's own \emph{p} value. When
+  the individual group sizes of an unequal-\emph{n} previous study are
+  known, we highly encourage entering these explicitly, especially if the
+  sample sizes are quite discrepant, as this allows for the greatest
+  precision in estimating an appropriate planned study \emph{n}.
 }
 \examples{
 result <- ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05,

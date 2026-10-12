@@ -78,6 +78,52 @@ test_that("the correlation planner uses the random-predictor distribution", {
   expect_gte(cor_plan$value[cor_plan$term == "actual_power"], .80)
 })
 
+test_that("VIG-5: treating a correlation's predictor as fixed overstates power by about 1/n", {
+  # The correlation vignette says that planning as though the statistic were
+  # a plain noncentral F overstates the planned study's power by roughly 1/n
+  # for a plan of n participants, "about .01 at n = 100, .02 at 50, .05 at
+  # 20, and .10 at 10 (for the regression plan of 119 above, about .009)".
+  # None of the five figures was computed or pinned. Each anchor is the
+  # effect at which the fixed-predictor power is exactly .80 at that n; the
+  # sampled-predictor power there was computed 2026-10-12 without BUCSS, by
+  # adaptive quadrature over the predictor's chi square and again by a
+  # midpoint rule (they agree to 2e-9).
+  fixed_power <- function(n, c2) pf(qf(.95, 1, n - 2), 1, n - 2, ncp = c2 * n,
+                                    lower.tail = FALSE)
+  sampled_power <- function(n, c2)
+    1 - BUCSS:::.p_correlation_f(qf(.95, 1, n - 2), n, c2 / (1 + c2))
+  anchors <- list(list(n = 100, sampled = 0.7895669381, stated = .01),
+                  list(n = 50, sampled = 0.7792775829, stated = .02),
+                  list(n = 20, sampled = 0.7492689440, stated = .05),
+                  list(n = 10, sampled = 0.7022645946, stated = .10))
+  for (a in anchors) {
+    c2 <- uniroot(function(c) fixed_power(a$n, c) - .80, c(1e-6, 5), tol = 1e-14)$root
+    expect_lt(abs(sampled_power(a$n, c2) - a$sampled), 1e-8)
+    overstated <- .80 - sampled_power(a$n, c2)
+    expect_equal(round(overstated, 2), a$stated)
+    # "roughly 1/n": the overstatement times n is between .86 and 1.05.
+    expect_gt(overstated * a$n, .86)
+    expect_lt(overstated * a$n, 1.05)
+  }
+
+  # The vignette's own regression plan: 119 participants planned in the fixed
+  # frame from r = .35 and N = 100, whose reported power of .8032 is .7944
+  # with the predictor sampled, .0088 lower (independent check 2026-10-12:
+  # .803183391, .794386824, and .008796566).
+  reg_plan <- ss_buc_reg_coef(t_observed = .35 * sqrt(98 / (1 - .35^2)), N = 100, p = 1,
+                              random_predictors = FALSE)
+  n <- reg_plan$value[reg_plan$term == "necessary_N"]
+  lambda <- reg_plan$value[reg_plan$term == "ncp_adjusted"]
+  reported <- reg_plan$value[reg_plan$term == "actual_power"]
+  expect_identical(n, 119)
+  expect_equal(reported, 0.803183391, tolerance = 1e-8)
+  expect_equal(reported, fixed_power(n, lambda / 100), tolerance = 1e-12)
+  delivered <- sampled_power(n, lambda / 100)
+  expect_lt(abs(delivered - 0.794386824), 1e-8)
+  expect_equal(round(reported - delivered, 4), .0088)
+  expect_equal(round(reported - delivered, 3), .009)
+})
+
 test_that("the ANCOVA planner reduces to the ANOVA planner with no covariates", {
   none <- ss_buc_ancova(F_observed = 6, N = 120, cells = 3, n_covariates = 0)
   anova <- ss_buc_one_way_anova(F_observed = 6, N = 120, levels_A = 3)

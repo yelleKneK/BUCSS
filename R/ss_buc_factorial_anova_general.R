@@ -127,9 +127,13 @@
 #'   to the same balanced design as the reported noncentrality parameter, so an
 #'   ordinary power analysis at it can return a sample size a little smaller
 #'   than the one reported here (never a larger one), because the reported size
-#'   is the larger of the two rounded designs' requirements. Although
-#'   equal-\emph{n} previous studies are preferable, this approach will work
-#'   well as long as the cell sizes are only slightly discrepant.
+#'   is the larger of the two rounded designs' requirements. For a prior study
+#'   with unequal group sizes, or a total sample size that does not divide
+#'   evenly, the largest supportable assurance is computed at the balanced
+#'   design the planner plans from, so it can be below
+#'   \eqn{1 - p/\alpha}{1 - p/alpha} at the study's own \emph{p} value.
+#'   Although equal-\emph{n} previous studies are preferable, this approach
+#'   will work well as long as the cell sizes are only slightly discrepant.
 #'
 #' @param F_observed Observed \emph{F} value from a previous study used to plan
 #'   sample size for a planned study.

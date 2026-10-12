@@ -150,6 +150,95 @@ test_that("bucss_plan keeps 1.x positional extraction working", {
   expect_identical(r[["term"]], r$term)
 })
 
+test_that("the legacy positional [[ applies only to an object with one plan's shape", {
+  # CL15-1 and PC-3 of the 2026-10-12 triage. Tools built on vctrs
+  # (dplyr::bind_rows(), dplyr::filter(), purrr::map_dfr()) keep the class on
+  # a stack of plans or a trimmed plan. The legacy reading then returned the
+  # first plan's size for [[1]] (222 for this stack, the second plan's 31
+  # lost), a vector of two parameters for [[2]], and NA or an empty vector for
+  # a plan with its row removed, with no condition raised. Such an object is
+  # now read as the plain data frame print() already shows it to be.
+  a <- ss_buc_independent_t(t_observed = 3, n = c(50, 50))
+  b <- ss_buc_one_way_anova(F_observed = 8, N = 60, levels_A = 3)
+  expect_identical(a[[1]], 222)
+  expect_identical(b[[1]], 31)
+  keep_class <- function(df, like) {
+    for (nm in setdiff(names(attributes(like)), c("names", "row.names")))
+      attr(df, nm) <- attr(like, nm)
+    df
+  }
+  stack <- keep_class(rbind(as.data.frame(a), as.data.frame(b)), a)
+  expect_s3_class(stack, "bucss_plan")
+  expect_identical(nrow(stack), nrow(a) + nrow(b))
+  expect_identical(stack[[1]], c(a$term, b$term))
+  expect_identical(stack[[2]], c(a$value, b$value))
+  expect_length(stack[[1]], nrow(a) + nrow(b))
+
+  no_ncp <- keep_class(as.data.frame(a)[a$term != "ncp_adjusted", ], a)
+  expect_s3_class(no_ncp, "bucss_plan")
+  expect_identical(no_ncp[[2]], a$value[a$term != "ncp_adjusted"])
+  no_size <- keep_class(as.data.frame(a)[a$term %in% c("ncp_adjusted", "assurance"), ], a)
+  expect_identical(no_size[[1]], c("ncp_adjusted", "assurance"))
+
+  # A plan with a column added is not one plan's shape either.
+  wide <- keep_class(cbind(as.data.frame(a), extra = 1), a)
+  expect_identical(wide[[1]], a$term)
+
+  # One plan is read as 1.x read it, by a double 1 or 2 only, and a plan with
+  # its rows reordered (still one plan's shape) is too.
+  expect_identical(a[[1]], a$value[a$term == "necessary_n_per_group"])
+  expect_identical(a[[2]], a$value[a$term == "ncp_adjusted"])
+  expect_identical(b[[1]], b$value[b$term == "necessary_n_per_group"])
+  shuffled <- keep_class(as.data.frame(a)[rev(seq_len(nrow(a))), ], a)
+  expect_identical(shuffled[[1]], a[[1]])
+  expect_identical(shuffled[[2]], a[[2]])
+  expect_identical(a[[1L]], a$term)
+  # The relabeled and wrapper results are plans like any other.
+  one <- ss_buc_one_sample_t(t_observed = 3, N = 40)
+  expect_identical(one[[1]], one$value[one$term == "necessary_N"])
+  old <- suppressWarnings(ss.power.dt(t.observed = 3, N = 40))
+  expect_identical(old[[1]], 255)
+  expect_identical(old[[2]], old$value[old$term == "ncp_adjusted"])
+})
+
+test_that("a malformed 'effect' in a 1.x wrapper gets one message, in the dotted spelling", {
+  # GF-3 of the 2026-10-12 triage: these reached match.arg() and failed with
+  # "'arg' must be of length 1" or "'arg' must be NULL or a character vector".
+  # The message names the argument and the 1.x choices the user typed.
+  dotted <- function(choices)
+    paste0("'effect' should be one of \"", choices[1], "\", \"", choices[2], "\", or \"",
+           choices[3], "\", given as a single character string.")
+  ab <- dotted(c("factor.A", "factor.B", "interaction"))
+  for (bad in list(c("factor.B", "factor.A"), 2, NA, NULL, "bogus", "factor_B")) {
+    label <- paste(deparse(bad), collapse = " ")
+    expect_error(suppressWarnings(ss.power.ba(F.observed = 12, N = 120, levels.A = 2,
+                                              levels.B = 3, effect = bad)),
+                 ab, fixed = TRUE, label = label)
+    expect_error(suppressWarnings(ss.power.wa(F.observed = 12, N = 60, levels.A = 2,
+                                              levels.B = 3, effect = bad)),
+                 ab, fixed = TRUE, label = label)
+    expect_error(suppressWarnings(ss.power.spa(F.observed = 12, N = 60, levels.between = 2,
+                                               levels.within = 3, effect = bad)),
+                 dotted(c("between", "within", "interaction")), fixed = TRUE, label = label)
+    expect_error(suppressWarnings(ss.power.spa.general(F.observed = 12, N = 90,
+                                                       df.numerator = 2, num.groups = 3,
+                                                       effect = bad)),
+                 dotted(c("between.only", "within.only", "between.within")), fixed = TRUE,
+                 label = label)
+  }
+  # The untouched default still means the first choice, and a dotted value is
+  # translated as before.
+  expect_identical(
+    attr(suppressWarnings(ss.power.wa(F.observed = 12, N = 60, levels.A = 2, levels.B = 3)),
+         "effect"), "factor_A")
+  expect_identical(
+    attr(suppressWarnings(ss.power.spa.general(F.observed = 12, N = 90, df.numerator = 2,
+                                               num.groups = 3)), "effect"), "between_only")
+  expect_identical(
+    attr(suppressWarnings(ss.power.ba(F.observed = 12, N = 120, levels.A = 2, levels.B = 3,
+                                      effect = "factor.B")), "effect"), "factor_B")
+})
+
 test_that("ss.power.ba keeps the 1.x refusal to plan a two-factor effect alone", {
   # 1.2.1 stopped with "You cannot select 'effect=interaction' if you do not
   # specify 'levels.B'". Dispatching to the one-way planner instead would

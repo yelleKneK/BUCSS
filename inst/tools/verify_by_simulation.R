@@ -34,7 +34,7 @@
 #      at the corrected effect reaches the actual_power the function reports,
 #      and that planning at sd_ratio = 1 when the truth has a ratio of 2 costs
 #      a large amount of realized power (the documented load-bearing caveat).
-#   4. Chi-square difference, finite-sample caveat. The likelihood ratio
+#   4. Chi square difference, finite-sample caveat. The likelihood ratio
 #      statistic for nested normal models is N*log(1 + chisq_k/chisq_{N-p})
 #      under the null, so its small-sample Type I error can be simulated
 #      without raw data, and it also has a closed form: confirm the two agree
@@ -64,8 +64,11 @@
 #   Rscript inst/tools/verify_by_simulation.R full     # full
 #
 # Sourcing this file leaves the session as it found it, apart from attaching
-# BUCSS if it was not already attached. Everything runs inside
-# local(), so nothing is created in, or overwritten in, the global environment;
+# BUCSS if it was not already attached. (Run from the root of the BUCSS source
+# repository, pkgload also attaches its development shims and testthat, and
+# sets an option and an environment variable of its own.) Everything runs
+# inside local(), so nothing is created in, or overwritten in, the global
+# environment;
 # the seed is set with withr::local_seed(), so the caller's random number state
 # and generator kind are restored when the run ends, even on an error. The run
 # is pinned to R's default generators (Mersenne-Twister, Inversion, Rejection),

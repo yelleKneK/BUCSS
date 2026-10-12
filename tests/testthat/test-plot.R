@@ -140,3 +140,46 @@ test_that("plot validates its inputs", {
                  "at least two finite values", fixed = TRUE)
   })
 })
+
+test_that("plot() catches only the classed refusal and muffles only the below-.5 warning", {
+  # TQ-3 of the 2026-10-12 triage. Across its grid plot() treats the zero
+  # noncentrality parameter refusal as the wall the figure shows, and muffles
+  # the planners' warning for an assurance below .5; any other error or
+  # warning must reach the user. With the handler widened to catch every
+  # error, or to muffle every warning, the whole suite passed: an unexpected
+  # failure was drawn as "No assurance value in the plotted range yields a
+  # usable plan", and another warning vanished. The mock lets the first call
+  # (the replay that checks the stored inputs) through and misbehaves after.
+  real_planner <- ss_buc_paired_t
+  plan <- real_planner(t_observed = 3, N = 40)
+  state <- new.env(parent = emptyenv())
+  state$calls <- 0
+  state$mode <- "error"
+  local_mocked_bindings(
+    ss_buc_paired_t = function(...) {
+      state$calls <- state$calls + 1
+      if (state$calls > 1 && state$mode == "error") stop("an unexpected failure", call. = FALSE)
+      if (state$calls > 1) warning("some other warning", call. = FALSE)
+      real_planner(...)
+    },
+    .package = "BUCSS")
+  seen <- function(code) {
+    record <- new.env(parent = emptyenv())
+    record$warnings <- character(0)
+    withCallingHandlers(code, warning = function(w) {
+      record$warnings <- c(record$warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    })
+    record$warnings
+  }
+  with_null_device({
+    expect_error(seen(plot(plan)), "an unexpected failure", fixed = TRUE)
+    state$calls <- 0
+    state$mode <- "warning"
+    warnings <- seen(plot(plan, n_points = 10))
+    expect_true("some other warning" %in% warnings)
+    # one per grid point, none of them the muffled one
+    expect_identical(sum(warnings == "some other warning"), 10L)
+    expect_false(any(grepl("you have entered is < .5", warnings, fixed = TRUE)))
+  })
+})

@@ -17,9 +17,9 @@ method as a column index.}
 \item{...}{Passed to the \code{data.frame} method.}
 }
 \value{
-For \code{i} equal to the double \code{1} or \code{2}, a single
-  numeric value; otherwise whatever the \code{data.frame} \code{[[} method
-  returns.
+For \code{i} equal to the double \code{1} or \code{2} and an object
+  with the shape of a single plan, a single numeric value; otherwise
+  whatever the \code{data.frame} \code{[[} method returns.
 }
 \description{
 Backward-compatible positional extraction for
@@ -34,5 +34,13 @@ Backward-compatible positional extraction for
   Any other subscript (a column name, or a length other than one) falls
   through to the ordinary \code{data.frame} method, so \code{result[["value"]]}
   and \code{result$value} are unaffected.
+
+  The legacy reading applies only to an object that still has the shape of
+  a single plan, as its planner returned it. An object that keeps the class
+  without that shape (several plans stacked together, or a plan with rows
+  removed, which some data manipulation tools leave in the class) is read
+  as the plain \code{data.frame} it is, so \code{[[1]]} and \code{[[2]]}
+  give its \code{term} and \code{value} columns rather than one plan's
+  sample size and noncentrality parameter.
 }
 \keyword{internal}

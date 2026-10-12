@@ -1,38 +1,45 @@
 # Validation tests: every guard that should stop() or warning() before any
 # sample size planning happens. Messages are matched as fixed substrings.
 
+# The range errors are matched on their opening words, "There is a problem
+# with '<argument>'", not on the argument's name alone: a refusal raised
+# further on (the nonsignificance or zero noncentrality parameter message)
+# also names 'alpha_prior' and 'assurance', so the bare name passed even when
+# the validator let an endpoint through (TQ-6 of the 2026-10-12 triage: with
+# 'alpha_prior <= 0' weakened to '< 0', or 'assurance >= 1' to '> 1', every
+# test still passed).
 test_that("out-of-range alpha_prior is rejected", {
   expect_error(ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = 1.5),
-               "alpha_prior", fixed = TRUE)
+               "There is a problem with 'alpha_prior'", fixed = TRUE)
   expect_error(ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = 0),
-               "alpha_prior", fixed = TRUE)
+               "There is a problem with 'alpha_prior'", fixed = TRUE)
 })
 
 test_that("out-of-range alpha_planned is rejected", {
   expect_error(ss_buc_independent_t(t_observed = 3, n = 20, alpha_planned = 1),
-               "alpha_planned", fixed = TRUE)
+               "There is a problem with 'alpha_planned'", fixed = TRUE)
   expect_error(ss_buc_independent_t(t_observed = 3, n = 20, alpha_planned = 0),
-               "alpha_planned", fixed = TRUE)
+               "There is a problem with 'alpha_planned'", fixed = TRUE)
 })
 
 test_that("out-of-range assurance is rejected", {
   expect_error(ss_buc_independent_t(t_observed = 3, n = 20, assurance = -.1),
-               "assurance", fixed = TRUE)
+               "There is a problem with 'assurance'", fixed = TRUE)
 })
 
 test_that("endpoint assurance and power are rejected, not silently planned", {
   # assurance = 0 has no root (TM is strictly positive): the old behavior
   # returned the uniroot bracket endpoint as the adjusted NCP.
   expect_error(ss_buc_independent_t(t_observed = 3, n = 50, assurance = 0),
-               "assurance", fixed = TRUE)
+               "There is a problem with 'assurance'", fixed = TRUE)
   # desired_power = 100 coerces to a target of exactly 1.0, which the search can only
   # "reach" by floating-point error in pt(); desired_power = 0 trivially returned n = 2.
   expect_error(ss_buc_paired_t(t_observed = 3, N = 25, desired_power = 100),
-               "power", fixed = TRUE)
+               "There is a problem with 'desired_power'", fixed = TRUE)
   expect_error(ss_buc_paired_t(t_observed = 3, N = 25, desired_power = 0),
-               "power", fixed = TRUE)
+               "There is a problem with 'desired_power'", fixed = TRUE)
   expect_error(ss_buc_independent_t(t_observed = 3, n = 20, assurance = 100),
-               "assurance", fixed = TRUE)
+               "There is a problem with 'assurance'", fixed = TRUE)
   # The documented percentage rule is untouched: exactly 1 still means 1
   # percent (coercion runs before the range check), so desired_power = 1 plans at a
   # .01 target without error, and assurance = 1 reaches the < .5 warning
@@ -49,7 +56,7 @@ test_that("assurance below .5 warns but still computes", {
 
 test_that("out-of-range power is rejected", {
   expect_error(ss_buc_independent_t(t_observed = 3, n = 20, desired_power = -.1),
-               "power", fixed = TRUE)
+               "There is a problem with 'desired_power'", fixed = TRUE)
 })
 
 test_that("a nonsignificant prior t is rejected", {
@@ -296,9 +303,9 @@ test_that("every remaining documented guard fires with its message", {
   guard_cases <- list(
     # validator: percentages above 100 are out of range after the coercion
     list(quote(ss_buc_independent_t(t_observed = 3, n = 20, assurance = 150)),
-         "assurance"),
+         "There is a problem with 'assurance'"),
     list(quote(ss_buc_independent_t(t_observed = 3, n = 20, desired_power = 150)),
-         "power"),
+         "There is a problem with 'desired_power'"),
     # independent t structural guards
     list(quote(ss_buc_independent_t(t_observed = 3, n = 20, N = 40)),
          "should not specify 'n'"),
@@ -379,10 +386,11 @@ test_that("every remaining documented guard fires with its message", {
          "cannot exceed"),
     list(quote(ss_buc_reg_joint(F_observed = 1, N = 150, p = 4, p_joint = 2)),
          "nonsignificant"),
-    # an unrecognized effect value falls through .match_effect to match.arg
+    # an unrecognized effect value falls through .match_effect to
+    # .check_effect, whose message names the argument and its choices
     list(quote(ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2,
                                       levels_B = 3, effect = "bogus")),
-         "should be one of")
+         "'effect' should be one of \"factor_A\", \"factor_B\", or \"interaction\"")
   )
   for (case in guard_cases) {
     expect_error(suppressWarnings(eval(case[[1]])), case[[2]], fixed = TRUE,

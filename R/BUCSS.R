@@ -161,5 +161,6 @@
 #' @importFrom graphics abline box lines mtext par points rect text
 #' @importFrom stats dnbinom pbeta pchisq pf pt qchisq qf qnbinom qt quantile
 #' @importFrom stats rchisq rf rt uniroot
+#' @importFrom withr local_seed
 #'
 "_PACKAGE"

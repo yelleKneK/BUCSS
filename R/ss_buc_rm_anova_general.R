@@ -261,7 +261,7 @@ ss_buc_rm_anova_general <- function(F_observed, N, df_numerator, alpha_prior = .
   # every product is exact.
   crit_F <- qf(1 - alpha_prior, df1 = epsilon * df_numerator,
                df2 = epsilon * df_denominator)
-  if (F_observed <= crit_F) .stop_nonsignificant("F statistic", "'F_observed'")
+  if (F_observed <= crit_F) .stop_nonsignificant("F statistic", "'F_observed'", alpha_prior = alpha_prior)
 
   ncp_solution <- .solve_ncp_assurance(
     .tm_f(F_observed, crit_F, df_numerator, df_denominator, epsilon), assurance)

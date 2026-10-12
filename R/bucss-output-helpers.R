@@ -43,6 +43,22 @@ knit_print.bucss_plan <- function(x, ...) {
   sub("\\.?0+$", "", sprintf(paste0("%.", d, "f"), round(100 * p, d)))
 }
 
+# A proportion as a footer writes it: two decimals and no leading zero (.80),
+# with as many more decimals as it takes for a value below 1 never to print
+# as 1.00 (.996 -> ".996", .9999 -> ".9999"), the rule .format_pct() applies
+# on the percentage scale. Any other value prints at two decimals, as before.
+# The loop reads the text ("1.00" begins with 1) and never parses it back to
+# a number: R reads a 16-decimal text with extended precision where the
+# platform has it, so a parsed test stopped at a different number of decimals
+# on different machines for a value within 1e-16 of 1. Display only.
+.format_proportion <- function(p) {
+  fixed <- function(d) sprintf(paste0("%.", d, "f"), p)
+  d <- 2L
+  if (length(p) == 1L && is.finite(p))
+    while (p < 1 && startsWith(fixed(d), "1") && d < 17L) d <- d + 1L
+  sub("^0", "", fixed(d))
+}
+
 # The sphericity parameter as the sentence writes it: three significant
 # figures and no leading zero (.865), with as many more figures as it takes
 # for a value below 1 never to print as 1 (.9996 -> ".9996"), the rule
@@ -108,7 +124,7 @@ knit_print.bucss_plan <- function(x, ...) {
 #' @author Ken Kelley (\email{kkelley@@nd.edu}) and
 #'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 planning_sentence <- function(x) {
-  if (!inherits(x, "bucss_plan")) {
+  if (missing(x) || !inherits(x, "bucss_plan")) {
     stop("'x' must be a bucss_plan result from an ss_buc_* function.",
          call. = FALSE)
   }
@@ -176,11 +192,12 @@ planning_sentence <- function(x) {
 # The planning effect size as the sentence writes it: at
 # getOption("bucss.digits", 3) significant figures, never in scientific
 # notation, and, for the metrics that cannot exceed 1 (.BUCSS_EFFECT_BOUNDED),
-# without the leading zero, as APA style writes such statistics. Display
-# only; the stored row keeps full precision.
+# without the leading zero, as APA style writes such statistics. Through
+# .format_signif(), as in the printed table, a value below 1 never prints as
+# 1 (a planning correlation of .99996 is written .99996). Display only; the
+# stored row keeps full precision.
 .format_effect_size <- function(value, term) {
-  shown <- format(signif(value, getOption("bucss.digits", 3L)),
-                  scientific = FALSE)
+  shown <- .format_signif(value, getOption("bucss.digits", 3L))
   if (term %in% .BUCSS_EFFECT_BOUNDED) shown <- sub("^0\\.", ".", shown)
   shown
 }

@@ -223,9 +223,13 @@ Researchers often use the sample effect size from a prior study as
   to the same balanced design as the reported noncentrality parameter, so an
   ordinary power analysis at it can return a sample size a little smaller
   than the one reported here (never a larger one), because the reported size
-  is the larger of the two rounded designs' requirements. Although
-  equal-\emph{n} previous studies are preferable, this approach will work
-  well as long as the cell sizes are only slightly discrepant.
+  is the larger of the two rounded designs' requirements. For a prior study
+  with unequal group sizes, or a total sample size that does not divide
+  evenly, the largest supportable assurance is computed at the balanced
+  design the planner plans from, so it can be below
+  \eqn{1 - p/\alpha}{1 - p/alpha} at the study's own \emph{p} value.
+  Although equal-\emph{n} previous studies are preferable, this approach
+  will work well as long as the cell sizes are only slightly discrepant.
 }
 \examples{
 result <- ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2,

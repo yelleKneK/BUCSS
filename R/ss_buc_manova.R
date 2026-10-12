@@ -109,6 +109,10 @@
 #'   parameter, so an ordinary power analysis at it can return a sample size a
 #'   little smaller than the one reported here (never a larger one), because
 #'   the reported size is the larger of the two rounded designs' requirements.
+#'   For a prior study with unequal group sizes, or a total sample size that
+#'   does not divide evenly, the largest supportable assurance is computed at
+#'   the balanced design the planner plans from, so it can be below
+#'   \eqn{1 - p/\alpha}{1 - p/alpha} at the study's own \emph{p} value.
 #'
 #' @param F_observed Observed \emph{F} value for the multivariate comparison
 #'   from a previous study. Supply either \code{F_observed} or
@@ -186,6 +190,17 @@ ss_buc_manova <- function(F_observed, N, p_variables, T2_observed,
   n_ru <- ceiling(N / 2)
   n_rd <- floor(N / 2)
 
+  # An odd N can pass the check above and still leave the rounded-down
+  # balanced design, 2 * floor(N / 2) cases, without error degrees of freedom
+  # (N = 5 with three outcomes: 5 - 3 - 1 = 1, but 4 - 3 - 1 = 0). This is
+  # checked before either rounding branch runs, because the round-up branch's
+  # nonsignificance message evaluates the p value at the rounded-down design,
+  # and at 0 degrees of freedom that raised R's "NaNs produced" warning
+  # beside the error.
+  if (2 * n_rd - p_variables - 1 < 1) {
+    stop("The combination of 'N' and 'p_variables' leaves no error degrees of freedom once an odd 'N' is rounded down to two equal groups, as this planner does. Reduce 'p_variables' or increase 'N'.", call. = FALSE)
+  }
+
   # The prior study's own p value, at its own degrees of freedom, so that a
   # statistic significant there but not at the rounded-down design is not
   # called nonsignificant (see .stop_nonsignificant()).
@@ -194,9 +209,6 @@ ss_buc_manova <- function(F_observed, N, p_variables, T2_observed,
   branch <- function(n_prior) {
     N_branch <- 2 * n_prior
     df_denominator <- N_branch - p_variables - 1
-    if (df_denominator < 1) {
-      stop("The combination of 'N' and 'p_variables' leaves no error degrees of freedom. Reduce 'p_variables' or increase 'N'.", call. = FALSE)
-    }
     crit <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator)
     if (F_stat <= crit)
       .stop_nonsignificant("multivariate test", "the prior result", p_own, alpha_prior,

@@ -385,6 +385,78 @@ test_that("a prior significant at its own df is not called nonsignificant", {
   expect_no_match(msg, "own degrees of freedom", fixed = TRUE)
 })
 
+test_that("the independent t's own degrees of freedom are n_1 + n_2 - 2", {
+  # TQ-1 of the 2026-10-12 triage: with the own df computed as n_1 + n_2 - 1
+  # the whole suite passed, because the two strings pinned above cannot tell
+  # the df apart (t = 2.05 prints .0416 at 203 and at 204 df). Here they can:
+  # t = 2.1 from groups of 3 and 40 has p = .0419 at 41 df and .0418 at 42.
+  three_digits <- function(p) sub("^0", "", format(signif(p, 3)))
+  stopifnot(identical(three_digits(2 * pt(2.1, 41, lower.tail = FALSE)), ".0419"),
+            identical(three_digits(2 * pt(2.1, 42, lower.tail = FALSE)), ".0418"))
+  expect_error(ss_buc_independent_t(t_observed = 2.1, n = c(3, 40)),
+               "own degrees of freedom (p = .0419)", fixed = TRUE,
+               class = "bucss_nonsignificant")
+})
+
+test_that("the band message prints each p value on its own side of alpha_prior", {
+  # PC-4 and TQ-8 of the 2026-10-12 triage. Three significant digits printed
+  # a p value within about .00005 of 'alpha_prior' as the threshold itself, so
+  # the message read "significant at the prior study's own degrees of freedom
+  # (p = .05) ... and there its p value is .05, above 'alpha_prior'", and an
+  # own-df ceiling that floors to zero as "at most about .00". Each p value
+  # now gets as many digits as it takes to read on its own side, and such a
+  # ceiling is worded "below .01".
+  #
+  # MANOVA, N = 81, three outcomes: the own error df are 77 and the
+  # rounded-down design's 76; halfway between the two critical values the own
+  # p is .04995105 and the balanced p .05004894 (pf() alone).
+  f_mid <- (qf(.95, 3, 77) + qf(.95, 3, 76)) / 2
+  stopifnot(abs(pf(f_mid, 3, 77, lower.tail = FALSE) - 0.0499510518) < 1e-9,
+            abs(pf(f_mid, 3, 76, lower.tail = FALSE) - 0.0500489357) < 1e-9)
+  msg <- tryCatch(ss_buc_manova(F_observed = f_mid, N = 81, p_variables = 3),
+                  bucss_nonsignificant = conditionMessage)
+  expect_match(msg, "at the prior study's own degrees of freedom (p = .04995), but",
+               fixed = TRUE)
+  expect_match(msg, "and there its p value is .05005, above 'alpha_prior'.", fixed = TRUE)
+  expect_match(msg, paste0("Even at its own degrees of freedom the result supports an ",
+                           "assurance below .01, far below the recommended floor of .5."),
+               fixed = TRUE)
+  expect_no_match(msg, "(p = .05)", fixed = TRUE)
+  expect_no_match(msg, "p value is .05,", fixed = TRUE)
+  expect_no_match(msg, "at most about", fixed = TRUE)
+  # The advice in the message is unchanged, and true.
+  expect_match(msg, "would need an 'alpha_prior' of .251 or more", fixed = TRUE)
+  expect_s3_class(ss_buc_manova(F_observed = f_mid, N = 81, p_variables = 3, alpha_prior = .251),
+                  "bucss_plan")
+
+  # The independent t, t = 2.012 from a total N of 49: own df 47 (p =
+  # .0499716), rounded down to 24 per group (df 46, p = .0500978).
+  stopifnot(abs(2 * pt(2.012, 47, lower.tail = FALSE) - 0.0499716417) < 1e-9,
+            abs(2 * pt(2.012, 46, lower.tail = FALSE) - 0.0500978403) < 1e-9)
+  msg <- tryCatch(ss_buc_independent_t(t_observed = 2.012, N = 49, assurance = .5),
+                  bucss_nonsignificant = conditionMessage)
+  expect_match(msg, "(p = .04997), but", fixed = TRUE)
+  expect_match(msg, "its p value is .0501, above 'alpha_prior'.", fixed = TRUE)
+  expect_match(msg, "supports an assurance below .01, far below", fixed = TRUE)
+
+  # The helper: three significant digits wherever that already reads on the
+  # right side (so every message pinned above is unchanged), more only when
+  # needed, and no threshold means three.
+  fp <- BUCSS:::.format_p_value
+  expect_identical(fp(.0416498694, .05), ".0416")
+  expect_identical(fp(.0571229, .05), ".0571")
+  expect_identical(fp(.00571, .05), ".00571")
+  expect_identical(fp(.049972, .05), ".04997")
+  expect_identical(fp(.0500049, .05), ".050005")
+  expect_identical(fp(.049999996, .05), ".049999996")
+  expect_identical(fp(.0499716417), ".05")
+  for (alpha in c(.05, .10, .999)) for (step in c(1e-3, 1e-4, 1e-5, 1e-7, 1e-9))
+    for (p in alpha * (1 + c(-1, 1) * step)) {
+      shown <- as.numeric(fp(p, alpha))
+      expect_identical(sign(shown - alpha), sign(p - alpha))
+    }
+})
+
 test_that("the band message reports the balanced design's p value and an alpha_prior that plans", {
   # The message reports the p value at the rounded-down balanced design (the
   # one with the fewest degrees of freedom, where the statistic fell short) and

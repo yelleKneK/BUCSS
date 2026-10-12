@@ -237,7 +237,7 @@ ss_buc_correlation <- function(r_observed, N, t_observed, alpha_prior = .05,
 
   value_critical <- qf(1 - alpha_prior, df1 = df_numerator, df2 = df_denominator)
 
-  if (t_stat^2 <= value_critical) .stop_nonsignificant("correlation", "the prior result")
+  if (t_stat^2 <= value_critical) .stop_nonsignificant("correlation", "the prior result", alpha_prior = alpha_prior)
 
   # Both the correction and the planned-study power use the exact
   # random-predictor distribution (.p_correlation_f), because a correlation

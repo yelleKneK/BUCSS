@@ -4,11 +4,11 @@
 # returning that planner's bucss_plan object. The wrappers are not actively
 # developed; the statistical work lives in the ss_buc_* functions. A one-time
 # (per session, per function) deprecation warning steers users to the new name;
-# the ss_buc_* functions themselves are silent. The 1.x grid-resolution 'step'
-# argument is accepted for call compatibility and ignored (the 2.0.0 engine
-# finds the noncentrality parameter by root finding, not a grid). The 1.x effect
-# values (e.g. "factor.A", "between.only") are translated to their snake_case
-# 2.x forms with a single dot-to-underscore rule.
+# the ss_buc_* functions themselves never issue it. The 1.x grid-resolution
+# 'step' argument is accepted for call compatibility and ignored (the 2.0.0
+# engine finds the noncentrality parameter by root finding, not a grid). The
+# 1.x effect values (e.g. "factor.A", "between.only") are translated to their
+# snake_case 2.x forms with a single dot-to-underscore rule.
 
 # Track which deprecated functions have already warned this session, so the
 # warning fires once per function per session rather than on every call.
@@ -40,7 +40,7 @@
 # "between.only" -> "between_only", and the dotless values ("between",
 # "interaction") are unchanged.
 .translate_effect <- function(effect, choices_1x) {
-  gsub(".", "_", match.arg(effect, choices_1x), fixed = TRUE)
+  gsub(".", "_", .check_effect(effect, choices_1x), fixed = TRUE)
 }
 
 #' Deprecated 1.x Functions in BUCSS
@@ -65,8 +65,8 @@
 #'
 #'   Calling one of these functions issues a deprecation warning that names its
 #'   replacement, once per function per session; the \code{ss_buc_*} functions
-#'   themselves never warn. New code should call the \code{ss_buc_*} functions
-#'   directly.
+#'   themselves never issue this deprecation warning. New code should call the
+#'   \code{ss_buc_*} functions directly.
 #'
 #' @details The replacements are:
 #'
@@ -108,9 +108,10 @@
 #'   the split plot, above \code{num.groups - 1} for the between-subjects
 #'   effect, or not a multiple of \code{df.num.within} within that bound for
 #'   the interaction). Non-scalar, non-finite, and fractional inputs are
-#'   rejected with a message naming the argument. Errors raised through these
-#'   wrappers come from the \code{ss_buc_*} planners and name their
-#'   arguments (\code{t_observed} for \code{t.observed}, and so on). The
+#'   rejected with a message naming the argument. Most errors raised through
+#'   these wrappers come from the \code{ss_buc_*} planners and name their
+#'   arguments (\code{t_observed} for \code{t.observed}, and so on); an
+#'   unrecognized \code{effect} is rejected by the wrapper itself. The
 #'   regression wrappers keep the 1.x fixed-predictor computation
 #'   (\code{random_predictors = FALSE}); call \code{\link{ss_buc_reg_coef}},
 #'   \code{\link{ss_buc_R2}}, or \code{\link{ss_buc_reg_joint}} directly for
@@ -187,8 +188,10 @@ ss.power.ba <- function(F.observed, N, levels.A, levels.B = NULL,
   # interaction here but silently returned the Factor A plan for "factor.B";
   # 2.0.0 refuses both, since dispatching to the one-way planner would hand a
   # user who asked for Factor B the plan for Factor A.
-  if (is.null(levels.B) && !identical(match.arg(effect), "factor.A")) {
-    stop("You cannot select 'effect = \"", match.arg(effect),
+  choices_1x <- c("factor.A", "factor.B", "interaction")
+  effect <- .check_effect(effect, choices_1x)
+  if (is.null(levels.B) && !identical(effect, "factor.A")) {
+    stop("You cannot select 'effect = \"", effect,
          "\"' if you do not specify 'levels.B'.", call. = FALSE)
   }
   if (is.null(levels.B)) {
@@ -196,7 +199,7 @@ ss.power.ba <- function(F.observed, N, levels.A, levels.B = NULL,
                          alpha_prior = alpha.prior, alpha_planned = alpha.planned,
                          assurance = assurance, desired_power = power)
   } else {
-    effect <- .translate_effect(effect, c("factor.A", "factor.B", "interaction"))
+    effect <- .translate_effect(effect, choices_1x)
     ss_buc_factorial_anova(F_observed = F.observed, N = N, levels_A = levels.A,
                            levels_B = levels.B, effect = effect,
                            alpha_prior = alpha.prior, alpha_planned = alpha.planned,
@@ -330,6 +333,14 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
 #'   through to the ordinary \code{data.frame} method, so \code{result[["value"]]}
 #'   and \code{result$value} are unaffected.
 #'
+#'   The legacy reading applies only to an object that still has the shape of
+#'   a single plan, as its planner returned it. An object that keeps the class
+#'   without that shape (several plans stacked together, or a plan with rows
+#'   removed, which some data manipulation tools leave in the class) is read
+#'   as the plain \code{data.frame} it is, so \code{[[1]]} and \code{[[2]]}
+#'   give its \code{term} and \code{value} columns rather than one plan's
+#'   sample size and noncentrality parameter.
+#'
 #' @param x A \code{bucss_plan} object.
 #' @param i A subscript. A single double \code{1} or \code{2}, as 1.x code
 #'   writes it, selects the legacy scalar; anything else, including the
@@ -337,9 +348,9 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
 #'   method as a column index.
 #' @param ... Passed to the \code{data.frame} method.
 #'
-#' @return For \code{i} equal to the double \code{1} or \code{2}, a single
-#'   numeric value; otherwise whatever the \code{data.frame} \code{[[} method
-#'   returns.
+#' @return For \code{i} equal to the double \code{1} or \code{2} and an object
+#'   with the shape of a single plan, a single numeric value; otherwise
+#'   whatever the \code{data.frame} \code{[[} method returns.
 #'
 #' @keywords internal
 #' @export
@@ -350,9 +361,14 @@ ss.power.reg.joint <- function(F.observed, N, p, p.joint, alpha.prior = .05,
   # user typed as a literal: base R's column loops (format.data.frame, str,
   # lapply, data.matrix, and friends) index with integers from seq_len(), and
   # without this they would receive the legacy scalars in place of the term
-  # and value columns.
+  # and value columns. A third guard, the shape check every other reader of
+  # "the" sample size makes, keeps it to one plan: on a stack of plans the
+  # legacy reading returned the first plan's size and a vector of parameters,
+  # and on a plan with rows removed NA or an empty vector, with no condition
+  # raised. (.is_plan_shape() reads the columns by name, so it does not come
+  # back through this branch.)
   if (nargs() == 2L && !missing(i) && length(i) == 1L && is.double(i) &&
-      i %in% c(1, 2)) {
+      i %in% c(1, 2) && .is_plan_shape(x)) {
     term <- .subset2(x, "term")
     value <- .subset2(x, "value")
     if (i == 1) return(value[term %in% .BUCSS_SIZE_TERMS][1])

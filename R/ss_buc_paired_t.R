@@ -173,7 +173,7 @@ ss_buc_paired_t <- function(t_observed, N, alpha_prior = .05, alpha_planned = .0
   DF <- N - 1
 
   value_critical <- qt(1 - alpha_prior / 2, df = DF)
-  if (t_stat <= value_critical) .stop_nonsignificant("t statistic", "'t_observed'")
+  if (t_stat <= value_critical) .stop_nonsignificant("t statistic", "'t_observed'", alpha_prior = alpha_prior)
 
   ncp_solution <- .solve_ncp_assurance(
     .tm_t(t_stat, value_critical, DF), assurance)

@@ -25,8 +25,10 @@ footer lines naming the design, for the regression planners the predictor
 frame (\code{random_predictors}), the unit the sample size is counted in,
 and the largest assurance the prior result can support. Whole numbers
 print clean; other values print at \code{getOption("bucss.digits", 3)}
-significant figures. Only the display is rounded; the stored values keep
-full precision.
+significant figures, except that a value below 1 is never shown as 1: it
+is given as many more figures as it takes to stay below 1 (a power of
+.99957 prints as 0.9996). Only the display is rounded; the stored values
+keep full precision.
 }
 \examples{
 result <- ss_buc_independent_t(t_observed = 3, n = c(50, 55),

@@ -214,8 +214,15 @@ Researchers often use the sample effect size from a prior study as
 
   The covariates are treated as fixed, which is the usual convention in
   sample size planning for an analysis of covariance. When the covariates
-  are themselves sampled, the planned study's power is very slightly lower
-  than reported.
+  are themselves sampled, chance imbalance between the groups on the
+  covariates lowers the planned study's power below the reported value, by
+  roughly .4 to .5 times \emph{q}/\emph{N} at a desired power of .80 and an
+  \code{alpha_planned} of .05 (somewhat more at a stricter
+  \code{alpha_planned}, or when the plan has few participants per
+  covariate), for \emph{q} covariates and \emph{N} planned participants in
+  total: about .002 for the first example below (462 participants, two
+  covariates), but about .05 for a plan of 27 participants with three
+  covariates.
 
   \code{ss_buc_ancova} assumes that the planned study will have equal
   \emph{n}. If the prior \emph{N} is not equally divisible by the number of
@@ -226,7 +233,11 @@ Researchers often use the sample effect size from a prior study as
   as the reported noncentrality parameter, so an ordinary power analysis at
   it can return a sample size a little smaller than the one reported here
   (never a larger one), because the reported size is the larger of the two
-  rounded designs' requirements.
+  rounded designs' requirements. For a prior study with unequal group
+  sizes, or a total sample size that does not divide evenly, the largest
+  supportable assurance is computed at the balanced design the planner
+  plans from, so it can be below \eqn{1 - p/\alpha}{1 - p/alpha} at the
+  study's own \emph{p} value.
 }
 \examples{
 # Three groups, two covariates, prior N = 120: the omnibus group effect.
