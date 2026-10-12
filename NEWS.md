@@ -43,9 +43,13 @@ Planning Effect Size" below).
     leaving out the cases the old cap affected, the `df_denominator` change,
     and the harmonic-mean correction, about 95% of sample sizes are
     unchanged; most of the rest move by a few units and none by more than 2
-    percent, except close to the assurance ceiling, where the corrected
-    parameter is small and the grid's resolution mattered most (up to about 5
-    percent). Among the documented examples, seven planned sample sizes move:
+    percent. The exception lies close to the assurance ceiling, beyond all
+    but one case in that grid, where the corrected parameter is small beside
+    the 1.x search's resolution of .001: within about 25 times that
+    resolution on the *F* scale (50 times on the *t* scale) a 1.x sample size
+    can differ from the 2.0.0 one by more than 2 percent, and within about
+    .001 of the ceiling by 10 percent or more, in either direction. Among the
+    documented examples, seven planned sample sizes move:
     1482 to 1485 (`ss_buc_independent_t`); 1904 to 1902 (`ss_buc_rm_anova`);
     968 to 969 (`ss_buc_mixed_anova`); 1491 to 1489
     (`ss_buc_mixed_anova_general`); 3963 to 3960 (`ss_buc_reg_joint`); and,
@@ -65,8 +69,8 @@ Planning Effect Size" below).
   group where the article prints 332, an *f* squared of .09 gives 1,400 where
   it prints 1,418, and a paired *d* of .50 gives 50 and 80 where it prints 49
   and 79. Each printed size is reproduced by a value that rounds to the
-  printed one (*d* = 0.6799, an *f* squared of .08996, and a paired *d* of
-  .502), in BUCSS 1.2.1 as in 2.0.0.
+  printed one (*d* = 0.6799, an *F* of 6.4773, which is an *f* squared of
+  about .08996, and a paired *d* of .502), in BUCSS 1.2.1 as in 2.0.0.
 * There is no grid-resolution argument or option. The 1.x `step` argument and
   any grid resolution setting are gone, since root finding has no resolution
   parameter.
@@ -123,7 +127,7 @@ Planning Effect Size" below).
   translates them, and calls the corresponding `ss_buc_*` function, so scripts
   written for BUCSS 1.x continue to run. Calling one issues a deprecation
   warning that names its replacement, once per function per session; the
-  `ss_buc_*` functions themselves are silent. `ss.power.ba` dispatches to
+  `ss_buc_*` functions themselves never issue it. `ss.power.ba` dispatches to
   `ss_buc_one_way_anova` when `levels.B` is `NULL` and to
   `ss_buc_factorial_anova` otherwise; the dotted `effect` values are translated
   to snake_case; and the 1.x `step` argument is accepted and ignored.
@@ -206,7 +210,10 @@ previously handle.
   estimation accuracy issues at smaller sample sizes: below 10 per group the
   approximation overstates the real Welch test's power, badly so for the
   smallest, while from 10 per group it is within .006 of the real test's
-  power for every plan returned.
+  power for every plan returned at an `alpha_planned` of .05. At a stricter
+  `alpha_planned` it overstates the power of the smallest plans by more (at
+  10 per group by up to about .012 at .01 and .025 at .001) and is within
+  .006 again from 14 and 20 per group, respectively.
 
 ## The Assurance Ceiling, Drawn
 
@@ -557,7 +564,7 @@ previously handle.
 
 * Omitting `effect` in the between-subjects, within-subjects, and split-plot
   functions no longer fails with "the condition has length > 1" under
-  R >= 4.2. `effect` now defaults to its first choice through `match.arg()`.
+  R >= 4.2. `effect` now defaults to its first choice.
 
 * `ss_buc_rm_anova()` no longer silently returns the single-factor result when
   `effect` is `"factor_B"` or `"interaction"` but `levels_B` is not supplied; it
@@ -583,6 +590,17 @@ previously handle.
   where TRUE/FALSE needed" or "the condition has length > 1". A within-subjects
   `N` of 1, or an independent-samples total `N` below 4, is likewise rejected
   up front instead of reaching `qt()`/`qf()` with zero degrees of freedom.
+
+* A last round of guards. A malformed `effect` (two values included, of which
+  the first was used without notice), a Welch spread or an `alpha_planned` too
+  extreme to compute with, and a missing first argument to
+  `ss_buc_sensitivity()` or `planning_sentence()` each get a clear error
+  naming the argument; `ss_buc_independent_t()` reads `n = NULL` with `N` as
+  `N` alone; `ss_buc_manova()` no longer raises a stray warning beside an
+  error; a nonsignificance refusal at `alpha_prior = 1` no longer advises
+  raising `alpha_prior`; a printed value below 1 is never shown as 1; the 1.x
+  positional `[[` applies only to a single plan; and loading the package
+  enforces the `withr` (>= 3.0.3) minimum, through an import in `NAMESPACE`.
 
 ## Documentation
 
@@ -659,8 +677,10 @@ previously handle.
 * The planned sample size search stops with a message rather than looping
   forever once the answer exceeds about 4.5e15 (2^52). Doubles hold every
   whole number exactly only up to 2^53, beyond which the bisection could not
-  finish; answers below the bound are found exactly. Only an assurance a hair
-  below the ceiling gets there. The random-predictor series (the correlation
+  finish; answers below the bound are found exactly. An assurance a hair
+  below the ceiling gets there, as does an implausibly large prior sample
+  size or an `alpha_planned` too small to compute with, and the message names
+  each. The random-predictor series (the correlation
   planner's, and the regression planners' with `random_predictors = TRUE`) is
   one internal function, summed over a window around its mode, so it stays
   exact for a strong correlation in a very large prior study (an *r* of .9

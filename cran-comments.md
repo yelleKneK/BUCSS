@@ -82,9 +82,10 @@ as they were, and is not run by the examples, tests, or vignettes.
 
 ## Test environments
 
-* local: macOS 27 (arm64), R 4.6.1 (2026-06-24), 2026-10-01.
+* local: macOS 27 (arm64), R 4.6.1 (2026-06-24), 2026-10-12.
 * win-builder: Windows Server 2022 x64, R-devel (2026-09-30 r90605 ucrt),
-  2026-10-01.
+  2026-10-01, on the build before the final corrections to documentation and
+  messages.
 
 ## R CMD check results
 

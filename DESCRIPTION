@@ -2,7 +2,7 @@ Package: BUCSS
 Type: Package
 Title: Bias and Uncertainty Corrected Sample Size
 Version: 2.0.0
-Date: 2026-09-30
+Date: 2026-10-12
 Authors@R: c(
     person("Ken", "Kelley", role = c("aut", "cre"),
            email = "kkelley@nd.edu",
