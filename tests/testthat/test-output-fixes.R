@@ -106,9 +106,10 @@ test_that("a value below 1 never prints as 1 in the table, the kable, or the sen
   expect_identical(fmt(c(.99957412839, .9996, .99999, 1 - 1e-12), 3),
                    c("0.9996", "0.9996", "0.99999", "0.999999999999"))
   expect_identical(fmt(c(-.99957, -.99999), 3), c("-0.9996", "-0.99999"))
-  # The last double below 1 prints as stored, and a 'digits' above the
-  # session's own print precision is covered too.
-  expect_identical(fmt(1 - .Machine$double.eps / 2, 3), "0.99999999999999989")
+  # The last double below 1 prints as stored (its sixteenth and seventeenth
+  # figures are matched by shape, since they are the platform's C library's),
+  # and a 'digits' above the session's own print precision is covered too.
+  expect_match(fmt(1 - .Machine$double.eps / 2, 3), "^0\\.9{15}[0-9]{1,2}$")
   expect_identical(fmt(.999999996, 10), "0.999999996")
   for (x in c(.9995, .99949999, .99957, 1 - 1e-7, 1 - 1e-10, 1 - 1e-15, -.9999))
     for (d in c(1, 2, 3, 3.5, 6, 10, 15, 20))

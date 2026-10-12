@@ -17,7 +17,10 @@ without `levels.B` (1.x silently returned the Factor A plan), an assurance of
 example, a sample size of 624.5). Two inputs 1.x already refused now get a
 message that names the problem: an assurance of 100 percent (1.x reported
 that the corrected noncentrality parameter was zero) and non-scalar counts
-(1.x stopped with an uninformative base R error). `NEWS.md` lists each.
+(1.x stopped with an uninformative base R error). `NEWS.md` describes them.
+
+`DESCRIPTION` now uses `Authors@R`. The maintainer is unchanged, and Scott E.
+Maxwell, a coauthor of the method, is added as an author.
 
 ## Why some results differ from 1.2.1
 
@@ -84,8 +87,10 @@ as they were, and is not run by the examples, tests, or vignettes.
 
 * local: macOS 27 (arm64), R 4.6.1 (2026-06-24), 2026-10-12.
 * win-builder: Windows Server 2022 x64, R-devel (2026-09-30 r90605 ucrt),
-  2026-10-01, on the build before the final corrections to documentation and
-  messages.
+  2026-10-01, on an earlier build. Since then the package gained input
+  checks, display fixes for values just below 1, an import of
+  `withr::local_seed` in NAMESPACE, tests, and documentation corrections; no
+  planner's result changed.
 
 ## R CMD check results
 

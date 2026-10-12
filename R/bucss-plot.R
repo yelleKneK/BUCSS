@@ -61,7 +61,7 @@
 #'   The ceiling is drawn as a dashed vertical line in both panels and the
 #'   plan's own assurance is marked with a filled point when it lies in the
 #'   plotted range (a plan made at an assurance below \code{lower} is marked
-#'   once \code{lower} is set at or below it), so a reader can see at a
+#'   once \code{lower} is set below it), so a reader can see at a
 #'   glance how much headroom their prior result has left.
 #'
 #'   The grid is spaced evenly in the logarithm of the remaining headroom

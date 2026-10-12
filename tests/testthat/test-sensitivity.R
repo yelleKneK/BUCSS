@@ -196,8 +196,9 @@ test_that("the audit's footers never show an assurance or a power below 1 as 1.0
   # "0.9999999999999999" is 1 on a build of R without extended precision and
   # below 1 on a build with it, so the footer had 17 decimals on the first
   # and 16 on the second.
-  expect_identical(footer(1 - .Machine$double.eps / 2), ".9999999999999999")
-  expect_identical(footer(1 - .Machine$double.eps), ".9999999999999998")
+  # The sixteenth decimal is matched by shape: it is the C library's.
+  expect_match(footer(1 - .Machine$double.eps / 2), "^\\.9{15}[0-9]$")
+  expect_match(footer(1 - .Machine$double.eps), "^\\.9{15}[0-9]$")
   # Every other value prints at two decimals, as before.
   expect_identical(vapply(c(.8, .5, .95, .825, .05, .99, .994), footer, character(1)),
                    c(".80", ".50", ".95", sub("^0", "", sprintf("%.2f", .825)), ".05", ".99",

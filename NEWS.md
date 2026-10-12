@@ -277,7 +277,9 @@ previously handle.
 * `ss_buc_sensitivity()` reports the Monte Carlo standard error of both
   attainment rates. Only the planner's own refusals count as refusals; any
   other error stops the audit with its message, and the planner's warnings are
-  summarized once rather than repeated for every simulated study. A plan given
+  summarized once rather than repeated for every simulated study (the warning
+  for an assurance below .5, which the plan already raised when it was built,
+  is not repeated). A plan given
   as Hotelling's *T* squared can be audited like any other.
 
 * Neither leaves a trace in the session. `ss_buc_sensitivity()`'s `seed`
@@ -397,7 +399,8 @@ previously handle.
 
 * Added `print.bucss_plan()`, which prints the aligned `term`/`value` table
   in the `DMAR` display style (whole numbers clean, other values at
-  `options(bucss.digits)` significant figures, stored values never rounded)
+  `options(bucss.digits)` significant figures, with more where fewer would
+  show a value below 1 as 1, stored values never rounded)
   and closes with factual footer lines naming the design, for the regression
   planners the predictor frame, the unit the sample size is counted in, and
   the largest assurance the prior result supports. A `knitr::knit_print`

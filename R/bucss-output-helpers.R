@@ -100,8 +100,9 @@ knit_print.bucss_plan <- function(x, ...) {
 #' correlation, and so on, as the planner's help page describes. It is the
 #' value used to plan given the prior result, \code{alpha_prior}, and
 #' \code{assurance}, not an estimate of the effect to report. It is shown at
-#' \code{getOption("bucss.digits", 3)} significant figures, and without a
-#' leading zero when the metric cannot exceed 1. This mirrors the
+#' \code{getOption("bucss.digits", 3)} significant figures (more when fewer
+#' would show a value below 1 as 1), and without a leading zero when the
+#' metric cannot exceed 1. This mirrors the
 #' \code{results_sentence()} helper in the sibling package \code{DMAR}.
 #'
 #' @param x An object of class \code{bucss_plan}, as returned by any
