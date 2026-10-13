@@ -10,17 +10,23 @@ regression planners' `random_predictors` defaults to `FALSE` (predictors fixed
 by design) and the within-subjects and split-plot planners' `epsilon` defaults
 to 1 (sphericity), so a plan that uses neither is computed in the frame 1.2.1
 used. For every documented example that 1.2.1 can also compute, the rounded
-(three-decimal) adjusted noncentrality parameter matches the 1.2.1 value. The
-main numerical change is the engine that finds the noncentrality parameter
-(see "Engine" below), which shifts some planned sample sizes, most by a few
-units, and makes them more accurate. Two smaller deliberate changes are
-described under "Bug Fixes": the general between-subjects function's
-`df_denominator` argument, silently ignored in 1.x, now functions, and the
-independent *t* planner rounds the harmonic mean of two prior group sizes in
-integer arithmetic, which changes the plan (to a smaller, correct one) for
-pairs whose harmonic mean is a whole number. Every plan also gains one row,
-its planning effect size (see "Sampled Predictors, Sphericity, and the
-Planning Effect Size" below).
+(three-decimal) adjusted noncentrality parameter matches the 1.2.1 value,
+except in two examples that set `alpha_prior = 1`. The main numerical change
+is the engine that finds the noncentrality parameter (see "Engine" below),
+which shifts some planned sample sizes, most by a few units, and makes them
+more accurate. Three smaller deliberate changes also move plans. An
+`alpha_prior` of 1 is computed as exactly 1, where 1.x computed with .999 in
+its place, which leaves most such plans unchanged and makes the rest slightly
+smaller (see "No Publication Filter" below). And, described under "Bug
+Fixes", the general between-subjects function's `df_denominator` argument,
+silently ignored in 1.x, now functions, and the independent *t* planner
+rounds the harmonic mean of two prior group sizes in integer arithmetic,
+which changes the plan (to a smaller, correct one) for pairs whose harmonic
+mean is a whole number. One request that 1.x answered now stops: a
+`desired_power` at or below `alpha_planned`, for which 1.x returned the
+smallest sample size it considers, is not allowable (also under "Bug Fixes").
+Every plan also gains one row, its planning effect size (see "Sampled
+Predictors, Sphericity, and the Planning Effect Size" below).
 
 ## Engine: Root Finding Instead of a Fixed Grid
 
@@ -34,33 +40,37 @@ Planning Effect Size" below).
     correctly.
   * The parameter is exact rather than snapped to the grid resolution. The
     rounded (three-decimal) parameters are unchanged from 1.2.1 (apart from
-    the harmonic-mean cases above), but the extra precision shifts some
-    planned sample sizes. For the documented unequal-*n* replication example
+    the harmonic-mean cases above and plans with `alpha_prior = 1`, described
+    in the next section), but the extra precision shifts some planned sample
+    sizes. For the documented unequal-*n* replication example
     (`ss_buc_independent_t(t_observed = 3, n = c(50, 55), assurance = .90)`),
     the necessary sample size moves from 1482 (the value BUCSS 1.x reported
     under its grid search) to 1485, which is the smallest sample size that
     actually reaches the target power. Across the developer characterization grid,
     leaving out the cases the old cap affected, the `df_denominator` change,
-    and the harmonic-mean correction, about 95% of sample sizes are
-    unchanged; most of the rest move by a few units and none by more than 2
-    percent. The exception lies close to the assurance ceiling, beyond all
+    and the harmonic-mean correction, about 94% of sample sizes are
+    unchanged (the plans with `alpha_prior = 1` included); most of the rest
+    move by a few units and none by more than 2 percent. The exception lies
+    close to the assurance ceiling, beyond all
     but one case in that grid, where the corrected parameter is small beside
     the 1.x search's resolution of .001: within about 25 times that
     resolution on the *F* scale (50 times on the *t* scale) a 1.x sample size
     can differ from the 2.0.0 one by more than 2 percent, and within about
     .001 of the ceiling by 10 percent or more, in either direction. Among the
-    documented examples, seven planned sample sizes move:
+    documented examples, eight planned sample sizes move:
     1482 to 1485 (`ss_buc_independent_t`); 1904 to 1902 (`ss_buc_rm_anova`);
     968 to 969 (`ss_buc_mixed_anova`); 1491 to 1489
     (`ss_buc_mixed_anova_general`); 3963 to 3960 (`ss_buc_reg_joint`); and,
     in the tables of the vignette "Assurance and the Publication Bias
     Correction", 5069 to 5042
-    (`ss_buc_independent_t(t_observed = 3, n = 20, assurance = .90)`) and 915
-    to 913 (`ss_buc_paired_t()` with `alpha_prior = 1` and `assurance = .80`,
-    for a prior *t* with a two-sided *p* value of .15 from 30 pairs). Each new
-    value is the smallest sample size that actually attains the target power
-    at the exact noncentrality parameter; they are pinned in the package's
-    regression tests.
+    (`ss_buc_independent_t(t_observed = 3, n = 20, assurance = .90)`) and,
+    from `ss_buc_paired_t()` with `alpha_prior = 1` and `assurance = .80`,
+    377 to 376 and 915 to 910 (for a prior *t* from 30 pairs with a two-sided
+    *p* value of .10 and of .15; in these two the rounded parameter moves as
+    well, from .793 to .794 and from .508 to .509). Each new value is the
+    smallest sample size that actually attains the target power at the exact
+    noncentrality parameter; they are pinned in the package's regression
+    tests.
 * Every worked example in Anderson, Kelley, and Maxwell (2017) and its
   supplemental material is reproduced, and the values are pinned in the
   regression tests. The article's three researchers plan from effect sizes it
@@ -74,6 +84,45 @@ Planning Effect Size" below).
 * There is no grid-resolution argument or option. The 1.x `step` argument and
   any grid resolution setting are gone, since root finding has no resolution
   parameter.
+
+## No Publication Filter: An `alpha_prior` of 1 Is Exactly 1
+
+* An `alpha_prior` of 1 is computed as exactly 1. The method's article
+  describes the setting: "If publication bias is thought not to apply,
+  [alpha_P] can be set equal to 1" (Anderson, Kelley, & Maxwell, 2017,
+  p. 1552, where alpha_P is the level `alpha_prior` names). With no
+  publication filter every result would have been published, so the
+  publication critical value is 0, the power term that truncates the
+  likelihood is 1, the prior statistic has its ordinary distribution, and the
+  largest supportable assurance is exactly 1 - *p*. BUCSS 1.x computed with
+  .999 in place of 1, that is, with a filter that drops results whose *p*
+  value is above .999. No value is substituted for 1 any longer.
+
+* How far plans move. Computing with exactly 1 rather than .999 raises the
+  adjusted noncentrality parameter a little, so a plan with `alpha_prior = 1`
+  is the same size or smaller, never larger. Across the 2,172 such plans of
+  the developer characterization grid (all eighteen planners), computed both
+  ways, the parameter rises by a median of about 0.002 percent and at most 1
+  percent; 95 percent of the planned sample sizes are unchanged, and the other
+  103 are smaller, most by one participant (79 of them), the largest moves
+  being about 1 percent of a very large plan (36,146 to 35,787) and one
+  participant in a small one (64 to 63, or 1.6 percent). Against BUCSS 1.2.1
+  on the grid described under "Engine", 829 of the 855 comparable plans with
+  `alpha_prior = 1` (97 percent) have the sample size 1.2.1 gave, and the
+  other 26 are one or two participants smaller, at most 1.6 percent (64 to 63
+  per group); none is larger. The rounded (three-decimal) parameter differs
+  from the 1.2.1 value in 182 of the 855, each higher by .001 (at most 0.2
+  percent). Outside that grid, a paired *t* significant at .01 from 3,000
+  pairs, planned with `alpha_prior = 1` at an `assurance` of .80, needs 7,823
+  pairs where 1.2.1 gave 7,825. Plans with `alpha_prior` below 1 are
+  unaffected.
+
+* `alpha_prior` also accepts the string `"No Publication Filter"` as a synonym
+  for 1, so that a call can say what the value means. It is read without
+  regard to case, with spaces, underscores, or hyphens between the words; the
+  result echoes it as an `alpha_prior` of 1; the deprecated functions'
+  `alpha.prior` accepts it too; and any other string is refused with a
+  message naming the range (above 0, at most 1) and the string.
 
 ## API Modernization
 
@@ -512,6 +561,15 @@ previously handle.
   noncentrality parameter was zero. The documented rule that an `assurance` or
   `power` of exactly 1 is read as 1 percent is unchanged.
 
+* A `desired_power` (1.x `power`) at or below `alpha_planned` is not allowable
+  and now stops, with an error that says so and names both values. A test's
+  power is never below its Type I error rate, so every sample size meets such
+  a target and no plan is meaningful; 1.x returned the smallest sample size
+  its search considers (2 per group, for instance), with no notice. The check
+  follows the percentage reading, so `desired_power = 1`, which is read as 1
+  percent, stops unless `alpha_planned` is below .01, and the message then
+  says how the value was read. The deprecated functions stop in the same way.
+
 * When the two prior group sizes given to `ss_buc_independent_t()` (or
   `ss.power.it`) have a harmonic mean that is a whole number, the planner no
   longer plans from a spurious second rounding one unit off. The mean was
@@ -632,10 +690,14 @@ previously handle.
   `assurance = .80`, the adjusted noncentrality parameter is the lower limit
   of the two-sided 60% confidence interval that safeguard power plans from,
   and in general a two-sided confidence level *C* corresponds to
-  `assurance = (1 + C)/2`. The package help page and the assurance vignette
-  explain how, and where the two differ: every difference makes the plan here
-  the same as the safeguard plan or larger, never smaller (for the regression
-  planners, within the frame `random_predictors` names).
+  `assurance = (1 + C)/2`. For *F* and chi square statistics the
+  correspondence is exact. The package help page and the assurance vignette
+  explain how, and where the two differ (for the *t* tests and other effects
+  on one degree of freedom, where the interval here bounds the size of the
+  effect whatever its sign; for an unbalanced prior design, read as a
+  balanced one; and for the Welch planner's minimum): every difference makes
+  the plan here the same as the safeguard plan or larger, never smaller (for
+  the regression planners, within the frame `random_predictors` names).
   `tests/testthat/test-safeguard-power.R` pins the equivalence.
 
 * Every planner's `alpha_prior` argument and Details say plainly what the
@@ -643,10 +705,22 @@ previously handle.
   published, so the correction assumes you see only results with *p* below
   it. `alpha_prior = 1` means no publication filter, since no *p* value
   exceeds 1, so there is no publication bias to correct and only the
-  correction for uncertainty, set by `assurance`, remains. The planners
-  compute with .999 in place of exactly 1, as BUCSS 1.x did, so plans match
-  earlier versions; the argument's help and the package help page say so,
-  and that the difference is negligible.
+  correction for uncertainty, set by `assurance`, remains. The help says that
+  the value may also be written `"No Publication Filter"`, and cites Anderson,
+  Kelley, and Maxwell (2017, p. 1552), who note that the level can be set
+  equal to 1 when publication bias is thought not to apply. The
+  `desired_power` argument's help says that it must exceed `alpha_planned`.
+
+* Source citations join the help pages of the designs added in 2.0.0, each in
+  the sentence it supports: Welch (1947) and Satterthwaite (1946) for the
+  Welch test and its degrees of freedom; Hotelling (1931) for *T* squared;
+  Fisher (1928) for the sampling distribution of the multiple correlation
+  coefficient, on the correlation page and where the regression pages
+  describe sampled predictors; and Steiger, Shapiro, and Browne (1985) and
+  Satorra and Saris (1985) for the asymptotic distribution of chi square
+  difference statistics and the power of the likelihood ratio test. Maxwell,
+  Delaney, and Kelley (2027) is cited in the text of every help page that
+  lists it.
 
 * The regression planners' help pages describe both predictor frames, what
   treating sampled predictors as fixed costs, and which frame plans the
@@ -721,4 +795,6 @@ previously handle.
   the correlation planner, `epsilon` against the corrected-degrees-of-freedom
   power, the planning effect size against the ordinary power of the returned
   sample size, and safeguard power against confidence limits computed
-  directly.
+  directly. `test-no-publication-filter.R` checks every planner at
+  `alpha_prior = 1` against the statistic's ordinary distribution, computed
+  in base R.

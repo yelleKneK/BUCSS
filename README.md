@@ -97,13 +97,13 @@ probability that a confidence interval will be no wider than desired.
 The publication threshold is `alpha_prior`: the significance level a prior
 result had to reach to be published (more generally, to reach you). The
 correction assumes you see only results with *p* below `alpha_prior`, .05 by
-default. Setting `alpha_prior = 1` means no publication filter: every *p*
-value is at most 1, so any result would have been published whatever its *p*
-value, there is no publication bias to correct, and only the correction for
-uncertainty, set by `assurance`, remains, as for a pilot study. (The planners
-compute with .999 in place of exactly 1, as BUCSS 1.x did, so plans match
-earlier versions; a filter that drops only results with *p* above .999 changes
-the plan negligibly.)
+default. Setting `alpha_prior = 1`, which may also be written
+`alpha_prior = "No Publication Filter"`, means no publication filter: every
+*p* value is at most 1, so any result would have been published whatever its
+*p* value, there is no publication bias to correct, and only the correction
+for uncertainty, set by `assurance`, remains, as for a pilot study. Anderson,
+Kelley, and Maxwell (2017, p. 1552) note that the level can be set equal to 1
+when publication bias is thought not to apply.
 
 For this prior study, the plan grows with the assurance requested: 60 per group
 at an assurance of .50, 233 at .80, and 1,485 at .90. Taking *t* = 3.00 at face
@@ -243,9 +243,13 @@ size that actually reaches the target power. `df_denominator` in
 `ss_buc_factorial_anova_general()`, which 1.2.1 ignored, now works. The
 independent *t* planner rounds the harmonic mean of two prior group sizes in
 integer arithmetic, so a pair whose harmonic mean is a whole number no longer
-plans from a spurious rounding one unit off. A negative observed *t* is
+plans from a spurious rounding one unit off. An `alpha_prior` of 1 is computed
+as exactly 1, where 1.2.1 computed with .999 in its place; most such plans are
+unchanged and the rest are slightly smaller. A negative observed *t* is
 planned from its magnitude, and endpoint or malformed inputs stop with an
-explanation rather than returning a meaningless number. Asked for the Factor B
+explanation rather than returning a meaningless number, as does a
+`desired_power` at or below `alpha_planned`, which is not allowable (1.2.1
+returned the smallest sample size it considers). Asked for the Factor B
 effect without `levels.B`, 1.2.1's `ss.power.ba()` and `ss.power.wa()`
 silently returned the Factor A plan; in 2.0.0 both stop and ask for the second
 factor's levels. Several 1.2.1 functions also fail on current R when `effect`
@@ -277,10 +281,10 @@ publication bias. It is BUCSS with `alpha_prior = 1` and `assurance = .80`,
 that is, without the publication bias correction: with no publication filter,
 the adjusted parameter is the lower limit of a two-sided 60% confidence
 interval, and in general a two-sided confidence level *C* corresponds to an
-assurance of (1 + *C*)/2. The package help page explains where the two differ; every
-difference makes the plan here the same as the safeguard plan or larger (for
-the regression planners, within the predictor frame `random_predictors`
-names).
+assurance of (1 + *C*)/2. For *F* and chi square statistics the two agree
+exactly. The package help page explains where they differ; every difference
+makes the plan here the same as the safeguard plan or larger (for the
+regression planners, within the predictor frame `random_predictors` names).
 
 ### Seeing and Auditing a Plan
 

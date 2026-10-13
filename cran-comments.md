@@ -13,8 +13,9 @@ with a `df.denominator` above `N - cells` or a `df.numerator` above
 `cells - 1`, and the corresponding split-plot inputs to
 `ss.power.spa.general`), `ss.power.ba` or `ss.power.wa` asked for Factor B
 without `levels.B` (1.x silently returned the Factor A plan), an assurance of
-0 or a power of 0 or 100 percent, and fractional counts (1.x returned, for
-example, a sample size of 624.5). Two inputs 1.x already refused now get a
+0 or a power of 0 or 100 percent, a desired power at or below the planned
+study's alpha level (1.x returned its smallest sample size), and fractional
+counts (1.x returned, for example, a sample size of 624.5). Two inputs 1.x already refused now get a
 message that names the problem: an assurance of 100 percent (1.x reported
 that the corrected noncentrality parameter was zero) and non-scalar counts
 (1.x stopped with an uninformative base R error). `NEWS.md` describes them.
@@ -26,14 +27,16 @@ Maxwell, a coauthor of the method, is added as an author.
 
 The bias and uncertainty adjusted noncentrality parameter is now found by
 direct root finding (`stats::uniroot`) rather than a fixed grid, so it is no
-longer capped at 100 and is exact rather than grid-snapped. For the documented
-examples that 1.2.1 can also compute, the rounded parameters are unchanged
-from 1.2.1; some planned sample sizes shift, most by a few units, as
-documented in `NEWS.md`. Two other numerical changes are corrections: the
-`df_denominator` argument of `ss_buc_factorial_anova_general`, which 1.x
-accepted but silently ignored, now functions, and the independent *t* planner
-rounds the harmonic mean of two prior group sizes in integer arithmetic (1.x
-could plan from a spurious rounding one unit off). The regression tests in
+longer capped at 100 and is exact rather than grid-snapped. Some planned
+sample sizes shift, most by a few units, as documented in `NEWS.md`. Three
+other numerical changes are deliberate: an `alpha_prior` of 1 (no publication
+filter) is computed as exactly 1, as the method's article describes, where
+1.x computed with .999 in its place (such plans are unchanged or slightly
+smaller); the `df_denominator` argument of `ss_buc_factorial_anova_general`,
+which 1.x accepted but silently ignored, now functions; and the independent
+*t* planner rounds the harmonic mean of two prior group sizes in integer
+arithmetic (1.x could plan from a spurious rounding one unit off). The
+regression tests in
 `tests/testthat/` pin each documented example whose planned sample size
 differs from 1.2.1.
 
@@ -60,6 +63,8 @@ are fixed in 2.0.0.
   correction). Each is the last argument, and each defaults to the
   assumption 1.2.1 made (`random_predictors = FALSE`, `epsilon = 1`); the
   deprecated 1.x functions do not take them.
+* `alpha_prior` also accepts the string "No Publication Filter", which means
+  1.
 * New output rows: every plan reports its planning effect size, the adjusted
   noncentrality parameter restated in the design's usual effect size metric
   (for example `smd_planning`, `f_planning`, or `R2_planning`).
@@ -85,12 +90,14 @@ as they were, and is not run by the examples, tests, or vignettes.
 
 ## Test environments
 
-* local: macOS 27 (arm64), R 4.6.1 (2026-06-24), 2026-10-12.
-* win-builder: Windows Server 2022 x64, R-devel (2026-09-30 r90605 ucrt),
-  2026-10-01, on an earlier build. Since then the package gained input
-  checks, display fixes for values just below 1, an import of
-  `withr::local_seed` in NAMESPACE, tests, and documentation corrections; no
-  planner's result changed.
+* local: macOS 27 (arm64), R 4.6.1 (2026-06-24), 2026-10-13.
+* win-builder: Windows Server 2022 x64, R-release 4.6.1 (2026-06-24 ucrt),
+  2026-10-13, on the build of the day before. Since that build an
+  `alpha_prior` of 1 is computed as exactly 1, a desired power at or below
+  the planned alpha level is refused, `alpha_prior` accepts the string above,
+  and references were added; none of this is specific to a platform.
+* win-builder: R-devel (2026-09-30 r90605 ucrt), 2026-10-01, on an earlier
+  build, with the same single NOTE.
 
 ## R CMD check results
 
@@ -102,7 +109,7 @@ as they were, and is not run by the examples, tests, or vignettes.
   HTML Tidy." The local copy of HTML Tidy is too old; this note is specific to
   the local machine.
 
-### win-builder (R-devel)
+### win-builder (R-release)
 
     Status: 1 NOTE
 
@@ -111,10 +118,6 @@ The NOTE is from the CRAN incoming feasibility check:
 * "Possibly misspelled words in DESCRIPTION: sphericity". The word is spelled
   correctly: it names the sphericity assumption of repeated measures analysis
   of variance, which the new `epsilon` argument relaxes.
-* "Found the following (possibly) invalid URLs": a README link to a PDF of
-  Anderson, Kelley, and Maxwell (2017) on the maintainer's website, which
-  reset the connection from the check machine although it resolves
-  elsewhere. The link now points to the article's DOI.
 
 ## Reverse dependencies
 

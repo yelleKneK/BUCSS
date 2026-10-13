@@ -321,7 +321,8 @@ contrast's *F* and set `df_numerator = 1`.
 ## Multivariate Comparison of Two Groups
 
 When two groups are compared on several outcome variables at once, the prior
-study's Hotelling *T* squared (or the *F* it maps to) plans the replication.
+study's Hotelling *T* squared (Hotelling, 1931), or the *F* it maps to, plans
+the replication.
 A study with *N* = 80 comparing two groups on 3 outcomes reported *F* = 4.50.
 The returned sample size is per group.
 
@@ -379,11 +380,12 @@ ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1.5,
 ```
 
 This planner treats the Welch statistic as noncentral *t* on the
-Welch-Satterthwaite degrees of freedom, the usual approximation in power
-analysis for this test. A minimum planned sample size of 10 per group is
-imposed because of estimation accuracy issues at smaller sample sizes: with
-fewer per group the approximation overstates the real test's power, while
-from 10 per group it is within .006 of it at an `alpha_planned` of .05. At a
+Welch-Satterthwaite degrees of freedom (Satterthwaite, 1946; Welch, 1947),
+the usual approximation in power analysis for this test. A minimum planned
+sample size of 10 per group is imposed because of estimation accuracy issues
+at smaller sample sizes: with fewer per group the approximation overstates
+the real test's power, while from 10 per group it is within .006 of it at an
+`alpha_planned` of .05. At a
 stricter `alpha_planned` the power of the smallest plans is overstated by
 more (at 10 per group by up to about .012 at .01 and .025 at .001), and the
 .006 holds again from 14 and 20 per group, respectively. When the target
@@ -450,6 +452,9 @@ https://doi.org/10.1037/0033-2909.106.3.516
 Greenhouse, S. W., & Geisser, S. (1959). On methods in the analysis of profile
 data. *Psychometrika, 24*, 95--112. https://doi.org/10.1007/BF02289823
 
+Hotelling, H. (1931). The generalization of Student's ratio. *The Annals of
+Mathematical Statistics, 2*, 360--378. https://doi.org/10.1214/aoms/1177732979
+
 Huynh, H., & Feldt, L. S. (1976). Estimation of the Box correction for degrees
 of freedom from sample data in randomized block and split-plot designs.
 *Journal of Educational Statistics, 1*, 69--82.
@@ -466,3 +471,11 @@ ANOVA lacking sphericity. *Journal of the American Statistical Association,
 Sampson, A. R. (1974). A tale of two regressions. *Journal of the American
 Statistical Association, 69*, 682--689.
 https://doi.org/10.1080/01621459.1974.10480189
+
+Satterthwaite, F. E. (1946). An approximate distribution of estimates of
+variance components. *Biometrics Bulletin, 2*, 110--114.
+https://doi.org/10.2307/3002019
+
+Welch, B. L. (1947). The generalization of 'Student's' problem when several
+different population variances are involved. *Biometrika, 34*, 28--35.
+https://doi.org/10.1093/biomet/34.1-2.28
