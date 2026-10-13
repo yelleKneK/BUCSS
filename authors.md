@@ -14,7 +14,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/yelleKneK/BUCSS/blob/master/inst/CITATION)
+[`inst/CITATION`](https://github.com/yelleKneK/BUCSS/blob/main/inst/CITATION)
 
 Kelley K, Anderson S, Maxwell S (2026). *BUCSS: Bias and Uncertainty
 Corrected Sample Size*. R package version 2.0.0,
@@ -30,7 +30,7 @@ Corrected Sample Size*. R package version 2.0.0,
 
 Anderson S, Kelley K, Maxwell S (2017). “Sample-size planning for more
 accurate statistical power: A method adjusting sample effect sizes for
-publication bias and uncertainty.” *Psychological Science*, **28**,
+publication bias and uncertainty.” *Psychological Science*, **28**(11),
 1547–1562.
 [doi:10.1177/0956797617723724](https://doi.org/10.1177/0956797617723724).
 
@@ -40,6 +40,7 @@ publication bias and uncertainty.” *Psychological Science*, **28**,
       journal = {Psychological Science},
       year = {2017},
       volume = {28},
+      number = {11},
       pages = {1547--1562},
       doi = {10.1177/0956797617723724},
     }
@@ -48,6 +49,7 @@ Anderson S, Maxwell S (2017). “Addressing the "replication crisis":
 Using original studies to design replication studies with appropriate
 statistical power.” *Multivariate Behavioral Research*, **52**(3),
 305–324.
+[doi:10.1080/00273171.2017.1289361](https://doi.org/10.1080/00273171.2017.1289361).
 
     @Article{,
       title = {Addressing the "replication crisis": Using original studies to design replication studies with appropriate statistical power},
@@ -57,6 +59,7 @@ statistical power.” *Multivariate Behavioral Research*, **52**(3),
       volume = {52},
       number = {3},
       pages = {305--324},
+      doi = {10.1080/00273171.2017.1289361},
     }
 
 Anderson S (2021). “Using prior information to plan appropriately
@@ -76,8 +79,9 @@ Methods*, **26**(5), 513–526.
     }
 
 Anderson S, Kelley K (2024). “Sample size planning for replication
-studies: The devil is in the design.” *Psychological Methods*, **29**,
-844–867. [doi:10.1037/met0000520](https://doi.org/10.1037/met0000520).
+studies: The devil is in the design.” *Psychological Methods*,
+**29**(5), 844–867.
+[doi:10.1037/met0000520](https://doi.org/10.1037/met0000520).
 
     @Article{,
       title = {Sample size planning for replication studies: The devil is in the design},
@@ -85,6 +89,7 @@ studies: The devil is in the design.” *Psychological Methods*, **29**,
       journal = {Psychological Methods},
       year = {2024},
       volume = {29},
+      number = {5},
       pages = {844--867},
       doi = {10.1037/met0000520},
     }

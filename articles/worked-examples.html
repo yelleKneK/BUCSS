@@ -65,20 +65,21 @@
 Samantha F. Anderson, and Scott E. Maxwell</h4>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/yelleKneK/BUCSS/blob/master/vignettes/worked-examples.Rmd" class="external-link"><code>vignettes/worked-examples.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/yelleKneK/BUCSS/blob/main/vignettes/worked-examples.Rmd" class="external-link"><code>vignettes/worked-examples.Rmd</code></a></small>
       <div class="d-none name"><code>worked-examples.Rmd</code></div>
     </div>
 
     
     
-<p>This vignette walks through one example of each <code>ss_buc_*</code>
-function. The pattern is always the same: summarize the prior study with
-a single test statistic and its design, and the function returns the
-necessary planned-study sample size and the bias and uncertainty
-adjusted noncentrality parameter (Anderson, Kelley, &amp; Maxwell,
-2017). Every example uses 80% power and 80% assurance unless noted. For
-the meaning of the <code>assurance</code> and <code>alpha_prior</code>
-settings, see
+<p>Which planner fits a given prior study, and what does it need to know
+about that study? This vignette walks through one example of each of the
+eighteen <code>ss_buc_*</code> planners. The pattern is always the same:
+summarize the prior study with a single test statistic and its design,
+and the function returns the necessary planned-study sample size and the
+bias and uncertainty adjusted noncentrality parameter (Anderson, Kelley,
+&amp; Maxwell, 2017; Anderson &amp; Kelley, 2024). Every example uses
+80% power and 80% assurance unless noted. For the meaning of the
+<code>assurance</code> and <code>alpha_prior</code> settings, see
 <code><a href="../articles/understanding-assurance.html">vignette("understanding-assurance", package = "BUCSS")</a></code>.</p>
 <div class="section level2">
 <h2 id="independent-t-test">Independent <em>t</em> Test<a class="anchor" aria-label="anchor" href="#independent-t-test"></a>
@@ -111,26 +112,30 @@ participants per group. The returned sample size is per group.</p>
 <td align="left">1.11</td>
 </tr>
 <tr class="odd">
+<td align="left">smd_planning</td>
+<td align="left">0.349</td>
+</tr>
+<tr class="even">
 <td align="left">t_observed</td>
 <td align="left">3</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">n</td>
 <td align="left">20</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">alpha_prior</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">alpha_planned</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">assurance</td>
 <td align="left">0.8</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">desired_power</td>
 <td align="left">0.8</td>
 </tr>
@@ -139,9 +144,9 @@ participants per group. The returned sample size is per group.</p>
 <p>Design: Independent t test; Sample size unit: per group; Largest
 supportable assurance: .90</p>
 <p><code>ss_buc_smd</code> is the same planner under an effect size
-name, for when you are working from a standardized mean difference
-rather than a raw <em>t</em>; prefer <code>ss_buc_independent_t</code>
-when the prior <em>t</em> was computed from unstandardized data.</p>
+name. It still takes <em>t</em>, so convert a reported standardized mean
+difference <em>d</em> first: <code>t = d / sqrt(1/n_1 + 1/n_2)</code>,
+with <code>n_1</code> and <code>n_2</code> the two group sizes.</p>
 </div>
 <div class="section level2">
 <h2 id="dependent-paired-t-test">Dependent (Paired) <em>t</em> Test<a class="anchor" aria-label="anchor" href="#dependent-paired-t-test"></a>
@@ -170,26 +175,30 @@ The returned sample size is the number of pairs.</p>
 <td align="left">1.12</td>
 </tr>
 <tr class="even">
+<td align="left">dz_planning</td>
+<td align="left">0.176</td>
+</tr>
+<tr class="odd">
 <td align="left">t_observed</td>
 <td align="left">3</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">N</td>
 <td align="left">40</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">alpha_prior</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">alpha_planned</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">assurance</td>
 <td align="left">0.8</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">desired_power</td>
 <td align="left">0.8</td>
 </tr>
@@ -201,13 +210,78 @@ Largest supportable assurance: .90</p>
 difference framing of the same comparison.</p>
 </div>
 <div class="section level2">
+<h2 id="one-sample-t-test">One-Sample <em>t</em> Test<a class="anchor" aria-label="anchor" href="#one-sample-t-test"></a>
+</h2>
+<p>A prior study of 30 participants compared their mean with a fixed
+reference value, such as a scale midpoint or a published norm, and
+reported <em>t</em> = 3.20. The returned sample size is the total number
+of participants.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_one_sample_t.html">ss_buc_one_sample_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="fl">3.2</span>, N <span class="op">=</span> <span class="fl">30</span>, alpha_prior <span class="op">=</span> <span class="fl">.05</span>,</span>
+<span>                    alpha_planned <span class="op">=</span> <span class="fl">.05</span>, assurance <span class="op">=</span> <span class="fl">.80</span>, desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<thead><tr class="header">
+<th align="left">term</th>
+<th align="left">value</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">necessary_N</td>
+<td align="left">107</td>
+</tr>
+<tr class="even">
+<td align="left">actual_power</td>
+<td align="left">0.8</td>
+</tr>
+<tr class="odd">
+<td align="left">ncp_adjusted</td>
+<td align="left">1.5</td>
+</tr>
+<tr class="even">
+<td align="left">std_mean_planning</td>
+<td align="left">0.273</td>
+</tr>
+<tr class="odd">
+<td align="left">t_observed</td>
+<td align="left">3.2</td>
+</tr>
+<tr class="even">
+<td align="left">N</td>
+<td align="left">30</td>
+</tr>
+<tr class="odd">
+<td align="left">alpha_prior</td>
+<td align="left">0.05</td>
+</tr>
+<tr class="even">
+<td align="left">alpha_planned</td>
+<td align="left">0.05</td>
+</tr>
+<tr class="odd">
+<td align="left">assurance</td>
+<td align="left">0.8</td>
+</tr>
+<tr class="even">
+<td align="left">desired_power</td>
+<td align="left">0.8</td>
+</tr>
+</tbody>
+</table>
+<p>Design: One-sample t test; Sample size unit: total; Largest
+supportable assurance: .93</p>
+<p>A paired <em>t</em> test is a one-sample <em>t</em> test on the
+difference scores, so this planner is the paired planner under another
+name: for the same prior <em>t</em> and <em>N</em> the two return the
+same plan.</p>
+</div>
+<div class="section level2">
 <h2 id="between-subjects-anova">Between-Subjects ANOVA<a class="anchor" aria-label="anchor" href="#between-subjects-anova"></a>
 </h2>
 <p>A one-way fully between-subjects design takes the number of levels of
 the single factor. Here a four-group design with total <em>N</em> = 120
 reported <em>F</em> = 5.00 for the omnibus effect. The returned sample
 size is per group.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_one_way_anova.html">ss_buc_one_way_anova</a></span><span class="op">(</span>F_observed <span class="op">=</span> <span class="fl">5</span>, N <span class="op">=</span> <span class="fl">120</span>, levels_A <span class="op">=</span> <span class="fl">4</span>, alpha_prior <span class="op">=</span> <span class="fl">.05</span>,</span>
 <span>                     alpha_planned <span class="op">=</span> <span class="fl">.05</span>, assurance <span class="op">=</span> <span class="fl">.80</span>, desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
@@ -233,30 +307,34 @@ size is per group.</p>
 <td align="left">3.74</td>
 </tr>
 <tr class="odd">
+<td align="left">f_planning</td>
+<td align="left">0.176</td>
+</tr>
+<tr class="even">
 <td align="left">F_observed</td>
 <td align="left">5</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">N</td>
 <td align="left">120</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">levels_A</td>
 <td align="left">4</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">alpha_prior</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">alpha_planned</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">assurance</td>
 <td align="left">0.8</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">desired_power</td>
 <td align="left">0.8</td>
 </tr>
@@ -269,7 +347,7 @@ factors and the effect of interest (<code>factor_A</code>,
 <code>factor_B</code>, or <code>interaction</code>). Here a 2 x 3 design
 with total <em>N</em> = 120 reported <em>F</em> = 5.00 for the main
 effect of Factor B. The returned sample size is per cell.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_factorial_anova.html">ss_buc_factorial_anova</a></span><span class="op">(</span>F_observed <span class="op">=</span> <span class="fl">5</span>, N <span class="op">=</span> <span class="fl">120</span>, levels_A <span class="op">=</span> <span class="fl">2</span>, levels_B <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>                       effect <span class="op">=</span> <span class="st">"factor_B"</span>, alpha_prior <span class="op">=</span> <span class="fl">.05</span>,</span>
 <span>                       alpha_planned <span class="op">=</span> <span class="fl">.05</span>, assurance <span class="op">=</span> <span class="fl">.80</span>, desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span></code></pre></div>
@@ -296,34 +374,38 @@ effect of Factor B. The returned sample size is per cell.</p>
 <td align="left">0.293</td>
 </tr>
 <tr class="odd">
+<td align="left">f_planning</td>
+<td align="left">0.0494</td>
+</tr>
+<tr class="even">
 <td align="left">F_observed</td>
 <td align="left">5</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">N</td>
 <td align="left">120</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">levels_A</td>
 <td align="left">2</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">levels_B</td>
 <td align="left">3</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">alpha_prior</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">alpha_planned</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">assurance</td>
 <td align="left">0.8</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">desired_power</td>
 <td align="left">0.8</td>
 </tr>
@@ -340,7 +422,7 @@ means are the only estimated parameters, so supplying
 the two-way result above. A smaller <code>df_denominator</code> accounts
 for covariates or other nuisance parameters and calls for a larger
 sample.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_factorial_anova_general.html">ss_buc_factorial_anova_general</a></span><span class="op">(</span>F_observed <span class="op">=</span> <span class="fl">5</span>, N <span class="op">=</span> <span class="fl">120</span>, cells <span class="op">=</span> <span class="fl">6</span>,</span>
 <span>                               df_numerator <span class="op">=</span> <span class="fl">2</span>, df_denominator <span class="op">=</span> <span class="fl">114</span>,</span>
 <span>                               alpha_prior <span class="op">=</span> <span class="fl">.05</span>, alpha_planned <span class="op">=</span> <span class="fl">.05</span>,</span>
@@ -368,38 +450,42 @@ sample.</p>
 <td align="left">0.293</td>
 </tr>
 <tr class="odd">
+<td align="left">f_planning</td>
+<td align="left">0.0494</td>
+</tr>
+<tr class="even">
 <td align="left">F_observed</td>
 <td align="left">5</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">N</td>
 <td align="left">120</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">cells</td>
 <td align="left">6</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">df_numerator</td>
 <td align="left">2</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">df_denominator</td>
 <td align="left">114</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">alpha_prior</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">alpha_planned</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">assurance</td>
 <td align="left">0.8</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">desired_power</td>
 <td align="left">0.8</td>
 </tr>
@@ -415,7 +501,7 @@ Largest supportable assurance: .83</p>
 effect. Here a 2 x 3 within-subjects design with <em>N</em> = 60
 reported <em>F</em> = 5.00 for the main effect of Factor B. The returned
 sample size is the total number of subjects.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_rm_anova.html">ss_buc_rm_anova</a></span><span class="op">(</span>F_observed <span class="op">=</span> <span class="fl">5</span>, N <span class="op">=</span> <span class="fl">60</span>, levels_A <span class="op">=</span> <span class="fl">2</span>, levels_B <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>                effect <span class="op">=</span> <span class="st">"factor_B"</span>, alpha_prior <span class="op">=</span> <span class="fl">.05</span>, alpha_planned <span class="op">=</span> <span class="fl">.05</span>,</span>
 <span>                assurance <span class="op">=</span> <span class="fl">.80</span>, desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span></code></pre></div>
@@ -438,20 +524,28 @@ sample size is the total number of subjects.</p>
 <td align="left">0.304</td>
 </tr>
 <tr class="even">
+<td align="left">f_planning</td>
+<td align="left">0.0504</td>
+</tr>
+<tr class="odd">
 <td align="left">F_observed</td>
 <td align="left">5</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">N</td>
 <td align="left">60</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">levels_A</td>
 <td align="left">2</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">levels_B</td>
 <td align="left">3</td>
+</tr>
+<tr class="odd">
+<td align="left">epsilon</td>
+<td align="left">1</td>
 </tr>
 <tr class="even">
 <td align="left">alpha_prior</td>
@@ -471,13 +565,13 @@ sample size is the total number of subjects.</p>
 </tr>
 </tbody>
 </table>
-<p>Design: One or two-way within-subjects ANOVA (factor_B); Sample size
+<p>Design: One- or two-way within-subjects ANOVA (factor_B); Sample size
 unit: total; Largest supportable assurance: .83</p>
 <p>The general form takes the numerator degrees of freedom directly and
 works for any number of within-subjects factors. This example uses
 <code>assurance = .50</code>, which corrects for publication bias
 only.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_rm_anova_general.html">ss_buc_rm_anova_general</a></span><span class="op">(</span>F_observed <span class="op">=</span> <span class="fl">6.5</span>, N <span class="op">=</span> <span class="fl">80</span>, df_numerator <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>                        alpha_prior <span class="op">=</span> <span class="fl">.05</span>, alpha_planned <span class="op">=</span> <span class="fl">.05</span>, assurance <span class="op">=</span> <span class="fl">.50</span>,</span>
 <span>                        desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span></code></pre></div>
@@ -500,15 +594,23 @@ only.</p>
 <td align="left">2.47</td>
 </tr>
 <tr class="even">
+<td align="left">f_planning</td>
+<td align="left">0.176</td>
+</tr>
+<tr class="odd">
 <td align="left">F_observed</td>
 <td align="left">6.5</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">N</td>
 <td align="left">80</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">df_numerator</td>
+<td align="left">1</td>
+</tr>
+<tr class="even">
+<td align="left">epsilon</td>
 <td align="left">1</td>
 </tr>
 <tr class="odd">
@@ -542,7 +644,7 @@ within-subjects factor. Supply the levels of each and the effect
 and 3 within-subjects levels and <em>N</em> = 60 reported <em>F</em> =
 5.00 for the within-subjects effect. The returned sample size is per
 between-subjects cell.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_mixed_anova.html">ss_buc_mixed_anova</a></span><span class="op">(</span>F_observed <span class="op">=</span> <span class="fl">5</span>, N <span class="op">=</span> <span class="fl">60</span>, levels_between <span class="op">=</span> <span class="fl">2</span>, levels_within <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>                   effect <span class="op">=</span> <span class="st">"within"</span>, alpha_prior <span class="op">=</span> <span class="fl">.05</span>, alpha_planned <span class="op">=</span> <span class="fl">.05</span>,</span>
 <span>                   assurance <span class="op">=</span> <span class="fl">.80</span>, desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span></code></pre></div>
@@ -569,20 +671,28 @@ between-subjects cell.</p>
 <td align="left">0.299</td>
 </tr>
 <tr class="odd">
+<td align="left">f_planning</td>
+<td align="left">0.0499</td>
+</tr>
+<tr class="even">
 <td align="left">F_observed</td>
 <td align="left">5</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">N</td>
 <td align="left">60</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">levels_between</td>
 <td align="left">2</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">levels_within</td>
 <td align="left">3</td>
+</tr>
+<tr class="even">
+<td align="left">epsilon</td>
+<td align="left">1</td>
 </tr>
 <tr class="odd">
 <td align="left">alpha_prior</td>
@@ -607,10 +717,12 @@ unit: per between-subjects cell; Largest supportable assurance: .83</p>
 <p>The general form takes the numerator degrees of freedom and the
 number of between-subjects groups directly. The effect is one of
 <code>between_only</code>, <code>within_only</code>, or
-<code>between_within</code>; supply <code>df_num_within</code> when the
-effect involves a within-subjects component. The returned sample size is
-per group.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code>between_within</code>; supply <code>df_num_within</code>, the
+numerator degrees of freedom of the within-subjects component, only when
+<code>effect = "between_within"</code> (it is required there, and
+ignored with a warning otherwise). The returned sample size is per
+group.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_mixed_anova_general.html">ss_buc_mixed_anova_general</a></span><span class="op">(</span>F_observed <span class="op">=</span> <span class="fl">5</span>, N <span class="op">=</span> <span class="fl">90</span>, df_numerator <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>                           num_groups <span class="op">=</span> <span class="fl">3</span>, effect <span class="op">=</span> <span class="st">"between_only"</span>,</span>
 <span>                           alpha_prior <span class="op">=</span> <span class="fl">.05</span>, alpha_planned <span class="op">=</span> <span class="fl">.05</span>,</span>
@@ -638,20 +750,100 @@ per group.</p>
 <td align="left">0.194</td>
 </tr>
 <tr class="odd">
+<td align="left">f_planning</td>
+<td align="left">0.0465</td>
+</tr>
+<tr class="even">
 <td align="left">F_observed</td>
 <td align="left">5</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">N</td>
 <td align="left">90</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">df_numerator</td>
 <td align="left">2</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">num_groups</td>
 <td align="left">3</td>
+</tr>
+<tr class="even">
+<td align="left">alpha_prior</td>
+<td align="left">0.05</td>
+</tr>
+<tr class="odd">
+<td align="left">alpha_planned</td>
+<td align="left">0.05</td>
+</tr>
+<tr class="even">
+<td align="left">assurance</td>
+<td align="left">0.8</td>
+</tr>
+<tr class="odd">
+<td align="left">desired_power</td>
+<td align="left">0.8</td>
+</tr>
+</tbody>
+</table>
+<p>Design: Split-plot (mixed) ANOVA (any number of factors)
+(between_only); Sample size unit: per group; Largest supportable
+assurance: .82</p>
+</div>
+<div class="section level2">
+<h2 id="departures-from-sphericity">Departures From Sphericity<a class="anchor" aria-label="anchor" href="#departures-from-sphericity"></a>
+</h2>
+<p>The within-subjects and split-plot planners assume sphericity by
+default, as the uncorrected within-subjects test does, and echo that
+assumption as an <code>epsilon</code> row of 1. When a paper reports a
+Greenhouse-Geisser (1959) or Huynh-Feldt (1976) correction instead, it
+shows fractional degrees of freedom: a three-level within-subjects
+factor measured on 30 subjects might be reported as <em>F</em>(1.73,
+50.2) = 6.50. The uncorrected degrees of freedom are 2 and 58, so the
+correction is <code>epsilon = 1.73/2</code>, about .865. The denominator
+agrees (50.2/58 is also about .865), and 50.2/1.73 = 29.0 is one less
+than the 30 subjects, which confirms how many subjects the analysis
+used.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_rm_anova.html">ss_buc_rm_anova</a></span><span class="op">(</span>F_observed <span class="op">=</span> <span class="fl">6.5</span>, N <span class="op">=</span> <span class="fl">30</span>, levels_A <span class="op">=</span> <span class="fl">3</span>, epsilon <span class="op">=</span> <span class="fl">1.73</span> <span class="op">/</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<thead><tr class="header">
+<th align="left">term</th>
+<th align="left">value</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">necessary_N</td>
+<td align="left">162</td>
+</tr>
+<tr class="even">
+<td align="left">actual_power</td>
+<td align="left">0.802</td>
+</tr>
+<tr class="odd">
+<td align="left">ncp_adjusted</td>
+<td align="left">2</td>
+</tr>
+<tr class="even">
+<td align="left">f_planning</td>
+<td align="left">0.183</td>
+</tr>
+<tr class="odd">
+<td align="left">F_observed</td>
+<td align="left">6.5</td>
+</tr>
+<tr class="even">
+<td align="left">N</td>
+<td align="left">30</td>
+</tr>
+<tr class="odd">
+<td align="left">levels_A</td>
+<td align="left">3</td>
+</tr>
+<tr class="even">
+<td align="left">epsilon</td>
+<td align="left">0.865</td>
 </tr>
 <tr class="odd">
 <td align="left">alpha_prior</td>
@@ -671,9 +863,96 @@ per group.</p>
 </tr>
 </tbody>
 </table>
-<p>Design: Split-plot (mixed) ANOVA (any number of factors)
-(between_only); Sample size unit: per group; Largest supportable
-assurance: .82</p>
+<p>Design: One- or two-way within-subjects ANOVA (factor_A); Sample size
+unit: total; Largest supportable assurance: .90</p>
+<p>Ignoring the correction plans 92 subjects rather than 162:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_rm_anova.html">ss_buc_rm_anova</a></span><span class="op">(</span>F_observed <span class="op">=</span> <span class="fl">6.5</span>, N <span class="op">=</span> <span class="fl">30</span>, levels_A <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<thead><tr class="header">
+<th align="left">term</th>
+<th align="left">value</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">necessary_N</td>
+<td align="left">92</td>
+</tr>
+<tr class="even">
+<td align="left">actual_power</td>
+<td align="left">0.802</td>
+</tr>
+<tr class="odd">
+<td align="left">ncp_adjusted</td>
+<td align="left">3.21</td>
+</tr>
+<tr class="even">
+<td align="left">f_planning</td>
+<td align="left">0.231</td>
+</tr>
+<tr class="odd">
+<td align="left">F_observed</td>
+<td align="left">6.5</td>
+</tr>
+<tr class="even">
+<td align="left">N</td>
+<td align="left">30</td>
+</tr>
+<tr class="odd">
+<td align="left">levels_A</td>
+<td align="left">3</td>
+</tr>
+<tr class="even">
+<td align="left">epsilon</td>
+<td align="left">1</td>
+</tr>
+<tr class="odd">
+<td align="left">alpha_prior</td>
+<td align="left">0.05</td>
+</tr>
+<tr class="even">
+<td align="left">alpha_planned</td>
+<td align="left">0.05</td>
+</tr>
+<tr class="odd">
+<td align="left">assurance</td>
+<td align="left">0.8</td>
+</tr>
+<tr class="even">
+<td align="left">desired_power</td>
+<td align="left">0.8</td>
+</tr>
+</tbody>
+</table>
+<p>Design: One- or two-way within-subjects ANOVA (factor_A); Sample size
+unit: total; Largest supportable assurance: .94</p>
+<p>The difference has two sources. The same <em>F</em> on fewer degrees
+of freedom is weaker evidence: its <em>p</em> value rises from .0028 to
+.0045, the largest supportable assurance falls from .94 to .90, and the
+correction for uncertainty at an <code>assurance</code> of .80 takes
+correspondingly more off. And the planned study, analyzed with the same
+correction, has less power at any size. Both follow the approximation of
+Muller and Barton (1989), in which both degrees of freedom and the
+noncentrality parameter are multiplied by <code>epsilon</code>;
+<code>ncp_adjusted</code> stays on the sphericity scale, so the two
+plans’ parameters are comparable. The plan is sensitive to
+<code>epsilon</code>, so it is worth seeing across the values you find
+plausible:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">eps</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">.95</span>, <span class="fl">.9</span>, <span class="fl">.85</span>, <span class="fl">.8</span>, <span class="fl">.75</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">eps</span>, <span class="kw">function</span><span class="op">(</span><span class="va">e</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_rm_anova.html">ss_buc_rm_anova</a></span><span class="op">(</span>F_observed <span class="op">=</span> <span class="fl">6.5</span>, N <span class="op">=</span> <span class="fl">30</span>, levels_A <span class="op">=</span> <span class="fl">3</span>, epsilon <span class="op">=</span> <span class="va">e</span><span class="op">)</span></span>
+<span>  <span class="va">res</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">res</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"necessary_N"</span><span class="op">]</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1]  92 109 135 177 252 415</span></span></code></pre></div>
+<p>One <code>epsilon</code> describes both studies: it is a property of
+the covariance of the repeated measures, which the planned study shares
+with the prior one. When a paper reports both corrections, use the
+Greenhouse-Geisser value. The correction is an approximation, and the
+help page for <code><a href="../reference/ss_buc_rm_anova.html">ss_buc_rm_anova()</a></code> reports how well it holds
+up in simulation. In a split-plot design it applies to the
+within-subjects effect and the interaction, not to the between-subjects
+effect, whose test is on subject means.</p>
 </div>
 <div class="section level2">
 <h2 id="multiple-regression">Multiple Regression<a class="anchor" aria-label="anchor" href="#multiple-regression"></a>
@@ -686,7 +965,7 @@ for that coefficient, the prior sample size, and the number of
 predictors <code>p</code>. A prior study with <em>N</em> = 150 and 3
 predictors reported <em>t</em> = 3.00 for one coefficient. The returned
 sample size is the total.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_reg_coef.html">ss_buc_reg_coef</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">150</span>, p <span class="op">=</span> <span class="fl">3</span>, alpha_prior <span class="op">=</span> <span class="fl">.05</span>,</span>
 <span>                alpha_planned <span class="op">=</span> <span class="fl">.05</span>, assurance <span class="op">=</span> <span class="fl">.80</span>, desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
@@ -708,16 +987,24 @@ sample size is the total.</p>
 <td align="left">1.89</td>
 </tr>
 <tr class="even">
+<td align="left">f2_planning</td>
+<td align="left">0.0126</td>
+</tr>
+<tr class="odd">
 <td align="left">t_observed</td>
 <td align="left">3</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">N</td>
 <td align="left">150</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">p</td>
 <td align="left">3</td>
+</tr>
+<tr class="even">
+<td align="left">random_predictors</td>
+<td align="left">0</td>
 </tr>
 <tr class="odd">
 <td align="left">alpha_prior</td>
@@ -737,12 +1024,12 @@ sample size is the total.</p>
 </tr>
 </tbody>
 </table>
-<p>Design: Multiple regression: single coefficient; Sample size unit:
-total; Largest supportable assurance: .93</p>
+<p>Design: Multiple regression: single coefficient; Predictors: fixed by
+design; Sample size unit: total; Largest supportable assurance: .93</p>
 <p>For the omnibus test of the model R-squared, supply the model
 <em>F</em> statistic. Here a prior study with <em>N</em> = 150 and 4
 predictors reported <em>F</em> = 5.00.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_R2.html">ss_buc_R2</a></span><span class="op">(</span>F_observed <span class="op">=</span> <span class="fl">5</span>, N <span class="op">=</span> <span class="fl">150</span>, p <span class="op">=</span> <span class="fl">4</span>, alpha_prior <span class="op">=</span> <span class="fl">.05</span>,</span>
 <span>          alpha_planned <span class="op">=</span> <span class="fl">.05</span>, assurance <span class="op">=</span> <span class="fl">.80</span>, desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
@@ -764,16 +1051,24 @@ predictors reported <em>F</em> = 5.00.</p>
 <td align="left">7.82</td>
 </tr>
 <tr class="even">
+<td align="left">R2_planning</td>
+<td align="left">0.0495</td>
+</tr>
+<tr class="odd">
 <td align="left">F_observed</td>
 <td align="left">5</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">N</td>
 <td align="left">150</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">p</td>
 <td align="left">4</td>
+</tr>
+<tr class="even">
+<td align="left">random_predictors</td>
+<td align="left">0</td>
 </tr>
 <tr class="odd">
 <td align="left">alpha_prior</td>
@@ -793,12 +1088,13 @@ predictors reported <em>F</em> = 5.00.</p>
 </tr>
 </tbody>
 </table>
-<p>Design: Multiple regression: omnibus test of model R2; Sample size
-unit: total; Largest supportable assurance: .98</p>
+<p>Design: Multiple regression: omnibus test of model R2; Predictors:
+fixed by design; Sample size unit: total; Largest supportable assurance:
+.98</p>
 <p>For a joint test of a subset of predictors, also supply
 <code>p_joint</code>, the number of predictors tested together. Here 2
 of the 4 predictors are tested jointly.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_reg_joint.html">ss_buc_reg_joint</a></span><span class="op">(</span>F_observed <span class="op">=</span> <span class="fl">5</span>, N <span class="op">=</span> <span class="fl">150</span>, p <span class="op">=</span> <span class="fl">4</span>, p_joint <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>                 alpha_prior <span class="op">=</span> <span class="fl">.05</span>, alpha_planned <span class="op">=</span> <span class="fl">.05</span>, assurance <span class="op">=</span> <span class="fl">.80</span>,</span>
 <span>                 desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span></code></pre></div>
@@ -821,20 +1117,28 @@ of the 4 predictors are tested jointly.</p>
 <td align="left">0.365</td>
 </tr>
 <tr class="even">
+<td align="left">f2_planning</td>
+<td align="left">0.00244</td>
+</tr>
+<tr class="odd">
 <td align="left">F_observed</td>
 <td align="left">5</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">N</td>
 <td align="left">150</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">p</td>
 <td align="left">4</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">p_joint</td>
 <td align="left">2</td>
+</tr>
+<tr class="odd">
+<td align="left">random_predictors</td>
+<td align="left">0</td>
 </tr>
 <tr class="even">
 <td align="left">alpha_prior</td>
@@ -854,8 +1158,101 @@ of the 4 predictors are tested jointly.</p>
 </tr>
 </tbody>
 </table>
-<p>Design: Multiple regression: joint test of predictors; Sample size
-unit: total; Largest supportable assurance: .84</p>
+<p>Design: Multiple regression: joint test of predictors; Predictors:
+fixed by design; Sample size unit: total; Largest supportable assurance:
+.84</p>
+<p>All three regression planners take <code>random_predictors</code>. By
+default (<code>random_predictors = FALSE</code>) they treat the
+predictors as fixed by design, as in an experiment in which the
+researcher sets their values, the frame of BUCSS 1.x. When the
+predictors are sampled along with the outcome, as in most observational
+research (Kelley &amp; Maxwell, 2003), pass
+<code>random_predictors = TRUE</code>: the test statistic’s
+noncentrality parameter then rises and falls with the sampled spread of
+the tested predictors, and the planners use the exact distribution that
+follows (Sampson, 1974; Gatsonis &amp; Sampson, 1989).</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_R2.html">ss_buc_R2</a></span><span class="op">(</span>F_observed <span class="op">=</span> <span class="fl">5</span>, N <span class="op">=</span> <span class="fl">150</span>, p <span class="op">=</span> <span class="fl">4</span>, random_predictors <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<thead><tr class="header">
+<th align="left">term</th>
+<th align="left">value</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">necessary_N</td>
+<td align="left">239</td>
+</tr>
+<tr class="even">
+<td align="left">actual_power</td>
+<td align="left">0.801</td>
+</tr>
+<tr class="odd">
+<td align="left">ncp_adjusted</td>
+<td align="left">7.76</td>
+</tr>
+<tr class="even">
+<td align="left">R2_planning</td>
+<td align="left">0.0492</td>
+</tr>
+<tr class="odd">
+<td align="left">F_observed</td>
+<td align="left">5</td>
+</tr>
+<tr class="even">
+<td align="left">N</td>
+<td align="left">150</td>
+</tr>
+<tr class="odd">
+<td align="left">p</td>
+<td align="left">4</td>
+</tr>
+<tr class="even">
+<td align="left">random_predictors</td>
+<td align="left">1</td>
+</tr>
+<tr class="odd">
+<td align="left">alpha_prior</td>
+<td align="left">0.05</td>
+</tr>
+<tr class="even">
+<td align="left">alpha_planned</td>
+<td align="left">0.05</td>
+</tr>
+<tr class="odd">
+<td align="left">assurance</td>
+<td align="left">0.8</td>
+</tr>
+<tr class="even">
+<td align="left">desired_power</td>
+<td align="left">0.8</td>
+</tr>
+</tbody>
+</table>
+<p>Design: Multiple regression: omnibus test of model R2; Predictors:
+random (sampled along with the outcome); Sample size unit: total;
+Largest supportable assurance: .98</p>
+<p>Planned as though they were fixed, sampled predictors make the
+reported <code>actual_power</code> overstate the planned study’s power
+by an amount that shrinks as 1/<em>n</em> for a plan of <em>n</em>
+participants and grows with the number of predictors left untested
+(roughly 1/<em>n</em> with one predictor and 4/<em>n</em> for a
+coefficient among eight: about .04 at <em>n</em> = 100, and less than
+.01 for each of the three plans above). From prior studies as large as
+these the two frames differ little: with
+<code>random_predictors = TRUE</code> the three plans above are 623,
+239, and 3,898 rather than 624, 234, and 3,960, the joint test’s
+differing most because it is requested close to its assurance ceiling of
+.84. From a small prior study, with predictors left untested and a plan
+several times the prior <em>N</em>, the random-predictor plan can be
+smaller by up to about the number of untested predictors plus one,
+divided by the prior <em>N</em>: as much as 40 percent for a coefficient
+among eight predictors from a prior study of 20 (the help pages of
+<code><a href="../reference/ss_buc_reg_coef.html">ss_buc_reg_coef()</a></code> and <code><a href="../reference/ss_buc_reg_joint.html">ss_buc_reg_joint()</a></code>
+describe the pattern). With one predictor,
+<code>ss_buc_reg_coef(p = 1, random_predictors = TRUE)</code> returns
+exactly what <code><a href="../reference/ss_buc_correlation.html">ss_buc_correlation()</a></code>, described in the next
+section, returns.</p>
 </div>
 <div class="section level2">
 <h2 id="correlation">Correlation<a class="anchor" aria-label="anchor" href="#correlation"></a>
@@ -863,7 +1260,7 @@ unit: total; Largest supportable assurance: .84</p>
 <p>A prior study reporting a Pearson correlation is planned from the
 correlation itself. A study with <em>N</em> = 100 reported <em>r</em> =
 .35. The returned sample size is the total.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_correlation.html">ss_buc_correlation</a></span><span class="op">(</span>r_observed <span class="op">=</span> <span class="fl">.35</span>, N <span class="op">=</span> <span class="fl">100</span>, alpha_prior <span class="op">=</span> <span class="fl">.05</span>,</span>
 <span>                   alpha_planned <span class="op">=</span> <span class="fl">.05</span>, assurance <span class="op">=</span> <span class="fl">.80</span>, desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
@@ -885,26 +1282,30 @@ correlation itself. A study with <em>N</em> = 100 reported <em>r</em> =
 <td align="left">6.71</td>
 </tr>
 <tr class="even">
+<td align="left">rho_planning</td>
+<td align="left">0.251</td>
+</tr>
+<tr class="odd">
 <td align="left">r_observed</td>
 <td align="left">0.35</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">N</td>
 <td align="left">100</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">alpha_prior</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">alpha_planned</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">assurance</td>
 <td align="left">0.8</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">desired_power</td>
 <td align="left">0.8</td>
 </tr>
@@ -920,16 +1321,22 @@ itself random, proportional to the sampled spread of the predictor. The
 resulting distribution is more dispersed, and planning as though it were
 not overstates the power. The planner uses the exact distribution for
 sampled variables, so it asks for a few more participants than the
-regression planner does:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+regression planner does when that planner treats the predictor as
+fixed:</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">t_equivalent</span> <span class="op">&lt;-</span> <span class="fl">.35</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">98</span> <span class="op">/</span> <span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="fl">.35</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>correlation <span class="op">=</span> <span class="fu"><a href="../reference/ss_buc_correlation.html">ss_buc_correlation</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="va">t_equivalent</span>, N <span class="op">=</span> <span class="fl">100</span><span class="op">)</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,</span>
-<span>  regression <span class="op">=</span> <span class="fu"><a href="../reference/ss_buc_reg_coef.html">ss_buc_reg_coef</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="va">t_equivalent</span>, N <span class="op">=</span> <span class="fl">100</span>, p <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">by_correlation</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_correlation.html">ss_buc_correlation</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="va">t_equivalent</span>, N <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
+<span><span class="va">by_regression</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_reg_coef.html">ss_buc_reg_coef</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="va">t_equivalent</span>, N <span class="op">=</span> <span class="fl">100</span>, p <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>                                  random_predictors <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>correlation <span class="op">=</span> <span class="va">by_correlation</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">by_correlation</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"necessary_N"</span><span class="op">]</span>,</span>
+<span>  regression  <span class="op">=</span> <span class="va">by_regression</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">by_regression</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"necessary_N"</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; correlation  regression </span></span>
 <span><span class="co">#&gt;         122         119</span></span></code></pre></div>
 <p>If your predictor really is fixed by design, the analysis is a
 regression slope, and <code><a href="../reference/ss_buc_reg_coef.html">ss_buc_reg_coef()</a></code> with
-<code>p = 1</code> is the planner for it.</p>
+<code>p = 1</code> and <code>random_predictors = FALSE</code> is the
+planner for it. <code><a href="../articles/correlation.html">vignette("correlation", package = "BUCSS")</a></code>
+develops the comparison.</p>
 </div>
 <div class="section level2">
 <h2 id="analysis-of-covariance">Analysis of Covariance<a class="anchor" aria-label="anchor" href="#analysis-of-covariance"></a>
@@ -939,7 +1346,7 @@ the planned one, so the planner takes their number directly. A prior
 study with <em>N</em> = 120, three groups, and two covariates reported
 <em>F</em> = 6.00 for the group effect. The returned sample size is per
 cell.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_ancova.html">ss_buc_ancova</a></span><span class="op">(</span>F_observed <span class="op">=</span> <span class="fl">6</span>, N <span class="op">=</span> <span class="fl">120</span>, cells <span class="op">=</span> <span class="fl">3</span>, n_covariates <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>              alpha_prior <span class="op">=</span> <span class="fl">.05</span>, alpha_planned <span class="op">=</span> <span class="fl">.05</span>, assurance <span class="op">=</span> <span class="fl">.80</span>,</span>
 <span>              desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span></code></pre></div>
@@ -966,38 +1373,42 @@ cell.</p>
 <td align="left">2.53</td>
 </tr>
 <tr class="odd">
+<td align="left">f_planning</td>
+<td align="left">0.145</td>
+</tr>
+<tr class="even">
 <td align="left">F_observed</td>
 <td align="left">6</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">N</td>
 <td align="left">120</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">cells</td>
 <td align="left">3</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">n_covariates</td>
 <td align="left">2</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">df_numerator</td>
 <td align="left">2</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">alpha_prior</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">alpha_planned</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">assurance</td>
 <td align="left">0.8</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">desired_power</td>
 <td align="left">0.8</td>
 </tr>
@@ -1014,11 +1425,11 @@ contrast’s <em>F</em> and set <code>df_numerator = 1</code>.</p>
 <h2 id="multivariate-comparison-of-two-groups">Multivariate Comparison of Two Groups<a class="anchor" aria-label="anchor" href="#multivariate-comparison-of-two-groups"></a>
 </h2>
 <p>When two groups are compared on several outcome variables at once,
-the prior study’s Hotelling <em>T</em>-squared (or the <em>F</em> it
-maps to) plans the replication. A study with <em>N</em> = 80 comparing
-two groups on 3 outcomes reported <em>F</em> = 4.50. The returned sample
-size is per group.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+the prior study’s Hotelling <em>T</em> squared (Hotelling, 1931), or the
+<em>F</em> it maps to, plans the replication. A study with <em>N</em> =
+80 comparing two groups on 3 outcomes reported <em>F</em> = 4.50. The
+returned sample size is per group.</p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_manova.html">ss_buc_manova</a></span><span class="op">(</span>F_observed <span class="op">=</span> <span class="fl">4.5</span>, N <span class="op">=</span> <span class="fl">80</span>, p_variables <span class="op">=</span> <span class="fl">3</span>, alpha_prior <span class="op">=</span> <span class="fl">.05</span>,</span>
 <span>              alpha_planned <span class="op">=</span> <span class="fl">.05</span>, assurance <span class="op">=</span> <span class="fl">.80</span>, desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
@@ -1044,30 +1455,34 @@ size is per group.</p>
 <td align="left">1.42</td>
 </tr>
 <tr class="odd">
+<td align="left">D2_planning</td>
+<td align="left">0.0709</td>
+</tr>
+<tr class="even">
 <td align="left">F_observed</td>
 <td align="left">4.5</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">N</td>
 <td align="left">80</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">p_variables</td>
 <td align="left">3</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">alpha_prior</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">alpha_planned</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">assurance</td>
 <td align="left">0.8</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">desired_power</td>
 <td align="left">0.8</td>
 </tr>
@@ -1083,13 +1498,13 @@ does not apply to it.</p>
 <div class="section level2">
 <h2 id="nested-model-comparison">Nested Model Comparison<a class="anchor" aria-label="anchor" href="#nested-model-comparison"></a>
 </h2>
-<p>An effect tested by the chi-square difference between two nested
+<p>An effect tested by the chi square difference between two nested
 models, such as a constrained path in a structural equation model, is
 planned from that difference. Supply both models’ degrees of freedom
 rather than only their difference. A prior study with <em>N</em> = 250
 fit a model with 42 degrees of freedom and a constrained version with
 43, a difference of 9.50 on 1 degree of freedom.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_chisq_diff.html">ss_buc_chisq_diff</a></span><span class="op">(</span>chisq_observed <span class="op">=</span> <span class="fl">9.5</span>, N <span class="op">=</span> <span class="fl">250</span>, df_full <span class="op">=</span> <span class="fl">42</span>, df_restricted <span class="op">=</span> <span class="fl">43</span>,</span>
 <span>                  alpha_prior <span class="op">=</span> <span class="fl">.05</span>, alpha_planned <span class="op">=</span> <span class="fl">.05</span>, assurance <span class="op">=</span> <span class="fl">.80</span>,</span>
 <span>                  desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span></code></pre></div>
@@ -1112,52 +1527,59 @@ fit a model with 42 degrees of freedom and a constrained version with
 <td align="left">2.71</td>
 </tr>
 <tr class="even">
+<td align="left">rmsea_d_planning</td>
+<td align="left">0.104</td>
+</tr>
+<tr class="odd">
 <td align="left">chisq_observed</td>
 <td align="left">9.5</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">N</td>
 <td align="left">250</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">df_full</td>
 <td align="left">42</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">df_restricted</td>
 <td align="left">43</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">alpha_prior</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">alpha_planned</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">assurance</td>
 <td align="left">0.8</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">desired_power</td>
 <td align="left">0.8</td>
 </tr>
 </tbody>
 </table>
-<p>Design: Nested model chi-square difference test; Sample size unit:
+<p>Design: Nested model chi square difference test; Sample size unit:
 total; Largest supportable assurance: .95</p>
 <p>This is for the <em>difference</em> test, not for an omnibus model
-fit chi-square: a publishable fit statistic is a small one, which
+fit chi square: a publishable fit statistic is a small one, which
 inverts the selection the correction assumes. Requiring both models’
 degrees of freedom is what lets the function enforce that. An omnibus
-fit chi-square compares a model against the <em>saturated</em> model,
-which has zero degrees of freedom, so <code>df_full = 0</code>
-identifies the misuse exactly and the function refuses it:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+fit chi square compares a model against the <em>saturated</em> model,
+which has zero degrees of freedom, so <code>df_full = 0</code> is its
+signature and the function refuses it:</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_chisq_diff.html">ss_buc_chisq_diff</a></span><span class="op">(</span>chisq_observed <span class="op">=</span> <span class="fl">9.5</span>, N <span class="op">=</span> <span class="fl">250</span>, df_full <span class="op">=</span> <span class="fl">0</span>, df_restricted <span class="op">=</span> <span class="fl">43</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 'df_full' is 0, so the full model is saturated and this comparison is the restricted model's omnibus test of model fit, not a difference test between two substantive models. This function does not apply to an omnibus fit chi-square: the correction assumes a literature publishes significant results, whereas a publishable fit chi-square is a small (nonsignificant) one, which inverts the selection region the method is built on. If you meant to compare two substantive nested models, give the full model's own degrees of freedom.</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 'df_full' is 0, so the full model is saturated and this comparison is the restricted model's omnibus test of model fit, not a difference test between two substantive models. This function does not apply to an omnibus fit chi square: the correction assumes a literature publishes significant results, whereas a publishable fit chi square is a small (nonsignificant) one, which inverts the selection region the method is built on. A just-identified full model also has 0 degrees of freedom; if that is your case and the comparison is a genuine difference test, the plan depends only on the number of constraints, so call with 'df_full = 1' and 'df_restricted' equal to 1 plus the number of constraints.</span></span></code></pre></div>
+<p>A just-identified full model also has zero degrees of freedom, and
+there the difference test is a genuine one; the message above, and the
+function’s help page, say how to plan that case.</p>
 </div>
 <div class="section level2">
 <h2 id="unequal-variances">Unequal Variances<a class="anchor" aria-label="anchor" href="#unequal-variances"></a>
@@ -1167,7 +1589,7 @@ appropriate comparison, and planning it needs the groups’ relative
 spread in addition to their sizes. A prior study with 40 and 55
 participants, whose second group was half again as variable as the
 first, reported <em>t</em> = 3.00.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_welch_t.html">ss_buc_welch_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="fl">3</span>, n_1 <span class="op">=</span> <span class="fl">40</span>, n_2 <span class="op">=</span> <span class="fl">55</span>, sd_ratio <span class="op">=</span> <span class="fl">1.5</span>,</span>
 <span>               alpha_prior <span class="op">=</span> <span class="fl">.05</span>, alpha_planned <span class="op">=</span> <span class="fl">.05</span>, assurance <span class="op">=</span> <span class="fl">.80</span>,</span>
 <span>               desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span></code></pre></div>
@@ -1194,34 +1616,38 @@ first, reported <em>t</em> = 3.00.</p>
 <td align="left">1.32</td>
 </tr>
 <tr class="odd">
+<td align="left">smd_planning</td>
+<td align="left">0.267</td>
+</tr>
+<tr class="even">
 <td align="left">t_observed</td>
 <td align="left">3</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">n_1</td>
 <td align="left">40</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">n_2</td>
 <td align="left">55</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">sd_ratio</td>
 <td align="left">1.5</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">alpha_prior</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">alpha_planned</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">assurance</td>
 <td align="left">0.8</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">desired_power</td>
 <td align="left">0.8</td>
 </tr>
@@ -1229,32 +1655,56 @@ first, reported <em>t</em> = 3.00.</p>
 </table>
 <p>Design: Welch (unequal variance) t test; Sample size unit: per group;
 Largest supportable assurance: .93</p>
+<p>This planner treats the Welch statistic as noncentral <em>t</em> on
+the Welch-Satterthwaite degrees of freedom (Satterthwaite, 1946; Welch,
+1947), the usual approximation in power analysis for this test. A
+minimum planned sample size of 10 per group is imposed because of
+estimation accuracy issues at smaller sample sizes: with fewer per group
+the approximation overstates the real test’s power, while from 10 per
+group it is within .006 of it at an <code>alpha_planned</code> of .05.
+At a stricter <code>alpha_planned</code> the power of the smallest plans
+is overstated by more (at 10 per group by up to about .012 at .01 and
+.025 at .001), and the .006 holds again from 14 and 20 per group,
+respectively. When the target power is reached with fewer than 10 per
+group, the planner returns 10.</p>
 <p>Only the ratio enters the computation, but a paper usually reports
 the group standard deviations or variances rather than their ratio, so
 those may be given directly instead. All three calls describe the same
 study:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sizes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>  ratio <span class="op">=</span> <span class="fu"><a href="../reference/ss_buc_welch_t.html">ss_buc_welch_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="fl">3</span>, n_1 <span class="op">=</span> <span class="fl">40</span>, n_2 <span class="op">=</span> <span class="fl">55</span>, sd_ratio <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,</span>
-<span>  sds <span class="op">=</span> <span class="fu"><a href="../reference/ss_buc_welch_t.html">ss_buc_welch_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="fl">3</span>, n_1 <span class="op">=</span> <span class="fl">40</span>, n_2 <span class="op">=</span> <span class="fl">55</span>, sd_1 <span class="op">=</span> <span class="fl">8.4</span>, sd_2 <span class="op">=</span> <span class="fl">12.6</span><span class="op">)</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,</span>
-<span>  vars <span class="op">=</span> <span class="fu"><a href="../reference/ss_buc_welch_t.html">ss_buc_welch_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="fl">3</span>, n_1 <span class="op">=</span> <span class="fl">40</span>, n_2 <span class="op">=</span> <span class="fl">55</span>, var_1 <span class="op">=</span> <span class="fl">70.56</span>,</span>
-<span>                        var_2 <span class="op">=</span> <span class="fl">158.76</span><span class="op">)</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="va">sizes</span></span>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">by_ratio</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_welch_t.html">ss_buc_welch_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="fl">3</span>, n_1 <span class="op">=</span> <span class="fl">40</span>, n_2 <span class="op">=</span> <span class="fl">55</span>, sd_ratio <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span>
+<span><span class="va">by_sds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_welch_t.html">ss_buc_welch_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="fl">3</span>, n_1 <span class="op">=</span> <span class="fl">40</span>, n_2 <span class="op">=</span> <span class="fl">55</span>, sd_1 <span class="op">=</span> <span class="fl">8.4</span>,</span>
+<span>                         sd_2 <span class="op">=</span> <span class="fl">12.6</span><span class="op">)</span></span>
+<span><span class="va">by_vars</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_welch_t.html">ss_buc_welch_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="fl">3</span>, n_1 <span class="op">=</span> <span class="fl">40</span>, n_2 <span class="op">=</span> <span class="fl">55</span>, var_1 <span class="op">=</span> <span class="fl">70.56</span>,</span>
+<span>                          var_2 <span class="op">=</span> <span class="fl">158.76</span><span class="op">)</span></span>
+<span><span class="va">size_term</span> <span class="op">&lt;-</span> <span class="st">"necessary_n_per_group"</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>ratio <span class="op">=</span> <span class="va">by_ratio</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">by_ratio</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="va">size_term</span><span class="op">]</span>,</span>
+<span>  sds   <span class="op">=</span> <span class="va">by_sds</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">by_sds</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="va">size_term</span><span class="op">]</span>,</span>
+<span>  vars  <span class="op">=</span> <span class="va">by_vars</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">by_vars</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="va">size_term</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ratio   sds  vars </span></span>
 <span><span class="co">#&gt;   222   222   222</span></span></code></pre></div>
 <p>The assumed ratio matters more than any other input here, so it is
 worth seeing how the plan moves across the values you find
 plausible:</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ratios</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1.5</span>, <span class="fl">2</span>, <span class="fl">2.5</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">ratios</span>, <span class="kw">function</span><span class="op">(</span><span class="va">r</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_welch_t.html">ss_buc_welch_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="fl">3</span>, n_1 <span class="op">=</span> <span class="fl">40</span>, n_2 <span class="op">=</span> <span class="fl">55</span>, sd_ratio <span class="op">=</span> <span class="va">r</span><span class="op">)</span></span>
 <span>  <span class="va">res</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">res</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"necessary_n_per_group"</span><span class="op">]</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 213 222 236 248 257</span></span></code></pre></div>
-<p>Planning at equal variances and being wrong is expensive: if the true
-ratio were 2, that plan would deliver about .43 power rather than .80.
-Plan for the least favorable ratio you find credible.</p>
+<p>One <code>sd_ratio</code> describes both studies: the prior study,
+whose statistic is read under it, and the planned study. Getting it
+wrong can be costly. The plan built assuming equal variances (213 per
+group) delivers about .76 power rather than .80 if the ratio is in fact
+2 in both studies. It delivers about .43 if the prior study’s groups
+were equally variable but the planned study’s ratio is 2, with the mean
+difference held fixed in units of the first group’s standard deviation.
+Re-running across the ratios you find plausible, as above, and planning
+for the least favorable one you find credible guards against the first
+kind of error. The second, a planned study more unequal than the prior
+one, is not something the prior result can speak to, and needs its own
+allowance.</p>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
@@ -1269,6 +1719,30 @@ Methods, 29</em>, 844–867. <a href="https://doi.org/10.1037/met0000520" class=
 planning for more accurate statistical power: A method adjusting sample
 effect sizes for publication bias and uncertainty. <em>Psychological
 Science, 28</em>, 1547–1562. <a href="https://doi.org/10.1177/0956797617723724" class="external-link uri">https://doi.org/10.1177/0956797617723724</a></p>
+<p>Gatsonis, C., &amp; Sampson, A. R. (1989). Multiple correlation:
+Exact power and sample size calculations. <em>Psychological Bulletin,
+106</em>, 516–524. <a href="https://doi.org/10.1037/0033-2909.106.3.516" class="external-link uri">https://doi.org/10.1037/0033-2909.106.3.516</a></p>
+<p>Greenhouse, S. W., &amp; Geisser, S. (1959). On methods in the
+analysis of profile data. <em>Psychometrika, 24</em>, 95–112. <a href="https://doi.org/10.1007/BF02289823" class="external-link uri">https://doi.org/10.1007/BF02289823</a></p>
+<p>Hotelling, H. (1931). The generalization of Student’s ratio. <em>The
+Annals of Mathematical Statistics, 2</em>, 360–378. <a href="https://doi.org/10.1214/aoms/1177732979" class="external-link uri">https://doi.org/10.1214/aoms/1177732979</a></p>
+<p>Huynh, H., &amp; Feldt, L. S. (1976). Estimation of the Box
+correction for degrees of freedom from sample data in randomized block
+and split-plot designs. <em>Journal of Educational Statistics, 1</em>,
+69–82. <a href="https://doi.org/10.3102/10769986001001069" class="external-link uri">https://doi.org/10.3102/10769986001001069</a></p>
+<p>Kelley, K., &amp; Maxwell, S. E. (2003). Sample size for multiple
+regression: Obtaining regression coefficients that are accurate, not
+simply significant. <em>Psychological Methods, 8</em>, 305–321. <a href="https://doi.org/10.1037/1082-989X.8.3.305" class="external-link uri">https://doi.org/10.1037/1082-989X.8.3.305</a></p>
+<p>Muller, K. E., &amp; Barton, C. N. (1989). Approximate power for
+repeated-measures ANOVA lacking sphericity. <em>Journal of the American
+Statistical Association, 84</em>, 549–555. <a href="https://doi.org/10.1080/01621459.1989.10478802" class="external-link uri">https://doi.org/10.1080/01621459.1989.10478802</a></p>
+<p>Sampson, A. R. (1974). A tale of two regressions. <em>Journal of the
+American Statistical Association, 69</em>, 682–689. <a href="https://doi.org/10.1080/01621459.1974.10480189" class="external-link uri">https://doi.org/10.1080/01621459.1974.10480189</a></p>
+<p>Satterthwaite, F. E. (1946). An approximate distribution of estimates
+of variance components. <em>Biometrics Bulletin, 2</em>, 110–114. <a href="https://doi.org/10.2307/3002019" class="external-link uri">https://doi.org/10.2307/3002019</a></p>
+<p>Welch, B. L. (1947). The generalization of ‘Student’s’ problem when
+several different population variances are involved. <em>Biometrika,
+34</em>, 28–35. <a href="https://doi.org/10.1093/biomet/34.1-2.28" class="external-link uri">https://doi.org/10.1093/biomet/34.1-2.28</a></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

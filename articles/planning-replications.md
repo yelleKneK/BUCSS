@@ -4,9 +4,10 @@ This vignette is adapted from a graduate seminar exercise. It builds up,
 step by step, the problem that BUCSS exists to solve: when a research
 literature is built from underpowered studies, the effect sizes that get
 published are systematically too large, so a replication planned from a
-published result is itself underpowered, often badly. We first reproduce
-that problem with a small simulation, then show how the bias and
-uncertainty correction repairs the sample size plan.
+published result is itself underpowered, often badly (Anderson &
+Maxwell, 2017). We first reproduce that problem with a small simulation,
+then show how the bias and uncertainty correction of Anderson, Kelley,
+and Maxwell (2017) repairs the sample size plan.
 
 ``` r
 
@@ -20,9 +21,9 @@ two-group experiment to detect it, each with a modest sample size, and
 (as is the norm) only the statistically significant results find their
 way into print. We can watch this happen by simulating it.
 
-The true standardized mean difference is `d = 0.2` (Cohen’s “small”).
-Each study uses 30 participants per group. We run 1000 such studies and
-keep track of which ones reach `p < .05`.
+The true standardized mean difference is `d = 0.2`. Each study uses 30
+participants per group. We run 1000 such studies and keep track of which
+ones reach `p < .05`.
 
 ``` r
 
@@ -45,26 +46,37 @@ studies$published <- studies$p < .05
 ```
 
 How often does a single study detect this effect? That is just its
-statistical power, and it is low:
+statistical power (Maxwell, Delaney, & Kelley, 2027), and it is low. The
+simulated proportion that “got published” estimates the same quantity,
+and its Monte Carlo standard error says how closely:
 
 ``` r
 
 power.t.test(delta = true_d, n = n, sig.level = .05)$power
 #> [1] 0.1154342
-mean(studies$published)   # the simulated proportion that "got published"
-#> [1] 0.126
+p_published <- mean(studies$published)
+c(proportion = p_published,
+  mcse       = sqrt(p_published * (1 - p_published) / G))
+#> proportion       mcse 
+#>   0.126000   0.010494
 ```
 
-About one study in nine reaches significance. Now compare the average
-effect size across *all* studies with the average across only the
-*published* ones:
+About one study in nine reaches significance in the long run, and the
+simulated literature agrees to within about one standard error. Now
+compare the average effect size across *all* studies with the average
+across only the *published* ones, each with its Monte Carlo standard
+error:
 
 ``` r
 
-c(all       = mean(studies$d),
-  published = mean(studies$d[studies$published]))
-#>       all published 
-#> 0.1904788 0.6166919
+d_published <- studies$d[studies$published]
+rbind(all       = c(mean = mean(studies$d),
+                    mcse = sd(studies$d) / sqrt(G)),
+      published = c(mean = mean(d_published),
+                    mcse = sd(d_published) / sqrt(length(d_published))))
+#>                mean        mcse
+#> all       0.1904788 0.008310797
+#> published 0.6166919 0.013018500
 ```
 
 The average across all studies sits near the truth of 0.2. The average
@@ -73,19 +85,26 @@ clear the significance filter when its sample effect happens to land
 high. The filter does not select for true effects; it selects for large
 *estimates*. This is publication bias, and the figure makes it vivid.
 
-![](planning-replications_files/figure-html/unnamed-chunk-5-1.png)
+![Scatter plot of the observed d in each of the 1000 simulated studies.
+The unpublished studies, drawn as open gray points, scatter around the
+true value of 0.2, shown as a dotted red line, and the dashed gray line
+for the mean of all 1000 studies lies almost on top of it. The published
+studies, drawn as filled black points, sit almost all above about 0.5,
+and the solid black line for their mean lies near 0.6, far above the
+truth.](planning-replications_files/figure-html/unnamed-chunk-5-1.png)
 
 The published effects (filled points) are a biased sample of the truth:
-their average (solid line) is well above the true value (dashed red
-line). A reader of this literature sees only the filled points and
-naturally concludes the effect is much larger than it is.
+their average (solid line) is well above the true value (dotted red
+line), which the average of all studies (dashed gray line) nearly
+coincides with. A reader of this literature sees only the filled points
+and naturally concludes the effect is much larger than it is.
 
 ## Why Planning at Face Value Underpowers the Replication
 
 Now put yourself in the position of a researcher who wants to replicate
-one of these published findings. Suppose the published study you are
-working from used 25 participants per group and reported `t = 2.52`.
-Taken at face value, that implies a healthy effect size:
+a finding from a literature like this one. Suppose the published study
+you are working from used 25 participants per group and reported
+`t = 2.52`. Taken at face value, that implies a healthy effect size:
 
 ``` r
 
@@ -125,15 +144,16 @@ keeps running studies that cannot succeed.
 
 BUCSS breaks this cycle. Instead of trusting the published effect, it
 treats the published test statistic as a draw from a *truncated*
-distribution, truncated because only significant results were
-publishable, and corrects for both the publication bias and the sampling
-uncertainty before planning. The same prior study, run through
+distribution (Taylor & Muller, 1996), truncated because only significant
+results were publishable, and corrects for both the publication bias and
+the sampling uncertainty before planning. The same prior study, run
+through
 [`ss_buc_independent_t()`](https://yelleKneK.github.io/BUCSS/reference/ss_buc_independent_t.md),
 asks for a very different sample size.
 
 We use `assurance = .50` first. An assurance of .50 corrects for
-publication bias only: it asks for the sample size that gives the target
-power on average across replications.
+publication bias only: it asks for the sample size that reaches the
+target power in half of replications.
 
 ``` r
 
@@ -148,6 +168,7 @@ ss_buc_independent_t(t_observed = 2.52, n = 25,
 | total_N               | 218   |
 | actual_power          | 0.801 |
 | ncp_adjusted          | 1.35  |
+| smd_planning          | 0.382 |
 | t_observed            | 2.52  |
 | n                     | 25    |
 | alpha_prior           | 0.05  |
@@ -163,11 +184,11 @@ participants per group than the naive plan of 32. The face-value plan
 was not cautious; it was wishful.
 
 Raising the assurance above .50 also corrects for *uncertainty*: it asks
-for the sample size that will reach the target power not just on average
-but in a stated proportion of replications. With a prior study this
-small, however, asking for high assurance reveals a hard truth. The
-original study simply did not carry enough information, and BUCSS says
-so rather than returning a falsely precise number:
+for the sample size that will reach the target power not just half the
+time but in a stated, larger proportion of replications. With a prior
+study this small, however, asking for high assurance reveals a hard
+truth. The original study simply did not carry enough information, and
+BUCSS says so rather than returning a falsely precise number:
 
 ``` r
 
@@ -183,13 +204,13 @@ anchor a high-assurance replication. It tells you the largest assurance
 this prior can support and the two levers you can pull (lower the
 assurance, or raise `alpha_prior` to assume the literature filtered less
 aggressively), so you can make an informed, minimal adjustment rather
-than a blind one. A well-powered original study would support assurance
-of .80 or .95 comfortably; this one does not, and that is worth knowing
-before you collect data.
+than a blind one. A well-powered original study usually supports an
+assurance of .80, and often .95; this one cannot support .80, and that
+is worth knowing before you collect data.
 
 ## Reading and Using the Result
 
-Every `ss_buc_*` function returns a tidy object. Print it for a readable
+Every `ss_buc_*` planner returns a tidy object. Print it for a readable
 summary, or pull the pieces out programmatically:
 
 ``` r
@@ -203,9 +224,9 @@ tidy(plan)$estimate
 ```
 
 The classic dotted name still works for scripts written against earlier
-versions of BUCSS, and the first two elements of the result remain the
-sample size and the adjusted noncentrality parameter, exactly as they
-were:
+versions of BUCSS, and `result[[1]]` and `result[[2]]` still return the
+sample size and the adjusted noncentrality parameter, as the 1.x list
+did:
 
 ``` r
 
@@ -225,12 +246,14 @@ Detecting the effect again is only one possible goal of a replication.
 Anderson and Kelley (2024) describe four, each with its own sample size
 logic: inferring that the effect exists (the goal above, served by
 BUCSS), inferring that the effect is so small it is essentially null
-(equivalence testing), estimating the effect’s magnitude precisely
-(accuracy in parameter estimation, as in the MBESS package), and
-planning the next study to sharpen a running meta-analytic estimate. The
-common thread is that the design choice comes first: decide what a
-successful replication would mean, then plan the sample size for that,
-and never take a published effect size at face value.
+(equivalence testing, for which the DMAR package’s
+`ss_aipe_equivalence_smd()` plans the sample size), estimating the
+effect’s magnitude precisely (accuracy in parameter estimation, as in
+the `ss_aipe_smd()` function in DMAR), and planning the next study to
+sharpen a running meta-analytic estimate. The common thread is that the
+design choice comes first: decide what a successful replication would
+mean, then plan the sample size for that, and never take a published
+effect size at face value.
 
 ## References
 
@@ -241,7 +264,7 @@ replication studies: The devil is in the design. *Psychological Methods,
 Anderson, S. F., & Maxwell, S. E. (2017). Addressing the “replication
 crisis”: Using original studies to design replication studies with
 appropriate statistical power. *Multivariate Behavioral Research, 52*,
-305–324.
+305–324. <https://doi.org/10.1080/00273171.2017.1289361>
 
 Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample-size
 planning for more accurate statistical power: A method adjusting sample
@@ -255,3 +278,4 @@ ed.). Routledge.
 Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
 sample size calculation due to estimating noncentrality. *Communications
 in Statistics: Theory and Methods, 25*, 1595–1610.
+<https://doi.org/10.1080/03610929608831787>

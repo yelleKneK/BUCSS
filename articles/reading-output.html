@@ -65,16 +65,20 @@
 Samantha F. Anderson, and Scott E. Maxwell</h4>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/yelleKneK/BUCSS/blob/master/vignettes/reading-output.Rmd" class="external-link"><code>vignettes/reading-output.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/yelleKneK/BUCSS/blob/main/vignettes/reading-output.Rmd" class="external-link"><code>vignettes/reading-output.Rmd</code></a></small>
       <div class="d-none name"><code>reading-output.Rmd</code></div>
     </div>
 
     
     
-<p>Every <code>ss_buc_*</code> function returns the same kind of object:
-a tidy result of class <code>bucss_power</code>. This vignette shows the
-three ways to read it, which follow the same conventions as the
-<strong>DMAR</strong> package, so the habits carry over.</p>
+<p>Once a planner has returned, how do you read the plan, pull the one
+number you need out of it, or collect it into a table or a manuscript?
+Every <code>ss_buc_*</code> planner returns the same kind of object: a
+tidy result of class <code>bucss_plan</code>, holding a bias and
+uncertainty corrected plan (Anderson, Kelley, &amp; Maxwell, 2017). This
+vignette shows the three ways to read it, which follow the same
+conventions as the <strong>DMAR</strong> package, so the habits carry
+over.</p>
 <p>We will use a two-way between-subjects ANOVA throughout.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_factorial_anova.html">ss_buc_factorial_anova</a></span><span class="op">(</span>F_observed <span class="op">=</span> <span class="fl">5</span>, N <span class="op">=</span> <span class="fl">120</span>, levels_A <span class="op">=</span> <span class="fl">2</span>,</span>
@@ -83,14 +87,16 @@ three ways to read it, which follow the same conventions as the
 <h2 id="read-it-as-a-printed-summary">1. Read It as a Printed Summary<a class="anchor" aria-label="anchor" href="#read-it-as-a-printed-summary"></a>
 </h2>
 <p>Printing the object shows the aligned
-<code>term</code>/<code>value</code> table, exactly as in
-<strong>DMAR</strong>: the design results first (the necessary sample
-size, named for its unit; the implied total sample size for per-group
-and per-cell designs; the achieved power at the returned size; and the
-bias and uncertainty adjusted noncentrality parameter), then the rows
-echoing the planning inputs you supplied. Footer lines close with the
-design, the unit the sample size is counted in, and the largest
-assurance this prior result can support.</p>
+<code>term</code>/<code>value</code> table, in the <strong>DMAR</strong>
+style: the design results first (the necessary sample size, named for
+its unit; the implied total sample size for per-group and per-cell
+designs; the achieved power at the returned size; the bias and
+uncertainty adjusted noncentrality parameter; and the planning effect
+size, the effect size the plan is built on, in the design’s usual
+metric), then the rows echoing the planning inputs you supplied. Footer
+lines close with the design, for the regression planners the predictor
+frame (<code>random_predictors</code>), the unit the sample size is
+counted in, and the largest assurance this prior result can support.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span></span></code></pre></div>
 <table class="table">
@@ -116,34 +122,38 @@ assurance this prior result can support.</p>
 <td align="left">0.293</td>
 </tr>
 <tr class="odd">
+<td align="left">f_planning</td>
+<td align="left">0.0494</td>
+</tr>
+<tr class="even">
 <td align="left">F_observed</td>
 <td align="left">5</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">N</td>
 <td align="left">120</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">levels_A</td>
 <td align="left">2</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">levels_B</td>
 <td align="left">3</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">alpha_prior</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">alpha_planned</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">assurance</td>
 <td align="left">0.8</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">desired_power</td>
 <td align="left">0.8</td>
 </tr>
@@ -152,11 +162,13 @@ assurance this prior result can support.</p>
 <p>Design: Two-way between-subjects ANOVA (factor_B); Sample size unit:
 per cell; Largest supportable assurance: .83</p>
 <p>Displayed values are rounded for reading (whole numbers print clean;
-other values print at three significant figures); the stored values keep
-full precision. Change the display with
-<code>options(bucss.digits = )</code>.</p>
+other values print at three significant figures, and a value below 1 is
+given more figures rather than shown as 1); the stored values keep full
+precision. Change the display with
+<code>options(bucss.digits = )</code>, and put back whatever was set
+before when you are done:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>bucss.digits <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">old</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>bucss.digits <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="va">result</span></span></code></pre></div>
 <table class="table">
 <thead><tr class="header">
@@ -181,34 +193,38 @@ full precision. Change the display with
 <td align="left">0.29302</td>
 </tr>
 <tr class="odd">
+<td align="left">f_planning</td>
+<td align="left">0.049415</td>
+</tr>
+<tr class="even">
 <td align="left">F_observed</td>
 <td align="left">5</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">N</td>
 <td align="left">120</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">levels_A</td>
 <td align="left">2</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">levels_B</td>
 <td align="left">3</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">alpha_prior</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">alpha_planned</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">assurance</td>
 <td align="left">0.8</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">desired_power</td>
 <td align="left">0.8</td>
 </tr>
@@ -217,7 +233,7 @@ full precision. Change the display with
 <p>Design: Two-way between-subjects ANOVA (factor_B); Sample size unit:
 per cell; Largest supportable assurance: .83</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>bucss.digits <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>  <span class="co"># restore the default</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span><span class="va">old</span><span class="op">)</span>  <span class="co"># restore the previous setting</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="pull-a-single-number-out">2. Pull a Single Number Out<a class="anchor" aria-label="anchor" href="#pull-a-single-number-out"></a>
@@ -226,18 +242,21 @@ per cell; Largest supportable assurance: .83</p>
 <code>term</code> column and a numeric <code>value</code> column, so you
 can index it like any data frame. The design results come first (here
 <code>necessary_n_per_cell</code>, <code>total_N</code>,
-<code>actual_power</code>, and <code>ncp_adjusted</code>; the size row
-is <code>necessary_n_per_group</code> or <code>necessary_N</code> in
-other designs), followed by one row per planning input, so the
-assumptions travel with the result through subsetting and
-<code><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv()</a></code>.</p>
+<code>actual_power</code>, <code>ncp_adjusted</code>, and
+<code>f_planning</code>; the size row is
+<code>necessary_n_per_group</code> or <code>necessary_N</code> in other
+designs, and the planning effect size row is named for its metric),
+followed by one row per planning input, so the assumptions travel with
+the result through subsetting and <code><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv()</a></code>.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">result</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"necessary_n_per_cell"</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] 659</span></span>
 <span><span class="va">result</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">result</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"total_N"</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] 3954</span></span></code></pre></div>
-<p>That works, but the <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> view below is usually tidier
-for pulling one value out by name.</p>
+<p>That works for any row. For the sample size and its power,
+<code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> below gives them directly, and <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>
+puts every row in a column of its own, so any single value can be pulled
+out by name.</p>
 </div>
 <div class="section level2">
 <h2 id="the-broom-verbs-tidy-and-glance">3. The Broom Verbs: <code>tidy()</code> and
@@ -254,21 +273,26 @@ as <strong>DMAR</strong>’s sample size planners: one row with
 <span><span class="co">#&gt; 1 sample_size      659 0.8005714</span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span><span class="op">$</span><span class="va">estimate</span></span>
 <span><span class="co">#&gt; [1] 659</span></span></code></pre></div>
-<p><code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> returns the one-row wide view: every quantity
-and echoed planning input as a column, plus the design, the effect
-tested, the unit, the planned test’s degrees of freedom, and the
+<p><code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> returns the one-row wide view. It begins with
+the same <code>term</code>, <code>estimate</code>, and
+<code>power</code> columns as <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> (as
+<strong>DMAR</strong>’s planners do), then gives every quantity and
+echoed planning input a column of its own, and ends with the design, the
+effect tested, the unit, the planned test’s degrees of freedom, and the
 assurance ceiling. It is the convenient shape for pulling one value out
 by name or collecting many results into one table for reporting.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   necessary_n_per_cell total_N actual_power ncp_adjusted F_observed   N</span></span>
-<span><span class="co">#&gt; 1                  659    3954    0.8005714    0.2930235          5 120</span></span>
-<span><span class="co">#&gt;   levels_A levels_B alpha_prior alpha_planned assurance desired_power</span></span>
-<span><span class="co">#&gt; 1        2        3        0.05          0.05       0.8           0.8</span></span>
-<span><span class="co">#&gt;                           design   effect sample_size_unit df_effect df_error</span></span>
-<span><span class="co">#&gt; 1 Two-way between-subjects ANOVA factor_B         per cell         2     3948</span></span>
-<span><span class="co">#&gt;   assurance_ceiling</span></span>
-<span><span class="co">#&gt; 1         0.8342054</span></span></code></pre></div>
+<span><span class="co">#&gt;          term estimate     power necessary_n_per_cell total_N actual_power</span></span>
+<span><span class="co">#&gt; 1 sample_size      659 0.8005714                  659    3954    0.8005714</span></span>
+<span><span class="co">#&gt;   ncp_adjusted f_planning F_observed   N levels_A levels_B alpha_prior</span></span>
+<span><span class="co">#&gt; 1    0.2930235  0.0494152          5 120        2        3        0.05</span></span>
+<span><span class="co">#&gt;   alpha_planned assurance desired_power                         design   effect</span></span>
+<span><span class="co">#&gt; 1          0.05       0.8           0.8 Two-way between-subjects ANOVA factor_B</span></span>
+<span><span class="co">#&gt;   sample_size_unit df_effect df_error assurance_ceiling</span></span>
+<span><span class="co">#&gt; 1         per cell         2     3948         0.8342054</span></span>
+<span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span><span class="op">$</span><span class="va">ncp_adjusted</span></span>
+<span><span class="co">#&gt; [1] 0.2930235</span></span></code></pre></div>
 <p>Both verbs come from the <strong>generics</strong> package and are
 re-exported by BUCSS, so they work as soon as the package is loaded,
 with no extra setup. The full precision values are always available in
@@ -277,21 +301,180 @@ manuscript’s method section, <code><a href="../reference/planning_sentence.htm
 sentence:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/planning_sentence.html">planning_sentence</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "A planned study with 659 participants per cell (total N = 3954) attains 80% power with 80% assurance, after correcting the prior study's result for publication bias and uncertainty."</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "A planned study with 659 participants per cell (total N = 3,954) attains 80% power with 80% assurance, after correcting the prior study's result for publication bias (assuming its literature published results significant at the .05 level) and for uncertainty. The plan is built on a planning effect size of 0.0494, expressed as Cohen's f."</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="the-planning-effect-size">The Planning Effect Size<a class="anchor" aria-label="anchor" href="#the-planning-effect-size"></a>
+</h2>
+<p>The noncentrality parameter is the natural scale for the correction,
+but it is not the scale a paper reports an effect on, and it grows with
+the sample size. So every plan also carries its <strong>planning effect
+size</strong>, an adjusted effect size: the value, in the design’s usual
+effect size metric, used to plan the sample size given the situation at
+hand (the prior study’s result, the publication bias assumed through
+<code>alpha_prior</code>, and the uncertainty allowed for through
+<code>assurance</code>). It is <code>ncp_adjusted</code> restated in
+that metric, and it is what the plan is built on, not an estimate of the
+population effect to report. It sits directly after
+<code>ncp_adjusted</code>, and its name, which always ends in
+<code>_planning</code>, says which metric it is:</p>
+<table class="table">
+<colgroup>
+<col width="40%">
+<col width="22%">
+<col width="36%">
+</colgroup>
+<thead><tr class="header">
+<th>Planner</th>
+<th>Row</th>
+<th>Metric</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<code>ss_buc_independent_t</code> (<code>ss_buc_smd</code>)</td>
+<td><code>smd_planning</code></td>
+<td>standardized mean difference</td>
+</tr>
+<tr class="even">
+<td><code>ss_buc_welch_t</code></td>
+<td><code>smd_planning</code></td>
+<td>standardized mean difference, standardized by the root mean square
+of the two standard deviations</td>
+</tr>
+<tr class="odd">
+<td>
+<code>ss_buc_paired_t</code> (<code>ss_buc_smd_paired</code>)</td>
+<td><code>dz_planning</code></td>
+<td>Cohen’s (1988) <em>d_z</em>: the mean of the paired differences
+divided by their standard deviation (the <em>z</em> names the difference
+score, which Cohen writes Z = X - Y)</td>
+</tr>
+<tr class="even">
+<td><code>ss_buc_one_sample_t</code></td>
+<td><code>std_mean_planning</code></td>
+<td>standardized mean</td>
+</tr>
+<tr class="odd">
+<td>the eight ANOVA and ANCOVA planners</td>
+<td><code>f_planning</code></td>
+<td>Cohen’s <em>f</em> for the effect, relative to its own error
+term</td>
+</tr>
+<tr class="even">
+<td>
+<code>ss_buc_reg_coef</code>, <code>ss_buc_reg_joint</code>
+</td>
+<td><code>f2_planning</code></td>
+<td>Cohen’s <em>f</em> squared</td>
+</tr>
+<tr class="odd">
+<td><code>ss_buc_R2</code></td>
+<td><code>R2_planning</code></td>
+<td>squared multiple correlation</td>
+</tr>
+<tr class="even">
+<td><code>ss_buc_correlation</code></td>
+<td><code>rho_planning</code></td>
+<td>correlation</td>
+</tr>
+<tr class="odd">
+<td><code>ss_buc_manova</code></td>
+<td><code>D2_planning</code></td>
+<td>squared Mahalanobis distance</td>
+</tr>
+<tr class="even">
+<td><code>ss_buc_chisq_diff</code></td>
+<td><code>rmsea_d_planning</code></td>
+<td>RMSEA_D, with D for difference: the root mean square error of
+approximation of the chi square difference test between the two nested
+models (Savalei, Brace, &amp; Fouladi, 2024), not the RMSEA of either
+model’s fit</td>
+</tr>
+</tbody>
+</table>
+<p>For the example above, the published result was <em>F</em>(2, 114) =
+5, whose sample Cohen’s <em>f</em> is <code>sqrt(5 * 2/114)</code>,
+about 0.296. The plan is built on a much smaller effect:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">f_planning</span> <span class="op">&lt;-</span> <span class="va">result</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">result</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"f_planning"</span><span class="op">]</span></span>
+<span><span class="va">f_planning</span></span>
+<span><span class="co">#&gt; [1] 0.0494152</span></span>
+<span><span class="va">f_planning</span><span class="op">^</span><span class="fl">2</span> <span class="op">/</span> <span class="op">(</span><span class="fl">1</span> <span class="op">+</span> <span class="va">f_planning</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>  <span class="co"># the same effect as a partial eta squared</span></span>
+<span><span class="co">#&gt; [1] 0.002435914</span></span></code></pre></div>
+<p>“Built on” is meant literally. <code>actual_power</code> is the
+ordinary power of a study of the returned size when the population
+effect is the planning effect size, so any power calculator reproduces
+it from the effect alone. Here the planned study has 3954 participants
+in 6 cells, and its test of the effect has 2 and 3948 degrees of
+freedom:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">total_N</span> <span class="op">&lt;-</span> <span class="va">result</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">result</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"total_N"</span><span class="op">]</span></span>
+<span><span class="fl">1</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Fdist.html" class="external-link">pf</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Fdist.html" class="external-link">qf</a></span><span class="op">(</span><span class="fl">.95</span>, <span class="fl">2</span>, <span class="va">total_N</span> <span class="op">-</span> <span class="fl">6</span><span class="op">)</span>, <span class="fl">2</span>, <span class="va">total_N</span> <span class="op">-</span> <span class="fl">6</span>, ncp <span class="op">=</span> <span class="va">total_N</span> <span class="op">*</span> <span class="va">f_planning</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.8005714</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">result</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"actual_power"</span><span class="op">]</span></span>
+<span><span class="co">#&gt; [1] 0.8005714</span></span></code></pre></div>
+<p>A few things to know when you carry the planning effect size
+elsewhere:</p>
+<ul>
+<li>
+<strong>It is the value the plan is built on, not a better estimate
+of the effect.</strong> At <code>assurance = .5</code> it is the median
+unbiased estimate (with <code>alpha_prior</code> below 1, after the
+correction for publication bias); above .5 it is deliberately
+conservative, a lower confidence limit, an effect the plan must still be
+powered for, so report it as the planning effect size rather than as the
+size of the effect.</li>
+<li>
+<strong>Within-subjects and split-plot designs.</strong> There
+<code>f_planning</code> is relative to the effect’s own error term,
+which already reflects the correlation among the repeated measures.
+Power functions that take an <em>f</em> standardized by the raw scores
+together with a correlation (such as <strong>DMAR</strong>’s
+<code>ss_power_rm_anova()</code> and
+<code>ss_power_split_plot_anova()</code>) expect a different number;
+each planner’s help page gives the conversion. With <code>epsilon</code>
+below 1 the planning effect size stays on the sphericity scale, like
+<code>ncp_adjusted</code>, and <code>actual_power</code> is the power
+under the same sphericity correction.</li>
+<li>
+<strong>Regression with sampled predictors.</strong> With
+<code>random_predictors = TRUE</code>, <code>f2_planning</code> and
+<code>R2_planning</code> are the population values when the predictors
+are sampled along with the outcome, and <code>actual_power</code> is the
+power in that frame.</li>
+<li>
+<strong>An unbalanced prior study.</strong> When the planner reduces
+the prior study to a balanced design in two ways and reports the smaller
+noncentrality parameter, the planning effect size belongs to that same
+balanced design. An ordinary power analysis at it can then return a
+slightly smaller sample size than the plan, never a larger one, because
+the plan is the larger of the two designs’ requirements.</li>
+</ul>
+<p><code><a href="../reference/planning_sentence.html">planning_sentence()</a></code> names the planning effect size in
+its second sentence, as shown in the previous section.</p>
 </div>
 <div class="section level2">
 <h2 id="what-lives-where">What Lives Where<a class="anchor" aria-label="anchor" href="#what-lives-where"></a>
 </h2>
 <ul>
-<li>Everything numeric is a row of the <code>value</code> column: the
-design results (the size row named for its unit, <code>total_N</code>,
-<code>actual_power</code>, <code>ncp_adjusted</code>) and the echoed
+<li>Every planning result and every echoed input is a row of the
+<code>value</code> column: the design results (the size row named for
+its unit, <code>total_N</code>, <code>actual_power</code>,
+<code>ncp_adjusted</code>, and the planning effect size) and the
 planning inputs. Rows survive any further arithmetic, subsetting, or
-export you do on the object.</li>
-<li>Only non-numeric metadata travels on attributes: the design label,
-the effect tested, the unit, plus the assurance ceiling and the planned
-test’s degrees of freedom. All of it is surfaced by the print method and
-by <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>.</li>
+export you do on the object. A switch such as the regression planners’
+<code>random_predictors</code> is echoed as 1 (<code>TRUE</code>) or 0
+(<code>FALSE</code>), since the value column is numeric, and the print
+method’s footer names it in words. The within-subjects and split-plot
+planners echo <code>epsilon</code>, the sphericity parameter the plan
+assumed (1 under sphericity), for every effect it applies to.</li>
+<li>Everything else travels on attributes: the design label, the effect
+tested, and the unit, which are text, and the assurance ceiling and the
+planned test’s degrees of freedom, which are numbers describing the
+prior result and the planned test rather than rows of the plan. All of
+it is surfaced by <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>, and the design (with the effect
+tested), the unit, and the ceiling by the print method’s footer.</li>
 </ul>
 </div>
 <div class="section level2">
@@ -301,6 +484,11 @@ by <code><a href="https://generics.r-lib.org/reference/glance.html" class="exter
 planning for more accurate statistical power: A method adjusting sample
 effect sizes for publication bias and uncertainty. <em>Psychological
 Science, 28</em>, 1547–1562. <a href="https://doi.org/10.1177/0956797617723724" class="external-link uri">https://doi.org/10.1177/0956797617723724</a></p>
+<p>Cohen, J. (1988). <em>Statistical power analysis for the behavioral
+sciences</em> (2nd ed.). Lawrence Erlbaum Associates.</p>
+<p>Savalei, V., Brace, J. C., &amp; Fouladi, R. T. (2024). We need to
+change how we compute RMSEA for nested model comparisons in structural
+equation modeling. <em>Psychological Methods, 29</em>, 480–493. <a href="https://doi.org/10.1037/met0000537" class="external-link uri">https://doi.org/10.1037/met0000537</a></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

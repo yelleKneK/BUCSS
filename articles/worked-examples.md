@@ -1,12 +1,14 @@
 # Worked Examples Across Designs
 
-This vignette walks through one example of each `ss_buc_*` function. The
-pattern is always the same: summarize the prior study with a single test
-statistic and its design, and the function returns the necessary
-planned-study sample size and the bias and uncertainty adjusted
-noncentrality parameter (Anderson, Kelley, & Maxwell, 2017). Every
-example uses 80% power and 80% assurance unless noted. For the meaning
-of the `assurance` and `alpha_prior` settings, see
+Which planner fits a given prior study, and what does it need to know
+about that study? This vignette walks through one example of each of the
+eighteen `ss_buc_*` planners. The pattern is always the same: summarize
+the prior study with a single test statistic and its design, and the
+function returns the necessary planned-study sample size and the bias
+and uncertainty adjusted noncentrality parameter (Anderson, Kelley, &
+Maxwell, 2017; Anderson & Kelley, 2024). Every example uses 80% power
+and 80% assurance unless noted. For the meaning of the `assurance` and
+`alpha_prior` settings, see
 [`vignette("understanding-assurance", package = "BUCSS")`](https://yelleKneK.github.io/BUCSS/articles/understanding-assurance.md).
 
 ## Independent *t* Test
@@ -26,6 +28,7 @@ ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05, alpha_planned = 
 | total_N               | 260   |
 | actual_power          | 0.801 |
 | ncp_adjusted          | 1.11  |
+| smd_planning          | 0.349 |
 | t_observed            | 3     |
 | n                     | 20    |
 | alpha_prior           | 0.05  |
@@ -36,10 +39,9 @@ ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = .05, alpha_planned = 
 Design: Independent t test; Sample size unit: per group; Largest
 supportable assurance: .90
 
-`ss_buc_smd` is the same planner under an effect size name, for when you
-are working from a standardized mean difference rather than a raw *t*;
-prefer `ss_buc_independent_t` when the prior *t* was computed from
-unstandardized data.
+`ss_buc_smd` is the same planner under an effect size name. It still
+takes *t*, so convert a reported standardized mean difference *d* first:
+`t = d / sqrt(1/n_1 + 1/n_2)`, with `n_1` and `n_2` the two group sizes.
 
 ## Dependent (Paired) *t* Test
 
@@ -57,6 +59,7 @@ ss_buc_paired_t(t_observed = 3, N = 40, alpha_prior = .05, alpha_planned = .05,
 | necessary_N   | 255   |
 | actual_power  | 0.801 |
 | ncp_adjusted  | 1.12  |
+| dz_planning   | 0.176 |
 | t_observed    | 3     |
 | N             | 40    |
 | alpha_prior   | 0.05  |
@@ -69,6 +72,39 @@ Largest supportable assurance: .90
 
 The alias `ss_buc_smd_paired` serves the standardized mean difference
 framing of the same comparison.
+
+## One-Sample *t* Test
+
+A prior study of 30 participants compared their mean with a fixed
+reference value, such as a scale midpoint or a published norm, and
+reported *t* = 3.20. The returned sample size is the total number of
+participants.
+
+``` r
+
+ss_buc_one_sample_t(t_observed = 3.2, N = 30, alpha_prior = .05,
+                    alpha_planned = .05, assurance = .80, desired_power = .80)
+```
+
+| term              | value |
+|:------------------|:------|
+| necessary_N       | 107   |
+| actual_power      | 0.8   |
+| ncp_adjusted      | 1.5   |
+| std_mean_planning | 0.273 |
+| t_observed        | 3.2   |
+| N                 | 30    |
+| alpha_prior       | 0.05  |
+| alpha_planned     | 0.05  |
+| assurance         | 0.8   |
+| desired_power     | 0.8   |
+
+Design: One-sample t test; Sample size unit: total; Largest supportable
+assurance: .93
+
+A paired *t* test is a one-sample *t* test on the difference scores, so
+this planner is the paired planner under another name: for the same
+prior *t* and *N* the two return the same plan.
 
 ## Between-Subjects ANOVA
 
@@ -89,6 +125,7 @@ ss_buc_one_way_anova(F_observed = 5, N = 120, levels_A = 4, alpha_prior = .05,
 | total_N               | 356   |
 | actual_power          | 0.802 |
 | ncp_adjusted          | 3.74  |
+| f_planning            | 0.176 |
 | F_observed            | 5     |
 | N                     | 120   |
 | levels_A              | 4     |
@@ -112,20 +149,21 @@ ss_buc_factorial_anova(F_observed = 5, N = 120, levels_A = 2, levels_B = 3,
                        alpha_planned = .05, assurance = .80, desired_power = .80)
 ```
 
-| term                 | value |
-|:---------------------|:------|
-| necessary_n_per_cell | 659   |
-| total_N              | 3954  |
-| actual_power         | 0.801 |
-| ncp_adjusted         | 0.293 |
-| F_observed           | 5     |
-| N                    | 120   |
-| levels_A             | 2     |
-| levels_B             | 3     |
-| alpha_prior          | 0.05  |
-| alpha_planned        | 0.05  |
-| assurance            | 0.8   |
-| desired_power        | 0.8   |
+| term                 | value  |
+|:---------------------|:-------|
+| necessary_n_per_cell | 659    |
+| total_N              | 3954   |
+| actual_power         | 0.801  |
+| ncp_adjusted         | 0.293  |
+| f_planning           | 0.0494 |
+| F_observed           | 5      |
+| N                    | 120    |
+| levels_A             | 2      |
+| levels_B             | 3      |
+| alpha_prior          | 0.05   |
+| alpha_planned        | 0.05   |
+| assurance            | 0.8    |
+| desired_power        | 0.8    |
 
 Design: Two-way between-subjects ANOVA (factor_B); Sample size unit: per
 cell; Largest supportable assurance: .83
@@ -147,21 +185,22 @@ ss_buc_factorial_anova_general(F_observed = 5, N = 120, cells = 6,
                                assurance = .80, desired_power = .80)
 ```
 
-| term                 | value |
-|:---------------------|:------|
-| necessary_n_per_cell | 659   |
-| total_N              | 3954  |
-| actual_power         | 0.801 |
-| ncp_adjusted         | 0.293 |
-| F_observed           | 5     |
-| N                    | 120   |
-| cells                | 6     |
-| df_numerator         | 2     |
-| df_denominator       | 114   |
-| alpha_prior          | 0.05  |
-| alpha_planned        | 0.05  |
-| assurance            | 0.8   |
-| desired_power        | 0.8   |
+| term                 | value  |
+|:---------------------|:-------|
+| necessary_n_per_cell | 659    |
+| total_N              | 3954   |
+| actual_power         | 0.801  |
+| ncp_adjusted         | 0.293  |
+| f_planning           | 0.0494 |
+| F_observed           | 5      |
+| N                    | 120    |
+| cells                | 6      |
+| df_numerator         | 2      |
+| df_denominator       | 114    |
+| alpha_prior          | 0.05   |
+| alpha_planned        | 0.05   |
+| assurance            | 0.8    |
+| desired_power        | 0.8    |
 
 Design: Between-subjects ANOVA (general); Sample size unit: per cell;
 Largest supportable assurance: .83
@@ -180,21 +219,23 @@ ss_buc_rm_anova(F_observed = 5, N = 60, levels_A = 2, levels_B = 3,
                 assurance = .80, desired_power = .80)
 ```
 
-| term          | value |
-|:--------------|:------|
-| necessary_N   | 1902  |
-| actual_power  | 0.8   |
-| ncp_adjusted  | 0.304 |
-| F_observed    | 5     |
-| N             | 60    |
-| levels_A      | 2     |
-| levels_B      | 3     |
-| alpha_prior   | 0.05  |
-| alpha_planned | 0.05  |
-| assurance     | 0.8   |
-| desired_power | 0.8   |
+| term          | value  |
+|:--------------|:-------|
+| necessary_N   | 1902   |
+| actual_power  | 0.8    |
+| ncp_adjusted  | 0.304  |
+| f_planning    | 0.0504 |
+| F_observed    | 5      |
+| N             | 60     |
+| levels_A      | 2      |
+| levels_B      | 3      |
+| epsilon       | 1      |
+| alpha_prior   | 0.05   |
+| alpha_planned | 0.05   |
+| assurance     | 0.8    |
+| desired_power | 0.8    |
 
-Design: One or two-way within-subjects ANOVA (factor_B); Sample size
+Design: One- or two-way within-subjects ANOVA (factor_B); Sample size
 unit: total; Largest supportable assurance: .83
 
 The general form takes the numerator degrees of freedom directly and
@@ -213,9 +254,11 @@ ss_buc_rm_anova_general(F_observed = 6.5, N = 80, df_numerator = 1,
 | necessary_N   | 256   |
 | actual_power  | 0.8   |
 | ncp_adjusted  | 2.47  |
+| f_planning    | 0.176 |
 | F_observed    | 6.5   |
 | N             | 80    |
 | df_numerator  | 1     |
+| epsilon       | 1     |
 | alpha_prior   | 0.05  |
 | alpha_planned | 0.05  |
 | assurance     | 0.5   |
@@ -240,20 +283,22 @@ ss_buc_mixed_anova(F_observed = 5, N = 60, levels_between = 2, levels_within = 3
                    assurance = .80, desired_power = .80)
 ```
 
-| term                  | value |
-|:----------------------|:------|
-| necessary_n_per_group | 969   |
-| total_N               | 1938  |
-| actual_power          | 0.8   |
-| ncp_adjusted          | 0.299 |
-| F_observed            | 5     |
-| N                     | 60    |
-| levels_between        | 2     |
-| levels_within         | 3     |
-| alpha_prior           | 0.05  |
-| alpha_planned         | 0.05  |
-| assurance             | 0.8   |
-| desired_power         | 0.8   |
+| term                  | value  |
+|:----------------------|:-------|
+| necessary_n_per_group | 969    |
+| total_N               | 1938   |
+| actual_power          | 0.8    |
+| ncp_adjusted          | 0.299  |
+| f_planning            | 0.0499 |
+| F_observed            | 5      |
+| N                     | 60     |
+| levels_between        | 2      |
+| levels_within         | 3      |
+| epsilon               | 1      |
+| alpha_prior           | 0.05   |
+| alpha_planned         | 0.05   |
+| assurance             | 0.8    |
+| desired_power         | 0.8    |
 
 Design: Two-factor split-plot (mixed) ANOVA (within); Sample size unit:
 per between-subjects cell; Largest supportable assurance: .83
@@ -261,8 +306,10 @@ per between-subjects cell; Largest supportable assurance: .83
 The general form takes the numerator degrees of freedom and the number
 of between-subjects groups directly. The effect is one of
 `between_only`, `within_only`, or `between_within`; supply
-`df_num_within` when the effect involves a within-subjects component.
-The returned sample size is per group.
+`df_num_within`, the numerator degrees of freedom of the within-subjects
+component, only when `effect = "between_within"` (it is required there,
+and ignored with a warning otherwise). The returned sample size is per
+group.
 
 ``` r
 
@@ -272,23 +319,115 @@ ss_buc_mixed_anova_general(F_observed = 5, N = 90, df_numerator = 2,
                            assurance = .80, desired_power = .80)
 ```
 
-| term                  | value |
-|:----------------------|:------|
-| necessary_n_per_group | 1489  |
-| total_N               | 4467  |
-| actual_power          | 0.8   |
-| ncp_adjusted          | 0.194 |
-| F_observed            | 5     |
-| N                     | 90    |
-| df_numerator          | 2     |
-| num_groups            | 3     |
-| alpha_prior           | 0.05  |
-| alpha_planned         | 0.05  |
-| assurance             | 0.8   |
-| desired_power         | 0.8   |
+| term                  | value  |
+|:----------------------|:-------|
+| necessary_n_per_group | 1489   |
+| total_N               | 4467   |
+| actual_power          | 0.8    |
+| ncp_adjusted          | 0.194  |
+| f_planning            | 0.0465 |
+| F_observed            | 5      |
+| N                     | 90     |
+| df_numerator          | 2      |
+| num_groups            | 3      |
+| alpha_prior           | 0.05   |
+| alpha_planned         | 0.05   |
+| assurance             | 0.8    |
+| desired_power         | 0.8    |
 
 Design: Split-plot (mixed) ANOVA (any number of factors) (between_only);
 Sample size unit: per group; Largest supportable assurance: .82
+
+## Departures From Sphericity
+
+The within-subjects and split-plot planners assume sphericity by
+default, as the uncorrected within-subjects test does, and echo that
+assumption as an `epsilon` row of 1. When a paper reports a
+Greenhouse-Geisser (1959) or Huynh-Feldt (1976) correction instead, it
+shows fractional degrees of freedom: a three-level within-subjects
+factor measured on 30 subjects might be reported as *F*(1.73, 50.2) =
+6.50. The uncorrected degrees of freedom are 2 and 58, so the correction
+is `epsilon = 1.73/2`, about .865. The denominator agrees (50.2/58 is
+also about .865), and 50.2/1.73 = 29.0 is one less than the 30 subjects,
+which confirms how many subjects the analysis used.
+
+``` r
+
+ss_buc_rm_anova(F_observed = 6.5, N = 30, levels_A = 3, epsilon = 1.73 / 2)
+```
+
+| term          | value |
+|:--------------|:------|
+| necessary_N   | 162   |
+| actual_power  | 0.802 |
+| ncp_adjusted  | 2     |
+| f_planning    | 0.183 |
+| F_observed    | 6.5   |
+| N             | 30    |
+| levels_A      | 3     |
+| epsilon       | 0.865 |
+| alpha_prior   | 0.05  |
+| alpha_planned | 0.05  |
+| assurance     | 0.8   |
+| desired_power | 0.8   |
+
+Design: One- or two-way within-subjects ANOVA (factor_A); Sample size
+unit: total; Largest supportable assurance: .90
+
+Ignoring the correction plans 92 subjects rather than 162:
+
+``` r
+
+ss_buc_rm_anova(F_observed = 6.5, N = 30, levels_A = 3)
+```
+
+| term          | value |
+|:--------------|:------|
+| necessary_N   | 92    |
+| actual_power  | 0.802 |
+| ncp_adjusted  | 3.21  |
+| f_planning    | 0.231 |
+| F_observed    | 6.5   |
+| N             | 30    |
+| levels_A      | 3     |
+| epsilon       | 1     |
+| alpha_prior   | 0.05  |
+| alpha_planned | 0.05  |
+| assurance     | 0.8   |
+| desired_power | 0.8   |
+
+Design: One- or two-way within-subjects ANOVA (factor_A); Sample size
+unit: total; Largest supportable assurance: .94
+
+The difference has two sources. The same *F* on fewer degrees of freedom
+is weaker evidence: its *p* value rises from .0028 to .0045, the largest
+supportable assurance falls from .94 to .90, and the correction for
+uncertainty at an `assurance` of .80 takes correspondingly more off. And
+the planned study, analyzed with the same correction, has less power at
+any size. Both follow the approximation of Muller and Barton (1989), in
+which both degrees of freedom and the noncentrality parameter are
+multiplied by `epsilon`; `ncp_adjusted` stays on the sphericity scale,
+so the two plans’ parameters are comparable. The plan is sensitive to
+`epsilon`, so it is worth seeing across the values you find plausible:
+
+``` r
+
+eps <- c(1, .95, .9, .85, .8, .75)
+sapply(eps, function(e) {
+  res <- ss_buc_rm_anova(F_observed = 6.5, N = 30, levels_A = 3, epsilon = e)
+  res$value[res$term == "necessary_N"]
+})
+#> [1]  92 109 135 177 252 415
+```
+
+One `epsilon` describes both studies: it is a property of the covariance
+of the repeated measures, which the planned study shares with the prior
+one. When a paper reports both corrections, use the Greenhouse-Geisser
+value. The correction is an approximation, and the help page for
+[`ss_buc_rm_anova()`](https://yelleKneK.github.io/BUCSS/reference/ss_buc_rm_anova.md)
+reports how well it holds up in simulation. In a split-plot design it
+applies to the within-subjects effect and the interaction, not to the
+between-subjects effect, whose test is on subject means.
 
 ## Multiple Regression
 
@@ -307,21 +446,23 @@ ss_buc_reg_coef(t_observed = 3, N = 150, p = 3, alpha_prior = .05,
                 alpha_planned = .05, assurance = .80, desired_power = .80)
 ```
 
-| term          | value |
-|:--------------|:------|
-| necessary_N   | 624   |
-| actual_power  | 0.8   |
-| ncp_adjusted  | 1.89  |
-| t_observed    | 3     |
-| N             | 150   |
-| p             | 3     |
-| alpha_prior   | 0.05  |
-| alpha_planned | 0.05  |
-| assurance     | 0.8   |
-| desired_power | 0.8   |
+| term              | value  |
+|:------------------|:-------|
+| necessary_N       | 624    |
+| actual_power      | 0.8    |
+| ncp_adjusted      | 1.89   |
+| f2_planning       | 0.0126 |
+| t_observed        | 3      |
+| N                 | 150    |
+| p                 | 3      |
+| random_predictors | 0      |
+| alpha_prior       | 0.05   |
+| alpha_planned     | 0.05   |
+| assurance         | 0.8    |
+| desired_power     | 0.8    |
 
-Design: Multiple regression: single coefficient; Sample size unit:
-total; Largest supportable assurance: .93
+Design: Multiple regression: single coefficient; Predictors: fixed by
+design; Sample size unit: total; Largest supportable assurance: .93
 
 For the omnibus test of the model R-squared, supply the model *F*
 statistic. Here a prior study with *N* = 150 and 4 predictors reported
@@ -333,21 +474,23 @@ ss_buc_R2(F_observed = 5, N = 150, p = 4, alpha_prior = .05,
           alpha_planned = .05, assurance = .80, desired_power = .80)
 ```
 
-| term          | value |
-|:--------------|:------|
-| necessary_N   | 234   |
-| actual_power  | 0.8   |
-| ncp_adjusted  | 7.82  |
-| F_observed    | 5     |
-| N             | 150   |
-| p             | 4     |
-| alpha_prior   | 0.05  |
-| alpha_planned | 0.05  |
-| assurance     | 0.8   |
-| desired_power | 0.8   |
+| term              | value  |
+|:------------------|:-------|
+| necessary_N       | 234    |
+| actual_power      | 0.8    |
+| ncp_adjusted      | 7.82   |
+| R2_planning       | 0.0495 |
+| F_observed        | 5      |
+| N                 | 150    |
+| p                 | 4      |
+| random_predictors | 0      |
+| alpha_prior       | 0.05   |
+| alpha_planned     | 0.05   |
+| assurance         | 0.8    |
+| desired_power     | 0.8    |
 
-Design: Multiple regression: omnibus test of model R2; Sample size unit:
-total; Largest supportable assurance: .98
+Design: Multiple regression: omnibus test of model R2; Predictors: fixed
+by design; Sample size unit: total; Largest supportable assurance: .98
 
 For a joint test of a subset of predictors, also supply `p_joint`, the
 number of predictors tested together. Here 2 of the 4 predictors are
@@ -360,22 +503,81 @@ ss_buc_reg_joint(F_observed = 5, N = 150, p = 4, p_joint = 2,
                  desired_power = .80)
 ```
 
-| term          | value |
-|:--------------|:------|
-| necessary_N   | 3960  |
-| actual_power  | 0.8   |
-| ncp_adjusted  | 0.365 |
-| F_observed    | 5     |
-| N             | 150   |
-| p             | 4     |
-| p_joint       | 2     |
-| alpha_prior   | 0.05  |
-| alpha_planned | 0.05  |
-| assurance     | 0.8   |
-| desired_power | 0.8   |
+| term              | value   |
+|:------------------|:--------|
+| necessary_N       | 3960    |
+| actual_power      | 0.8     |
+| ncp_adjusted      | 0.365   |
+| f2_planning       | 0.00244 |
+| F_observed        | 5       |
+| N                 | 150     |
+| p                 | 4       |
+| p_joint           | 2       |
+| random_predictors | 0       |
+| alpha_prior       | 0.05    |
+| alpha_planned     | 0.05    |
+| assurance         | 0.8     |
+| desired_power     | 0.8     |
 
-Design: Multiple regression: joint test of predictors; Sample size unit:
-total; Largest supportable assurance: .84
+Design: Multiple regression: joint test of predictors; Predictors: fixed
+by design; Sample size unit: total; Largest supportable assurance: .84
+
+All three regression planners take `random_predictors`. By default
+(`random_predictors = FALSE`) they treat the predictors as fixed by
+design, as in an experiment in which the researcher sets their values,
+the frame of BUCSS 1.x. When the predictors are sampled along with the
+outcome, as in most observational research (Kelley & Maxwell, 2003),
+pass `random_predictors = TRUE`: the test statistic’s noncentrality
+parameter then rises and falls with the sampled spread of the tested
+predictors, and the planners use the exact distribution that follows
+(Sampson, 1974; Gatsonis & Sampson, 1989).
+
+``` r
+
+ss_buc_R2(F_observed = 5, N = 150, p = 4, random_predictors = TRUE)
+```
+
+| term              | value  |
+|:------------------|:-------|
+| necessary_N       | 239    |
+| actual_power      | 0.801  |
+| ncp_adjusted      | 7.76   |
+| R2_planning       | 0.0492 |
+| F_observed        | 5      |
+| N                 | 150    |
+| p                 | 4      |
+| random_predictors | 1      |
+| alpha_prior       | 0.05   |
+| alpha_planned     | 0.05   |
+| assurance         | 0.8    |
+| desired_power     | 0.8    |
+
+Design: Multiple regression: omnibus test of model R2; Predictors:
+random (sampled along with the outcome); Sample size unit: total;
+Largest supportable assurance: .98
+
+Planned as though they were fixed, sampled predictors make the reported
+`actual_power` overstate the planned study’s power by an amount that
+shrinks as 1/*n* for a plan of *n* participants and grows with the
+number of predictors left untested (roughly 1/*n* with one predictor and
+4/*n* for a coefficient among eight: about .04 at *n* = 100, and less
+than .01 for each of the three plans above). From prior studies as large
+as these the two frames differ little: with `random_predictors = TRUE`
+the three plans above are 623, 239, and 3,898 rather than 624, 234, and
+3,960, the joint test’s differing most because it is requested close to
+its assurance ceiling of .84. From a small prior study, with predictors
+left untested and a plan several times the prior *N*, the
+random-predictor plan can be smaller by up to about the number of
+untested predictors plus one, divided by the prior *N*: as much as 40
+percent for a coefficient among eight predictors from a prior study of
+20 (the help pages of
+[`ss_buc_reg_coef()`](https://yelleKneK.github.io/BUCSS/reference/ss_buc_reg_coef.md)
+and
+[`ss_buc_reg_joint()`](https://yelleKneK.github.io/BUCSS/reference/ss_buc_reg_joint.md)
+describe the pattern). With one predictor,
+`ss_buc_reg_coef(p = 1, random_predictors = TRUE)` returns exactly what
+[`ss_buc_correlation()`](https://yelleKneK.github.io/BUCSS/reference/ss_buc_correlation.md),
+described in the next section, returns.
 
 ## Correlation
 
@@ -394,6 +596,7 @@ ss_buc_correlation(r_observed = .35, N = 100, alpha_prior = .05,
 | necessary_N   | 122   |
 | actual_power  | 0.802 |
 | ncp_adjusted  | 6.71  |
+| rho_planning  | 0.251 |
 | r_observed    | 0.35  |
 | N             | 100   |
 | alpha_prior   | 0.05  |
@@ -412,13 +615,16 @@ itself random, proportional to the sampled spread of the predictor. The
 resulting distribution is more dispersed, and planning as though it were
 not overstates the power. The planner uses the exact distribution for
 sampled variables, so it asks for a few more participants than the
-regression planner does:
+regression planner does when that planner treats the predictor as fixed:
 
 ``` r
 
 t_equivalent <- .35 * sqrt(98 / (1 - .35^2))
-c(correlation = ss_buc_correlation(t_observed = t_equivalent, N = 100)$value[1],
-  regression = ss_buc_reg_coef(t_observed = t_equivalent, N = 100, p = 1)$value[1])
+by_correlation <- ss_buc_correlation(t_observed = t_equivalent, N = 100)
+by_regression  <- ss_buc_reg_coef(t_observed = t_equivalent, N = 100, p = 1,
+                                  random_predictors = FALSE)
+c(correlation = by_correlation$value[by_correlation$term == "necessary_N"],
+  regression  = by_regression$value[by_regression$term == "necessary_N"])
 #> correlation  regression 
 #>         122         119
 ```
@@ -426,7 +632,9 @@ c(correlation = ss_buc_correlation(t_observed = t_equivalent, N = 100)$value[1],
 If your predictor really is fixed by design, the analysis is a
 regression slope, and
 [`ss_buc_reg_coef()`](https://yelleKneK.github.io/BUCSS/reference/ss_buc_reg_coef.md)
-with `p = 1` is the planner for it.
+with `p = 1` and `random_predictors = FALSE` is the planner for it.
+[`vignette("correlation", package = "BUCSS")`](https://yelleKneK.github.io/BUCSS/articles/correlation.md)
+develops the comparison.
 
 ## Analysis of Covariance
 
@@ -448,6 +656,7 @@ ss_buc_ancova(F_observed = 6, N = 120, cells = 3, n_covariates = 2,
 | total_N              | 462   |
 | actual_power         | 0.802 |
 | ncp_adjusted         | 2.53  |
+| f_planning           | 0.145 |
 | F_observed           | 6     |
 | N                    | 120   |
 | cells                | 3     |
@@ -469,9 +678,10 @@ means, supply that contrast’s *F* and set `df_numerator = 1`.
 ## Multivariate Comparison of Two Groups
 
 When two groups are compared on several outcome variables at once, the
-prior study’s Hotelling *T*-squared (or the *F* it maps to) plans the
-replication. A study with *N* = 80 comparing two groups on 3 outcomes
-reported *F* = 4.50. The returned sample size is per group.
+prior study’s Hotelling *T* squared (Hotelling, 1931), or the *F* it
+maps to, plans the replication. A study with *N* = 80 comparing two
+groups on 3 outcomes reported *F* = 4.50. The returned sample size is
+per group.
 
 ``` r
 
@@ -479,19 +689,20 @@ ss_buc_manova(F_observed = 4.5, N = 80, p_variables = 3, alpha_prior = .05,
               alpha_planned = .05, assurance = .80, desired_power = .80)
 ```
 
-| term                  | value |
-|:----------------------|:------|
-| necessary_n_per_group | 310   |
-| total_N               | 620   |
-| actual_power          | 0.801 |
-| ncp_adjusted          | 1.42  |
-| F_observed            | 4.5   |
-| N                     | 80    |
-| p_variables           | 3     |
-| alpha_prior           | 0.05  |
-| alpha_planned         | 0.05  |
-| assurance             | 0.8   |
-| desired_power         | 0.8   |
+| term                  | value  |
+|:----------------------|:-------|
+| necessary_n_per_group | 310    |
+| total_N               | 620    |
+| actual_power          | 0.801  |
+| ncp_adjusted          | 1.42   |
+| D2_planning           | 0.0709 |
+| F_observed            | 4.5    |
+| N                     | 80     |
+| p_variables           | 3      |
+| alpha_prior           | 0.05   |
+| alpha_planned         | 0.05   |
+| assurance             | 0.8    |
+| desired_power         | 0.8    |
 
 Design: Two-group multivariate comparison (Hotelling’s T squared);
 Sample size unit: per group; Largest supportable assurance: .88
@@ -503,7 +714,7 @@ does not apply to it.
 
 ## Nested Model Comparison
 
-An effect tested by the chi-square difference between two nested models,
+An effect tested by the chi square difference between two nested models,
 such as a constrained path in a structural equation model, is planned
 from that difference. Supply both models’ degrees of freedom rather than
 only their difference. A prior study with *N* = 250 fit a model with 42
@@ -517,37 +728,42 @@ ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42, df_restricted = 4
                   desired_power = .80)
 ```
 
-| term           | value |
-|:---------------|:------|
-| necessary_N    | 726   |
-| actual_power   | 0.8   |
-| ncp_adjusted   | 2.71  |
-| chisq_observed | 9.5   |
-| N              | 250   |
-| df_full        | 42    |
-| df_restricted  | 43    |
-| alpha_prior    | 0.05  |
-| alpha_planned  | 0.05  |
-| assurance      | 0.8   |
-| desired_power  | 0.8   |
+| term             | value |
+|:-----------------|:------|
+| necessary_N      | 726   |
+| actual_power     | 0.8   |
+| ncp_adjusted     | 2.71  |
+| rmsea_d_planning | 0.104 |
+| chisq_observed   | 9.5   |
+| N                | 250   |
+| df_full          | 42    |
+| df_restricted    | 43    |
+| alpha_prior      | 0.05  |
+| alpha_planned    | 0.05  |
+| assurance        | 0.8   |
+| desired_power    | 0.8   |
 
-Design: Nested model chi-square difference test; Sample size unit:
+Design: Nested model chi square difference test; Sample size unit:
 total; Largest supportable assurance: .95
 
-This is for the *difference* test, not for an omnibus model fit
-chi-square: a publishable fit statistic is a small one, which inverts
-the selection the correction assumes. Requiring both models’ degrees of
-freedom is what lets the function enforce that. An omnibus fit
-chi-square compares a model against the *saturated* model, which has
-zero degrees of freedom, so `df_full = 0` identifies the misuse exactly
-and the function refuses it:
+This is for the *difference* test, not for an omnibus model fit chi
+square: a publishable fit statistic is a small one, which inverts the
+selection the correction assumes. Requiring both models’ degrees of
+freedom is what lets the function enforce that. An omnibus fit chi
+square compares a model against the *saturated* model, which has zero
+degrees of freedom, so `df_full = 0` is its signature and the function
+refuses it:
 
 ``` r
 
 ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 0, df_restricted = 43)
 #> Error:
-#> ! 'df_full' is 0, so the full model is saturated and this comparison is the restricted model's omnibus test of model fit, not a difference test between two substantive models. This function does not apply to an omnibus fit chi-square: the correction assumes a literature publishes significant results, whereas a publishable fit chi-square is a small (nonsignificant) one, which inverts the selection region the method is built on. If you meant to compare two substantive nested models, give the full model's own degrees of freedom.
+#> ! 'df_full' is 0, so the full model is saturated and this comparison is the restricted model's omnibus test of model fit, not a difference test between two substantive models. This function does not apply to an omnibus fit chi square: the correction assumes a literature publishes significant results, whereas a publishable fit chi square is a small (nonsignificant) one, which inverts the selection region the method is built on. A just-identified full model also has 0 degrees of freedom; if that is your case and the comparison is a genuine difference test, the plan depends only on the number of constraints, so call with 'df_full = 1' and 'df_restricted' equal to 1 plus the number of constraints.
 ```
+
+A just-identified full model also has zero degrees of freedom, and there
+the difference test is a genuine one; the message above, and the
+function’s help page, say how to plan that case.
 
 ## Unequal Variances
 
@@ -570,6 +786,7 @@ ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1.5,
 | total_N               | 444   |
 | actual_power          | 0.801 |
 | ncp_adjusted          | 1.32  |
+| smd_planning          | 0.267 |
 | t_observed            | 3     |
 | n_1                   | 40    |
 | n_2                   | 55    |
@@ -582,18 +799,34 @@ ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1.5,
 Design: Welch (unequal variance) t test; Sample size unit: per group;
 Largest supportable assurance: .93
 
+This planner treats the Welch statistic as noncentral *t* on the
+Welch-Satterthwaite degrees of freedom (Satterthwaite, 1946; Welch,
+1947), the usual approximation in power analysis for this test. A
+minimum planned sample size of 10 per group is imposed because of
+estimation accuracy issues at smaller sample sizes: with fewer per group
+the approximation overstates the real test’s power, while from 10 per
+group it is within .006 of it at an `alpha_planned` of .05. At a
+stricter `alpha_planned` the power of the smallest plans is overstated
+by more (at 10 per group by up to about .012 at .01 and .025 at .001),
+and the .006 holds again from 14 and 20 per group, respectively. When
+the target power is reached with fewer than 10 per group, the planner
+returns 10.
+
 Only the ratio enters the computation, but a paper usually reports the
 group standard deviations or variances rather than their ratio, so those
 may be given directly instead. All three calls describe the same study:
 
 ``` r
 
-sizes <- c(
-  ratio = ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1.5)$value[1],
-  sds = ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_1 = 8.4, sd_2 = 12.6)$value[1],
-  vars = ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, var_1 = 70.56,
-                        var_2 = 158.76)$value[1])
-sizes
+by_ratio <- ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1.5)
+by_sds <- ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_1 = 8.4,
+                         sd_2 = 12.6)
+by_vars <- ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, var_1 = 70.56,
+                          var_2 = 158.76)
+size_term <- "necessary_n_per_group"
+c(ratio = by_ratio$value[by_ratio$term == size_term],
+  sds   = by_sds$value[by_sds$term == size_term],
+  vars  = by_vars$value[by_vars$term == size_term])
 #> ratio   sds  vars 
 #>   222   222   222
 ```
@@ -611,9 +844,17 @@ sapply(ratios, function(r) {
 #> [1] 213 222 236 248 257
 ```
 
-Planning at equal variances and being wrong is expensive: if the true
-ratio were 2, that plan would deliver about .43 power rather than .80.
-Plan for the least favorable ratio you find credible.
+One `sd_ratio` describes both studies: the prior study, whose statistic
+is read under it, and the planned study. Getting it wrong can be costly.
+The plan built assuming equal variances (213 per group) delivers about
+.76 power rather than .80 if the ratio is in fact 2 in both studies. It
+delivers about .43 if the prior study’s groups were equally variable but
+the planned study’s ratio is 2, with the mean difference held fixed in
+units of the first group’s standard deviation. Re-running across the
+ratios you find plausible, as above, and planning for the least
+favorable one you find credible guards against the first kind of error.
+The second, a planned study more unequal than the prior one, is not
+something the prior result can speak to, and needs its own allowance.
 
 ## References
 
@@ -629,3 +870,42 @@ Anderson, S. F., Kelley, K., & Maxwell, S. E. (2017). Sample-size
 planning for more accurate statistical power: A method adjusting sample
 effect sizes for publication bias and uncertainty. *Psychological
 Science, 28*, 1547–1562. <https://doi.org/10.1177/0956797617723724>
+
+Gatsonis, C., & Sampson, A. R. (1989). Multiple correlation: Exact power
+and sample size calculations. *Psychological Bulletin, 106*, 516–524.
+<https://doi.org/10.1037/0033-2909.106.3.516>
+
+Greenhouse, S. W., & Geisser, S. (1959). On methods in the analysis of
+profile data. *Psychometrika, 24*, 95–112.
+<https://doi.org/10.1007/BF02289823>
+
+Hotelling, H. (1931). The generalization of Student’s ratio. *The Annals
+of Mathematical Statistics, 2*, 360–378.
+<https://doi.org/10.1214/aoms/1177732979>
+
+Huynh, H., & Feldt, L. S. (1976). Estimation of the Box correction for
+degrees of freedom from sample data in randomized block and split-plot
+designs. *Journal of Educational Statistics, 1*, 69–82.
+<https://doi.org/10.3102/10769986001001069>
+
+Kelley, K., & Maxwell, S. E. (2003). Sample size for multiple
+regression: Obtaining regression coefficients that are accurate, not
+simply significant. *Psychological Methods, 8*, 305–321.
+<https://doi.org/10.1037/1082-989X.8.3.305>
+
+Muller, K. E., & Barton, C. N. (1989). Approximate power for
+repeated-measures ANOVA lacking sphericity. *Journal of the American
+Statistical Association, 84*, 549–555.
+<https://doi.org/10.1080/01621459.1989.10478802>
+
+Sampson, A. R. (1974). A tale of two regressions. *Journal of the
+American Statistical Association, 69*, 682–689.
+<https://doi.org/10.1080/01621459.1974.10480189>
+
+Satterthwaite, F. E. (1946). An approximate distribution of estimates of
+variance components. *Biometrics Bulletin, 2*, 110–114.
+<https://doi.org/10.2307/3002019>
+
+Welch, B. L. (1947). The generalization of ‘Student’s’ problem when
+several different population variances are involved. *Biometrika, 34*,
+28–35. <https://doi.org/10.1093/biomet/34.1-2.28>

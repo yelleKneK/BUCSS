@@ -39,7 +39,8 @@ unpublished (Taylor & Muller, 1996), then reads off a corrected
 noncentrality parameter at a chosen level of *assurance*. That corrected
 noncentrality parameter, rather than the face-value estimate, drives the
 sample size calculation for the planned study. The method is described
-in Anderson, Kelley, and Maxwell (2017).
+in Anderson, Kelley, and Maxwell (2017), and Anderson and Kelley (2024)
+extend it to the design of replication studies.
 
 ``` r
 
@@ -66,6 +67,7 @@ result
 | total_N               | 260   |
 | actual_power          | 0.801 |
 | ncp_adjusted          | 1.11  |
+| smd_planning          | 0.349 |
 | t_observed            | 3     |
 | n                     | 20    |
 | alpha_prior           | 0.05  |
@@ -81,17 +83,18 @@ face-value calculation from *t* = 3.00 would suggest.
 
 ## Reading the Result
 
-Every `ss_buc_*` function returns a tidy object shaped like the result
+Every `ss_buc_*` planner returns a tidy object shaped like the result
 tables in the **DMAR** package: `term`/`value` rows holding the design
 results first (the necessary sample size, named for its unit; the
 implied total sample size where the unit is per group or per cell; the
-achieved power at the returned size; and the bias and uncertainty
-adjusted noncentrality parameter), followed by rows echoing the planning
-inputs, so the assumptions travel with the result. The print method
-shows the aligned table and closes with the design, the unit, and the
-largest assurance the prior result can support. Because the object is an
-ordinary `data.frame` underneath, you can pull any quantity out
-directly:
+achieved power at the returned size; the bias and uncertainty adjusted
+noncentrality parameter; and the planning effect size, the effect size
+the plan is built on), followed by rows echoing the planning inputs, so
+the assumptions travel with the result. The print method shows the
+aligned table and closes with the design, for the regression planners
+the predictor frame, the unit, and the largest assurance the prior
+result can support. Because the object is an ordinary `data.frame`
+underneath, you can pull any quantity out directly:
 
 ``` r
 
@@ -99,7 +102,27 @@ result$value[result$term == "necessary_n_per_group"]
 #> [1] 130
 result$value[result$term == "ncp_adjusted"]
 #> [1] 1.105023
+result$value[result$term == "smd_planning"]
+#> [1] 0.3494388
 ```
+
+The last of these, `smd_planning`, is the **planning effect size**, an
+adjusted effect size: the value, in the design’s usual effect size
+metric (here a standardized mean difference), used to plan the sample
+size given the situation at hand (the prior study’s result, the
+publication bias assumed through `alpha_prior`, and the uncertainty
+allowed for through `assurance`). It is the adjusted noncentrality
+parameter restated in that metric, and it is what the plan is built on,
+not an estimate of the population effect to report: above an assurance
+of .5 it is deliberately conservative (a lower confidence limit), and at
+.5 it is the median unbiased estimate. A study of 130 per group has
+exactly the returned `actual_power` when the standardized mean
+difference is 0.349. The prior study’s own standardized mean difference
+was 3 \* sqrt(2/20), about 0.949. Each planner names the row for its
+metric (`f_planning` for Cohen’s *f* in the ANOVA planners,
+`rho_planning` for a correlation, and so on);
+[`vignette("reading-output", package = "BUCSS")`](https://yelleKneK.github.io/BUCSS/articles/reading-output.md)
+lists them.
 
 The unit the sample size is counted in depends on the design (per group,
 per cell, number of pairs, or total): the size row is named accordingly
@@ -112,12 +135,13 @@ attr(result, "sample_size_unit")
 #> [1] "per group"
 ```
 
-For programmatic use the broom verbs give the convenient views, exactly
-as in the **DMAR** package:
+For programmatic use the broom verbs give the convenient views.
 [`tidy()`](https://generics.r-lib.org/reference/tidy.html) returns the
-compact estimate view (the sample size and its achieved power), and
-[`glance()`](https://generics.r-lib.org/reference/glance.html) returns
-the one-row wide view with every quantity and echoed input as a column.
+compact estimate view (`term`, `estimate`, and `power`: the sample size
+and its achieved power), as the **DMAR** package’s sample size planners
+do, and [`glance()`](https://generics.r-lib.org/reference/glance.html)
+returns the one-row wide view, which begins with those same three
+columns and then keeps every row of the result as a column.
 
 ``` r
 
@@ -127,12 +151,14 @@ tidy(result)
 tidy(result)$estimate
 #> [1] 130
 glance(result)
-#>   necessary_n_per_group total_N actual_power ncp_adjusted t_observed  n
-#> 1                   130     260    0.8014476     1.105023          3 20
-#>   alpha_prior alpha_planned assurance desired_power             design
-#> 1        0.05          0.05       0.8           0.8 Independent t test
-#>   sample_size_unit df_effect df_error assurance_ceiling
-#> 1        per group         1      258         0.9050734
+#>          term estimate     power necessary_n_per_group total_N actual_power
+#> 1 sample_size      130 0.8014476                   130     260    0.8014476
+#>   ncp_adjusted smd_planning t_observed  n alpha_prior alpha_planned assurance
+#> 1     1.105023    0.3494388          3 20        0.05          0.05       0.8
+#>   desired_power             design sample_size_unit df_effect df_error
+#> 1           0.8 Independent t test        per group         1      258
+#>   assurance_ceiling
+#> 1         0.9050734
 ```
 
 For a manuscript’s method section,
@@ -142,7 +168,7 @@ writes the sentence:
 ``` r
 
 planning_sentence(result)
-#> [1] "A planned study with 130 participants per group (total N = 260) attains 80% power with 80% assurance, after correcting the prior study's result for publication bias and uncertainty."
+#> [1] "A planned study with 130 participants per group (total N = 260) attains 80% power with 80% assurance, after correcting the prior study's result for publication bias (assuming its literature published results significant at the .05 level) and for uncertainty. The plan is built on a planning effect size of 0.349, expressed as a standardized mean difference."
 ```
 
 ## The Replication Example
@@ -153,8 +179,10 @@ ask for 90% assurance:
 
 ``` r
 
-ss_buc_independent_t(t_observed = 3, n = c(50, 55), alpha_prior = .05,
-               alpha_planned = .05, desired_power = .80, assurance = .90)
+replication <- ss_buc_independent_t(t_observed = 3, n = c(50, 55),
+                                    alpha_prior = .05, alpha_planned = .05,
+                                    desired_power = .80, assurance = .90)
+replication
 ```
 
 | term                  | value |
@@ -163,6 +191,7 @@ ss_buc_independent_t(t_observed = 3, n = c(50, 55), alpha_prior = .05,
 | total_N               | 2970  |
 | actual_power          | 0.803 |
 | ncp_adjusted          | 0.526 |
+| smd_planning          | 0.103 |
 | t_observed            | 3     |
 | n_1                   | 50    |
 | n_2                   | 55    |
@@ -176,41 +205,78 @@ supportable assurance: .93
 
 The corrected plan calls for 1485 per group, a vivid illustration of how
 much publication bias and uncertainty can inflate the sample size needed
-for a dependable replication. Anderson et al. (2017) quoted 1482 for
-this example under the original grid-search method; as of BUCSS 2.0.0
-the adjusted noncentrality parameter is found by direct root finding,
-which gives 1485.
+for a dependable replication. The published standardized mean difference
+was 3 \* sqrt(1/50 + 1/55), about 0.586, while the plan is built on a
+planning effect size of 0.103: at 90% assurance, after allowing for
+publication at the .05 level, that is the effect the replication must be
+powered to detect. BUCSS 1.x reported 1482 for this example under its
+grid search; as of BUCSS 2.0.0 the adjusted noncentrality parameter is
+found by direct root finding, which gives 1485.
+
+## When the Prior Result Is Not Enough
+
+The correction can also decline to plan. The prior study of the first
+example supports assurance up to about .90, the value its printed footer
+reports; ask for .95 and the function stops rather than returning a
+meaningless number, and its message says how far to step back:
+
+``` r
+
+ss_buc_independent_t(t_observed = 3, n = 20, assurance = .95)
+#> Error:
+#> ! Sample size planning is not possible with these settings. After correcting the prior study's effect for publication bias and uncertainty at the requested level of assurance, the corrected noncentrality parameter is zero, which means there is not enough information in the prior result to plan the sample size as desired. With this prior result and 'alpha_prior', the largest 'assurance' that still yields a usable plan is about .90; re-run with 'assurance' at or below that value, or raise 'alpha_prior' to lift the ceiling. Re-running at a lower 'assurance' is not free: the plan it returns carries that lower assurance, not the one you first asked for, so the long run proportion of replications reaching your target power falls accordingly. 'alpha_prior' does not change the prior study, which is what it is; it is your assumption about the publication threshold the study's literature faced, so raising it toward 1 assumes less publication bias to undo (for example, 'alpha_prior = .10' assumes the literature's journals would have published a result significant at the .10 level, a more lenient policy than .05, and 'alpha_prior = 1' assumes no publication bias at all). See Anderson, Kelley, and Maxwell (2017) and Anderson and Kelley (2024).
+```
+
+[`vignette("understanding-assurance", package = "BUCSS")`](https://yelleKneK.github.io/BUCSS/articles/understanding-assurance.md)
+explains where that ceiling comes from and draws it.
 
 ## The Function Family
 
-BUCSS covers a range of designs, one function per analysis. Each
+BUCSS covers eighteen designs, one function per analysis. Each
 summarizes the prior study with a single test statistic plus the design.
 
 | Function | Analysis | Prior statistic |
 |----|----|----|
+| `ss_buc_one_sample_t` | one-sample *t* test | `t_observed` |
 | `ss_buc_independent_t` (alias `ss_buc_smd`) | independent *t* test / standardized mean difference | `t_observed` |
 | `ss_buc_paired_t` (alias `ss_buc_smd_paired`) | dependent (paired) *t* test | `t_observed` |
+| `ss_buc_welch_t` | Welch (unequal variance) *t* test | `t_observed` |
 | `ss_buc_one_way_anova` | one-way between-subjects ANOVA | `F_observed` |
 | `ss_buc_factorial_anova` | two-way between-subjects ANOVA | `F_observed` |
 | `ss_buc_factorial_anova_general` | between-subjects ANOVA, any factors or contrast | `F_observed` |
-| `ss_buc_rm_anova` | within-subjects ANOVA (one or two-way) | `F_observed` |
+| `ss_buc_ancova` | analysis of covariance | `F_observed` |
+| `ss_buc_rm_anova` | within-subjects ANOVA (one-way or two-way) | `F_observed` |
 | `ss_buc_rm_anova_general` | within-subjects ANOVA, any factors | `F_observed` |
 | `ss_buc_mixed_anova` | split-plot (mixed) ANOVA | `F_observed` |
 | `ss_buc_mixed_anova_general` | split-plot ANOVA, any factors | `F_observed` |
+| `ss_buc_correlation` | Pearson correlation | `r_observed` (or `t_observed`) |
 | `ss_buc_reg_coef` | single regression coefficient | `t_observed` |
 | `ss_buc_R2` | omnibus model R-squared | `F_observed` |
 | `ss_buc_reg_joint` | joint test of a subset of predictors | `F_observed` |
+| `ss_buc_manova` | two-group multivariate comparison (Hotelling *T* squared) | `F_observed` (or `T2_observed`) |
+| `ss_buc_chisq_diff` | nested model chi square difference test | `chisq_observed` |
+
+Two further functions take a finished plan from any of these planners:
+
+| Function | What it does |
+|----|----|
+| [`ss_buc_sensitivity()`](https://yelleKneK.github.io/BUCSS/reference/ss_buc_sensitivity.md) | audits the plan by simulation: from a true effect you name, how often a plan built this way reaches the target power |
+| [`plot()`](https://rdrr.io/r/graphics/plot.default.html) | draws the plan’s assurance ceiling: the corrected noncentrality parameter and the sample size as assurance rises toward the largest value the prior result supports |
 
 See
 [`vignette("worked-examples", package = "BUCSS")`](https://yelleKneK.github.io/BUCSS/articles/worked-examples.md)
-for one worked example of each,
+for one worked example of each planner,
 [`vignette("understanding-assurance", package = "BUCSS")`](https://yelleKneK.github.io/BUCSS/articles/understanding-assurance.md)
 for how the `assurance` and `alpha_prior` settings shape the correction,
 [`vignette("reading-output", package = "BUCSS")`](https://yelleKneK.github.io/BUCSS/articles/reading-output.md)
 for the print,
 [`tidy()`](https://generics.r-lib.org/reference/tidy.html), and
 [`glance()`](https://generics.r-lib.org/reference/glance.html) views of
-the result, and
+the result,
+[`vignette("correlation", package = "BUCSS")`](https://yelleKneK.github.io/BUCSS/articles/correlation.md)
+for why a correlation study needs its own planner and how
+[`ss_buc_sensitivity()`](https://yelleKneK.github.io/BUCSS/reference/ss_buc_sensitivity.md)
+audits a plan, and
 [`vignette("planning-replications", package = "BUCSS")`](https://yelleKneK.github.io/BUCSS/articles/planning-replications.md)
 for a worked demonstration of why a literature of underpowered studies
 misleads and how the correction repairs the replication sample size.
@@ -229,3 +295,4 @@ Science, 28*, 1547–1562. <https://doi.org/10.1177/0956797617723724>
 Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
 sample size calculation due to estimating noncentrality. *Communications
 in Statistics: Theory and Methods, 25*, 1595–1610.
+<https://doi.org/10.1080/03610929608831787>

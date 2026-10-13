@@ -1,9 +1,9 @@
-# Objects exported from other packages
+# Objects Exported From Other Packages
 
 These objects are imported from other packages. Follow the links below
 to see their documentation.
 
 - generics:
 
-  [`glance`](https://generics.r-lib.org/reference/glance.html),
-  [`tidy`](https://generics.r-lib.org/reference/tidy.html)
+  [`glance()`](https://generics.r-lib.org/reference/glance.html),
+  [`tidy()`](https://generics.r-lib.org/reference/tidy.html)

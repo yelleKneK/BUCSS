@@ -65,7 +65,7 @@
 Samantha F. Anderson, and Scott E. Maxwell</h4>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/yelleKneK/BUCSS/blob/master/vignettes/BUCSS.Rmd" class="external-link"><code>vignettes/BUCSS.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/yelleKneK/BUCSS/blob/main/vignettes/BUCSS.Rmd" class="external-link"><code>vignettes/BUCSS.Rmd</code></a></small>
       <div class="d-none name"><code>BUCSS.Rmd</code></div>
     </div>
 
@@ -114,7 +114,8 @@ unpublished (Taylor &amp; Muller, 1996), then reads off a corrected
 noncentrality parameter at a chosen level of <em>assurance</em>. That
 corrected noncentrality parameter, rather than the face-value estimate,
 drives the sample size calculation for the planned study. The method is
-described in Anderson, Kelley, and Maxwell (2017).</p>
+described in Anderson, Kelley, and Maxwell (2017), and Anderson and
+Kelley (2024) extend it to the design of replication studies.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/yelleKneK/BUCSS" class="external-link">BUCSS</a></span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -153,26 +154,30 @@ replications.</p>
 <td align="left">1.11</td>
 </tr>
 <tr class="odd">
+<td align="left">smd_planning</td>
+<td align="left">0.349</td>
+</tr>
+<tr class="even">
 <td align="left">t_observed</td>
 <td align="left">3</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">n</td>
 <td align="left">20</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">alpha_prior</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">alpha_planned</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">assurance</td>
 <td align="left">0.8</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">desired_power</td>
 <td align="left">0.8</td>
 </tr>
@@ -186,23 +191,44 @@ face-value calculation from <em>t</em> = 3.00 would suggest.</p>
 <div class="section level2">
 <h2 id="reading-the-result">Reading the Result<a class="anchor" aria-label="anchor" href="#reading-the-result"></a>
 </h2>
-<p>Every <code>ss_buc_*</code> function returns a tidy object shaped
-like the result tables in the <strong>DMAR</strong> package:
+<p>Every <code>ss_buc_*</code> planner returns a tidy object shaped like
+the result tables in the <strong>DMAR</strong> package:
 <code>term</code>/<code>value</code> rows holding the design results
 first (the necessary sample size, named for its unit; the implied total
 sample size where the unit is per group or per cell; the achieved power
-at the returned size; and the bias and uncertainty adjusted
-noncentrality parameter), followed by rows echoing the planning inputs,
-so the assumptions travel with the result. The print method shows the
-aligned table and closes with the design, the unit, and the largest
-assurance the prior result can support. Because the object is an
-ordinary <code>data.frame</code> underneath, you can pull any quantity
-out directly:</p>
+at the returned size; the bias and uncertainty adjusted noncentrality
+parameter; and the planning effect size, the effect size the plan is
+built on), followed by rows echoing the planning inputs, so the
+assumptions travel with the result. The print method shows the aligned
+table and closes with the design, for the regression planners the
+predictor frame, the unit, and the largest assurance the prior result
+can support. Because the object is an ordinary <code>data.frame</code>
+underneath, you can pull any quantity out directly:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">result</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"necessary_n_per_group"</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] 130</span></span>
 <span><span class="va">result</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">result</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"ncp_adjusted"</span><span class="op">]</span></span>
-<span><span class="co">#&gt; [1] 1.105023</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 1.105023</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">result</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"smd_planning"</span><span class="op">]</span></span>
+<span><span class="co">#&gt; [1] 0.3494388</span></span></code></pre></div>
+<p>The last of these, <code>smd_planning</code>, is the <strong>planning
+effect size</strong>, an adjusted effect size: the value, in the
+design’s usual effect size metric (here a standardized mean difference),
+used to plan the sample size given the situation at hand (the prior
+study’s result, the publication bias assumed through
+<code>alpha_prior</code>, and the uncertainty allowed for through
+<code>assurance</code>). It is the adjusted noncentrality parameter
+restated in that metric, and it is what the plan is built on, not an
+estimate of the population effect to report: above an assurance of .5 it
+is deliberately conservative (a lower confidence limit), and at .5 it is
+the median unbiased estimate. A study of 130 per group has exactly the
+returned <code>actual_power</code> when the standardized mean difference
+is 0.349. The prior study’s own standardized mean difference was 3 *
+sqrt(2/20), about 0.949. Each planner names the row for its metric
+(<code>f_planning</code> for Cohen’s <em>f</em> in the ANOVA planners,
+<code>rho_planning</code> for a correlation, and so on);
+<code><a href="../articles/reading-output.html">vignette("reading-output", package = "BUCSS")</a></code> lists
+them.</p>
 <p>The unit the sample size is counted in depends on the design (per
 group, per cell, number of pairs, or total): the size row is named
 accordingly (<code>necessary_n_per_group</code>,
@@ -211,11 +237,13 @@ unit also travels on the object so you never have to guess:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">result</span>, <span class="st">"sample_size_unit"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "per group"</span></span></code></pre></div>
-<p>For programmatic use the broom verbs give the convenient views,
-exactly as in the <strong>DMAR</strong> package: <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code>
-returns the compact estimate view (the sample size and its achieved
-power), and <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> returns the one-row wide view with
-every quantity and echoed input as a column.</p>
+<p>For programmatic use the broom verbs give the convenient views.
+<code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> returns the compact estimate view
+(<code>term</code>, <code>estimate</code>, and <code>power</code>: the
+sample size and its achieved power), as the <strong>DMAR</strong>
+package’s sample size planners do, and <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> returns the
+one-row wide view, which begins with those same three columns and then
+keeps every row of the result as a column.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          term estimate     power</span></span>
@@ -223,17 +251,19 @@ every quantity and echoed input as a column.</p>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span><span class="op">$</span><span class="va">estimate</span></span>
 <span><span class="co">#&gt; [1] 130</span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   necessary_n_per_group total_N actual_power ncp_adjusted t_observed  n</span></span>
-<span><span class="co">#&gt; 1                   130     260    0.8014476     1.105023          3 20</span></span>
-<span><span class="co">#&gt;   alpha_prior alpha_planned assurance desired_power             design</span></span>
-<span><span class="co">#&gt; 1        0.05          0.05       0.8           0.8 Independent t test</span></span>
-<span><span class="co">#&gt;   sample_size_unit df_effect df_error assurance_ceiling</span></span>
-<span><span class="co">#&gt; 1        per group         1      258         0.9050734</span></span></code></pre></div>
+<span><span class="co">#&gt;          term estimate     power necessary_n_per_group total_N actual_power</span></span>
+<span><span class="co">#&gt; 1 sample_size      130 0.8014476                   130     260    0.8014476</span></span>
+<span><span class="co">#&gt;   ncp_adjusted smd_planning t_observed  n alpha_prior alpha_planned assurance</span></span>
+<span><span class="co">#&gt; 1     1.105023    0.3494388          3 20        0.05          0.05       0.8</span></span>
+<span><span class="co">#&gt;   desired_power             design sample_size_unit df_effect df_error</span></span>
+<span><span class="co">#&gt; 1           0.8 Independent t test        per group         1      258</span></span>
+<span><span class="co">#&gt;   assurance_ceiling</span></span>
+<span><span class="co">#&gt; 1         0.9050734</span></span></code></pre></div>
 <p>For a manuscript’s method section, <code><a href="../reference/planning_sentence.html">planning_sentence()</a></code>
 writes the sentence:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/planning_sentence.html">planning_sentence</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "A planned study with 130 participants per group (total N = 260) attains 80% power with 80% assurance, after correcting the prior study's result for publication bias and uncertainty."</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "A planned study with 130 participants per group (total N = 260) attains 80% power with 80% assurance, after correcting the prior study's result for publication bias (assuming its literature published results significant at the .05 level) and for uncertainty. The plan is built on a planning effect size of 0.349, expressed as a standardized mean difference."</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="the-replication-example">The Replication Example<a class="anchor" aria-label="anchor" href="#the-replication-example"></a>
@@ -242,8 +272,10 @@ writes the sentence:</p>
 a prior study reported <em>t</em> = 3.00 with group sizes of 50 and 55,
 and we ask for 90% assurance:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_independent_t.html">ss_buc_independent_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="fl">3</span>, n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">55</span><span class="op">)</span>, alpha_prior <span class="op">=</span> <span class="fl">.05</span>,</span>
-<span>               alpha_planned <span class="op">=</span> <span class="fl">.05</span>, desired_power <span class="op">=</span> <span class="fl">.80</span>, assurance <span class="op">=</span> <span class="fl">.90</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">replication</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_independent_t.html">ss_buc_independent_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="fl">3</span>, n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">55</span><span class="op">)</span>,</span>
+<span>                                    alpha_prior <span class="op">=</span> <span class="fl">.05</span>, alpha_planned <span class="op">=</span> <span class="fl">.05</span>,</span>
+<span>                                    desired_power <span class="op">=</span> <span class="fl">.80</span>, assurance <span class="op">=</span> <span class="fl">.90</span><span class="op">)</span></span>
+<span><span class="va">replication</span></span></code></pre></div>
 <table class="table">
 <thead><tr class="header">
 <th align="left">term</th>
@@ -267,30 +299,34 @@ and we ask for 90% assurance:</p>
 <td align="left">0.526</td>
 </tr>
 <tr class="odd">
+<td align="left">smd_planning</td>
+<td align="left">0.103</td>
+</tr>
+<tr class="even">
 <td align="left">t_observed</td>
 <td align="left">3</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">n_1</td>
 <td align="left">50</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">n_2</td>
 <td align="left">55</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">alpha_prior</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">alpha_planned</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">assurance</td>
 <td align="left">0.9</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">desired_power</td>
 <td align="left">0.8</td>
 </tr>
@@ -300,15 +336,33 @@ and we ask for 90% assurance:</p>
 supportable assurance: .93</p>
 <p>The corrected plan calls for 1485 per group, a vivid illustration of
 how much publication bias and uncertainty can inflate the sample size
-needed for a dependable replication. Anderson et al. (2017) quoted 1482
-for this example under the original grid-search method; as of BUCSS
-2.0.0 the adjusted noncentrality parameter is found by direct root
-finding, which gives 1485.</p>
+needed for a dependable replication. The published standardized mean
+difference was 3 * sqrt(1/50 + 1/55), about 0.586, while the plan is
+built on a planning effect size of 0.103: at 90% assurance, after
+allowing for publication at the .05 level, that is the effect the
+replication must be powered to detect. BUCSS 1.x reported 1482 for this
+example under its grid search; as of BUCSS 2.0.0 the adjusted
+noncentrality parameter is found by direct root finding, which gives
+1485.</p>
+</div>
+<div class="section level2">
+<h2 id="when-the-prior-result-is-not-enough">When the Prior Result Is Not Enough<a class="anchor" aria-label="anchor" href="#when-the-prior-result-is-not-enough"></a>
+</h2>
+<p>The correction can also decline to plan. The prior study of the first
+example supports assurance up to about .90, the value its printed footer
+reports; ask for .95 and the function stops rather than returning a
+meaningless number, and its message says how far to step back:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_independent_t.html">ss_buc_independent_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="fl">3</span>, n <span class="op">=</span> <span class="fl">20</span>, assurance <span class="op">=</span> <span class="fl">.95</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> Sample size planning is not possible with these settings. After correcting the prior study's effect for publication bias and uncertainty at the requested level of assurance, the corrected noncentrality parameter is zero, which means there is not enough information in the prior result to plan the sample size as desired. With this prior result and 'alpha_prior', the largest 'assurance' that still yields a usable plan is about .90; re-run with 'assurance' at or below that value, or raise 'alpha_prior' to lift the ceiling. Re-running at a lower 'assurance' is not free: the plan it returns carries that lower assurance, not the one you first asked for, so the long run proportion of replications reaching your target power falls accordingly. 'alpha_prior' does not change the prior study, which is what it is; it is your assumption about the publication threshold the study's literature faced, so raising it toward 1 assumes less publication bias to undo (for example, 'alpha_prior = .10' assumes the literature's journals would have published a result significant at the .10 level, a more lenient policy than .05, and 'alpha_prior = 1' assumes no publication bias at all). See Anderson, Kelley, and Maxwell (2017) and Anderson and Kelley (2024).</span></span></code></pre></div>
+<p><code><a href="../articles/understanding-assurance.html">vignette("understanding-assurance", package = "BUCSS")</a></code>
+explains where that ceiling comes from and draws it.</p>
 </div>
 <div class="section level2">
 <h2 id="the-function-family">The Function Family<a class="anchor" aria-label="anchor" href="#the-function-family"></a>
 </h2>
-<p>BUCSS covers a range of designs, one function per analysis. Each
+<p>BUCSS covers eighteen designs, one function per analysis. Each
 summarizes the prior study with a single test statistic plus the
 design.</p>
 <table class="table">
@@ -324,17 +378,27 @@ design.</p>
 </tr></thead>
 <tbody>
 <tr class="odd">
+<td><code>ss_buc_one_sample_t</code></td>
+<td>one-sample <em>t</em> test</td>
+<td><code>t_observed</code></td>
+</tr>
+<tr class="even">
 <td>
 <code>ss_buc_independent_t</code> (alias
 <code>ss_buc_smd</code>)</td>
 <td>independent <em>t</em> test / standardized mean difference</td>
 <td><code>t_observed</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>
 <code>ss_buc_paired_t</code> (alias
 <code>ss_buc_smd_paired</code>)</td>
 <td>dependent (paired) <em>t</em> test</td>
+<td><code>t_observed</code></td>
+</tr>
+<tr class="even">
+<td><code>ss_buc_welch_t</code></td>
+<td>Welch (unequal variance) <em>t</em> test</td>
 <td><code>t_observed</code></td>
 </tr>
 <tr class="odd">
@@ -353,24 +417,35 @@ design.</p>
 <td><code>F_observed</code></td>
 </tr>
 <tr class="even">
-<td><code>ss_buc_rm_anova</code></td>
-<td>within-subjects ANOVA (one or two-way)</td>
+<td><code>ss_buc_ancova</code></td>
+<td>analysis of covariance</td>
 <td><code>F_observed</code></td>
 </tr>
 <tr class="odd">
+<td><code>ss_buc_rm_anova</code></td>
+<td>within-subjects ANOVA (one-way or two-way)</td>
+<td><code>F_observed</code></td>
+</tr>
+<tr class="even">
 <td><code>ss_buc_rm_anova_general</code></td>
 <td>within-subjects ANOVA, any factors</td>
 <td><code>F_observed</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>ss_buc_mixed_anova</code></td>
 <td>split-plot (mixed) ANOVA</td>
 <td><code>F_observed</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>ss_buc_mixed_anova_general</code></td>
 <td>split-plot ANOVA, any factors</td>
 <td><code>F_observed</code></td>
+</tr>
+<tr class="odd">
+<td><code>ss_buc_correlation</code></td>
+<td>Pearson correlation</td>
+<td>
+<code>r_observed</code> (or <code>t_observed</code>)</td>
 </tr>
 <tr class="even">
 <td><code>ss_buc_reg_coef</code></td>
@@ -387,16 +462,55 @@ design.</p>
 <td>joint test of a subset of predictors</td>
 <td><code>F_observed</code></td>
 </tr>
+<tr class="odd">
+<td><code>ss_buc_manova</code></td>
+<td>two-group multivariate comparison (Hotelling <em>T</em>
+squared)</td>
+<td>
+<code>F_observed</code> (or <code>T2_observed</code>)</td>
+</tr>
+<tr class="even">
+<td><code>ss_buc_chisq_diff</code></td>
+<td>nested model chi square difference test</td>
+<td><code>chisq_observed</code></td>
+</tr>
+</tbody>
+</table>
+<p>Two further functions take a finished plan from any of these
+planners:</p>
+<table class="table">
+<colgroup>
+<col width="41%">
+<col width="58%">
+</colgroup>
+<thead><tr class="header">
+<th>Function</th>
+<th>What it does</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code><a href="../reference/ss_buc_sensitivity.html">ss_buc_sensitivity()</a></code></td>
+<td>audits the plan by simulation: from a true effect you name, how
+often a plan built this way reaches the target power</td>
+</tr>
+<tr class="even">
+<td><code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code></td>
+<td>draws the plan’s assurance ceiling: the corrected noncentrality
+parameter and the sample size as assurance rises toward the largest
+value the prior result supports</td>
+</tr>
 </tbody>
 </table>
 <p>See <code><a href="../articles/worked-examples.html">vignette("worked-examples", package = "BUCSS")</a></code> for
-one worked example of each,
+one worked example of each planner,
 <code><a href="../articles/understanding-assurance.html">vignette("understanding-assurance", package = "BUCSS")</a></code> for
 how the <code>assurance</code> and <code>alpha_prior</code> settings
 shape the correction,
 <code><a href="../articles/reading-output.html">vignette("reading-output", package = "BUCSS")</a></code> for the
 print, <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code>, and <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> views of the
-result, and
+result, <code><a href="../articles/correlation.html">vignette("correlation", package = "BUCSS")</a></code> for why
+a correlation study needs its own planner and how
+<code><a href="../reference/ss_buc_sensitivity.html">ss_buc_sensitivity()</a></code> audits a plan, and
 <code><a href="../articles/planning-replications.html">vignette("planning-replications", package = "BUCSS")</a></code> for a
 worked demonstration of why a literature of underpowered studies
 misleads and how the correction repairs the replication sample size.</p>
@@ -414,7 +528,7 @@ Science, 28</em>, 1547–1562. <a href="https://doi.org/10.1177/0956797617723724
 <p>Taylor, D. J., &amp; Muller, K. E. (1996). Bias in linear model power
 and sample size calculation due to estimating noncentrality.
 <em>Communications in Statistics: Theory and Methods, 25</em>,
-1595–1610.</p>
+1595–1610. <a href="https://doi.org/10.1080/03610929608831787" class="external-link uri">https://doi.org/10.1080/03610929608831787</a></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

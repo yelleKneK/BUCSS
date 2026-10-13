@@ -65,7 +65,7 @@
 Samantha F. Anderson, and Scott E. Maxwell</h4>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/yelleKneK/BUCSS/blob/master/vignettes/correlation.Rmd" class="external-link"><code>vignettes/correlation.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/yelleKneK/BUCSS/blob/main/vignettes/correlation.Rmd" class="external-link"><code>vignettes/correlation.Rmd</code></a></small>
       <div class="d-none name"><code>correlation.Rmd</code></div>
     </div>
 
@@ -75,16 +75,20 @@ Samantha F. Anderson, and Scott E. Maxwell</h4>
 the social sciences, and one of the most commonly replicated. Suppose a
 published study of 100 participants reported a correlation of <em>r</em>
 = .35, and you want to plan a study powered to find that relationship
-again. As with every planner in this package, the reported correlation
-should not be taken at face value: it was selected for publication in
-part because it was large, so planning from it without correction tends
-to yield a study that is too small. <code><a href="../reference/ss_buc_correlation.html">ss_buc_correlation()</a></code>
-applies the bias and uncertainty correction of Anderson, Kelley, and
-Maxwell (2017) and returns the total sample size the replication
-needs.</p>
+again. How large should it be? As with every planner in this package,
+the reported correlation should not be taken at face value: it was
+selected for publication in part because it was large, so planning from
+it without correction tends to yield a study that is too small.
+<code><a href="../reference/ss_buc_correlation.html">ss_buc_correlation()</a></code> applies the bias and uncertainty
+correction of Anderson, Kelley, and Maxwell (2017), which reads the
+prior result as a draw from a distribution truncated at the publication
+threshold (Taylor &amp; Muller, 1996), and returns the total sample size
+the replication needs.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_correlation.html">ss_buc_correlation</a></span><span class="op">(</span>r_observed <span class="op">=</span> <span class="fl">.35</span>, N <span class="op">=</span> <span class="fl">100</span>, alpha_prior <span class="op">=</span> <span class="fl">.05</span>,</span>
-<span>                   alpha_planned <span class="op">=</span> <span class="fl">.05</span>, assurance <span class="op">=</span> <span class="fl">.80</span>, desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">first_plan</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_correlation.html">ss_buc_correlation</a></span><span class="op">(</span>r_observed <span class="op">=</span> <span class="fl">.35</span>, N <span class="op">=</span> <span class="fl">100</span>, alpha_prior <span class="op">=</span> <span class="fl">.05</span>,</span>
+<span>                                 alpha_planned <span class="op">=</span> <span class="fl">.05</span>, assurance <span class="op">=</span> <span class="fl">.80</span>,</span>
+<span>                                 desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span>
+<span><span class="va">first_plan</span></span></code></pre></div>
 <table class="table">
 <thead><tr class="header">
 <th align="left">term</th>
@@ -104,26 +108,30 @@ needs.</p>
 <td align="left">6.71</td>
 </tr>
 <tr class="even">
+<td align="left">rho_planning</td>
+<td align="left">0.251</td>
+</tr>
+<tr class="odd">
 <td align="left">r_observed</td>
 <td align="left">0.35</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">N</td>
 <td align="left">100</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">alpha_prior</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">alpha_planned</td>
 <td align="left">0.05</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">assurance</td>
 <td align="left">0.8</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">desired_power</td>
 <td align="left">0.8</td>
 </tr>
@@ -131,10 +139,16 @@ needs.</p>
 </table>
 <p>Design: Pearson correlation; Sample size unit: total; Largest
 supportable assurance: .99</p>
-<p>The returned <code>necessary_N</code> is the total sample size;
-<code>ncp_adjusted</code> is the corrected noncentrality parameter, from
-which the corrected correlation is recoverable as
-<code>sqrt(ncp / (ncp + N))</code>. For the meaning of
+<p>The returned <code>necessary_N</code> is the total sample size and
+<code>ncp_adjusted</code> the bias and uncertainty adjusted
+noncentrality parameter. <code>rho_planning</code> is the planning
+effect size, the adjusted correlation the plan is built on given the
+prior result, <code>alpha_prior</code>, and <code>assurance</code> (not
+an estimate of the population correlation to report),
+<code>sqrt(ncp_adjusted / (ncp_adjusted + N))</code> with the prior
+study’s <em>N</em>: here .251, against the published .35. A study of 122
+participants has exactly the returned <code>actual_power</code> when the
+population correlation is .251. For the meaning of
 <code>assurance</code> and <code>alpha_prior</code>, and how each moves
 the recommended sample size, see
 <code><a href="../articles/understanding-assurance.html">vignette("understanding-assurance", package = "BUCSS")</a></code>.
@@ -143,7 +157,8 @@ estimate at the cost of a larger study:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">assurances</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">.5</span>, <span class="fl">.7</span>, <span class="fl">.8</span>, <span class="fl">.9</span><span class="op">)</span></span>
 <span><span class="va">sizes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">assurances</span>, <span class="kw">function</span><span class="op">(</span><span class="va">a</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="../reference/ss_buc_correlation.html">ss_buc_correlation</a></span><span class="op">(</span>r_observed <span class="op">=</span> <span class="fl">.35</span>, N <span class="op">=</span> <span class="fl">100</span>, assurance <span class="op">=</span> <span class="va">a</span><span class="op">)</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></span>
+<span>  <span class="va">plan</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_correlation.html">ss_buc_correlation</a></span><span class="op">(</span>r_observed <span class="op">=</span> <span class="fl">.35</span>, N <span class="op">=</span> <span class="fl">100</span>, assurance <span class="op">=</span> <span class="va">a</span><span class="op">)</span></span>
+<span>  <span class="va">plan</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">plan</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"necessary_N"</span><span class="op">]</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>assurance <span class="op">=</span> <span class="va">assurances</span>, necessary_N <span class="op">=</span> <span class="va">sizes</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   assurance necessary_N</span></span>
@@ -156,42 +171,59 @@ estimate at the cost of a larger study:</p>
 </h2>
 <p>The test of whether a correlation differs from zero is arithmetically
 the test of the slope in a simple regression, so it is tempting to plan
-a correlation study with the single-coefficient regression planner.
-Doing so gives a slightly different, and slightly too small, answer:</p>
+a correlation study with the single-coefficient regression planner,
+treating the predictor as fixed. Doing so gives a slightly different,
+and slightly too small, answer:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">t_equivalent</span> <span class="op">&lt;-</span> <span class="fl">.35</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">98</span> <span class="op">/</span> <span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="fl">.35</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>correlation <span class="op">=</span> <span class="fu"><a href="../reference/ss_buc_correlation.html">ss_buc_correlation</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="va">t_equivalent</span>, N <span class="op">=</span> <span class="fl">100</span><span class="op">)</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,</span>
-<span>  regression  <span class="op">=</span> <span class="fu"><a href="../reference/ss_buc_reg_coef.html">ss_buc_reg_coef</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="va">t_equivalent</span>, N <span class="op">=</span> <span class="fl">100</span>, p <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">by_correlation</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_correlation.html">ss_buc_correlation</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="va">t_equivalent</span>, N <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
+<span><span class="va">by_regression</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_reg_coef.html">ss_buc_reg_coef</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="va">t_equivalent</span>, N <span class="op">=</span> <span class="fl">100</span>, p <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>                                  random_predictors <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>correlation <span class="op">=</span> <span class="va">by_correlation</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">by_correlation</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"necessary_N"</span><span class="op">]</span>,</span>
+<span>  regression  <span class="op">=</span> <span class="va">by_regression</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">by_regression</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"necessary_N"</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; correlation  regression </span></span>
 <span><span class="co">#&gt;         122         119</span></span></code></pre></div>
-<p>The gap is small here, a few participants, but it is systematic, and
-the reason is worth understanding because it decides which planner is
-correct for your design.</p>
-<p>The regression planner is exact when the predictor is <strong>fixed
-by design</strong>: the researcher chooses the values of the predictor,
-as in an experiment with assigned doses. A correlation study is
-different. It <strong>samples both variables</strong>, and the sampled
-spread of the predictor is itself random from study to study.
-Conditional on the spread that happens to be drawn, the test statistic
-is a noncentral <em>F</em>, but its noncentrality parameter rises and
-falls with that spread, which follows a chi-square distribution on
-<em>N</em> - 1 degrees of freedom. The distribution that actually
-governs the statistic is therefore a mixture of noncentral <em>F</em>
-distributions, not a single one, and a mixture is more spread out than
-its center. Planning as though the statistic were a plain noncentral
-<em>F</em> overstates the planned study’s power, by up to about .04, and
-so returns a sample size that is a few participants short.</p>
+<p>The gap is small here, three participants, but it is systematic (only
+near the assurance ceiling does it reverse, and then by a few percent,
+which can be hundreds of participants because plans there are very
+large), and the reason is worth understanding because it decides which
+planner is correct for your design.</p>
+<p>The regression planner, with <code>random_predictors = FALSE</code>,
+is exact when the predictor is <strong>fixed by design</strong>: the
+researcher chooses the values of the predictor, as in an experiment with
+assigned doses. A correlation study is different. It <strong>samples
+both variables</strong>, and the sampled spread of the predictor is
+itself random from study to study. Conditional on the spread that
+happens to be drawn, the test statistic is a noncentral <em>F</em>, but
+its noncentrality parameter rises and falls with that spread, which
+follows a chi square distribution on <em>N</em> - 1 degrees of freedom.
+The distribution that actually governs the statistic is therefore a
+mixture of noncentral <em>F</em> distributions, not a single one, and a
+mixture is more spread out than its center. The two frames give the same
+estimates, and the same distribution when there is no effect, but
+different power when there is one (Sampson, 1974; Gatsonis &amp;
+Sampson, 1989; Kelley &amp; Maxwell, 2003). Planning as though the
+statistic were a plain noncentral <em>F</em> overstates the planned
+study’s power by roughly 1/<em>n</em> for a plan of <em>n</em>
+participants: about .01 at <em>n</em> = 100, .02 at 50, .05 at 20, and
+.10 at 10 (for the regression plan of 119 above, about .009). It
+therefore returns a sample size that is a few participants short; the
+correct plan is typically 2 to 5 participants larger, and 1 to 3 larger
+for the smallest plans.</p>
 <p><code><a href="../reference/ss_buc_correlation.html">ss_buc_correlation()</a></code> uses the mixture. It has an exact
 closed form (the Poisson weights that build the noncentral <em>F</em>
-become negative binomial weights when mixed over the chi-square), so the
+become negative binomial weights when mixed over the chi square), so the
 returned sample size is exact for bivariate normal data rather than an
 approximation. The rule of thumb is simple:</p>
 <ul>
 <li>If both variables are sampled, as in an observational correlation
 study, use <code><a href="../reference/ss_buc_correlation.html">ss_buc_correlation()</a></code>.</li>
 <li>If the predictor is fixed by the design, the effect is a regression
-slope, and <code><a href="../reference/ss_buc_reg_coef.html">ss_buc_reg_coef()</a></code> with <code>p = 1</code> is the
-planner for it.</li>
+slope, and <code><a href="../reference/ss_buc_reg_coef.html">ss_buc_reg_coef()</a></code> with <code>p = 1</code> and
+<code>random_predictors = FALSE</code> is the planner for it. With
+<code>random_predictors = TRUE</code> the same call returns exactly what
+<code><a href="../reference/ss_buc_correlation.html">ss_buc_correlation()</a></code> returns, and the multiple regression
+planners use the same mixture for several sampled predictors.</li>
 </ul>
 <p>You may supply the prior result either as the correlation
 <code>r_observed</code> or as its <em>t</em> statistic
@@ -200,17 +232,21 @@ planner for it.</li>
 <div class="section level2">
 <h2 id="assuming-less-publication-bias">Assuming Less Publication Bias<a class="anchor" aria-label="anchor" href="#assuming-less-publication-bias"></a>
 </h2>
-<p><code>alpha_prior</code> encodes how strongly publication bias is
+<p><code>alpha_prior</code> is the significance level a prior result had
+to reach to be published, so it encodes how strongly publication bias is
 assumed to have shaped the prior literature. The default of .05 assumes
 the field publishes results significant at the .05 level; a larger value
 assumes a more permissive literature and therefore a smaller correction.
 A prior study that escaped the file drawer entirely, such as a
 registered report or a pilot, is described by
-<code>alpha_prior = 1</code>.</p>
+<code>alpha_prior = 1</code>: no <em>p</em> value exceeds 1, so that
+means no publication filter at all, and only the correction for
+uncertainty, set by <code>assurance</code>, remains.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">alphas</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">.05</span>, <span class="fl">.20</span>, <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">sizes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">alphas</span>, <span class="kw">function</span><span class="op">(</span><span class="va">ap</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="../reference/ss_buc_correlation.html">ss_buc_correlation</a></span><span class="op">(</span>r_observed <span class="op">=</span> <span class="fl">.35</span>, N <span class="op">=</span> <span class="fl">100</span>, alpha_prior <span class="op">=</span> <span class="va">ap</span><span class="op">)</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></span>
+<span>  <span class="va">plan</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_correlation.html">ss_buc_correlation</a></span><span class="op">(</span>r_observed <span class="op">=</span> <span class="fl">.35</span>, N <span class="op">=</span> <span class="fl">100</span>, alpha_prior <span class="op">=</span> <span class="va">ap</span><span class="op">)</span></span>
+<span>  <span class="va">plan</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">plan</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"necessary_N"</span><span class="op">]</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>alpha_prior <span class="op">=</span> <span class="va">alphas</span>, necessary_N <span class="op">=</span> <span class="va">sizes</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   alpha_prior necessary_N</span></span>
@@ -237,20 +273,23 @@ how would plans built this way behave?”</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">plan</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_correlation.html">ss_buc_correlation</a></span><span class="op">(</span>r_observed <span class="op">=</span> <span class="fl">.35</span>, N <span class="op">=</span> <span class="fl">100</span>, assurance <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span>
 <span><span class="va">ncp</span> <span class="op">&lt;-</span> <span class="va">plan</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">plan</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"ncp_adjusted"</span><span class="op">]</span></span>
-<span><span class="fu"><a href="../reference/ss_buc_sensitivity.html">ss_buc_sensitivity</a></span><span class="op">(</span><span class="va">plan</span>, true_ncp <span class="op">=</span> <span class="va">ncp</span>, replications <span class="op">=</span> <span class="fl">2000</span>, seed <span class="op">=</span> <span class="fl">2017</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  term                     value </span></span>
-<span><span class="co">#&gt;  true_ncp                 6.71  </span></span>
-<span><span class="co">#&gt;  ncp_adjusted             6.71  </span></span>
-<span><span class="co">#&gt;  replications             2000  </span></span>
-<span><span class="co">#&gt;  publication_rate         0.718 </span></span>
-<span><span class="co">#&gt;  refusal_rate             0.324 </span></span>
-<span><span class="co">#&gt;  attainment               0.708 </span></span>
-<span><span class="co">#&gt;  attainment_mcse          0.0124</span></span>
-<span><span class="co">#&gt;  attainment_with_refusals 0.803 </span></span>
-<span><span class="co">#&gt;  size_at_true_effect      122   </span></span>
-<span><span class="co">#&gt;  size_q25                 110   </span></span>
-<span><span class="co">#&gt;  size_median              212   </span></span>
-<span><span class="co">#&gt;  size_q75                 564   </span></span>
+<span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_sensitivity.html">ss_buc_sensitivity</a></span><span class="op">(</span><span class="va">plan</span>, true_ncp <span class="op">=</span> <span class="va">ncp</span>, replications <span class="op">=</span> <span class="fl">2000</span>,</span>
+<span>                            seed <span class="op">=</span> <span class="fl">2017</span><span class="op">)</span></span>
+<span><span class="va">audit</span></span>
+<span><span class="co">#&gt;  term                          value  </span></span>
+<span><span class="co">#&gt;  true_ncp                      6.71   </span></span>
+<span><span class="co">#&gt;  ncp_adjusted                  6.71   </span></span>
+<span><span class="co">#&gt;  replications                  2000   </span></span>
+<span><span class="co">#&gt;  publication_rate              0.718  </span></span>
+<span><span class="co">#&gt;  refusal_rate                  0.324  </span></span>
+<span><span class="co">#&gt;  attainment                    0.708  </span></span>
+<span><span class="co">#&gt;  attainment_mcse               0.0124 </span></span>
+<span><span class="co">#&gt;  attainment_with_refusals      0.803  </span></span>
+<span><span class="co">#&gt;  attainment_with_refusals_mcse 0.00889</span></span>
+<span><span class="co">#&gt;  size_at_true_effect           122    </span></span>
+<span><span class="co">#&gt;  size_q25                      110    </span></span>
+<span><span class="co">#&gt;  size_median                   212    </span></span>
+<span><span class="co">#&gt;  size_q75                      564    </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Design: Pearson correlation</span></span>
 <span><span class="co">#&gt; Sample size unit: total</span></span>
@@ -265,18 +304,23 @@ fraction of published prior studies for which a plan built this way
 reaches the target, counting a refusal (a prior result too weak to plan
 from, which the function declines rather than guesses at) as a success,
 because declining is the most cautious plan of all. This is the quantity
-the assurance guarantee is about, and it lands near the requested
-<code>assurance</code> of .80.</li>
+the assurance guarantee is about, and it lands on the requested
+<code>assurance</code> of .80 within simulation error: here it is .803,
+with a Monte Carlo standard error of .0089.</li>
 <li>
 <strong><code>attainment</code></strong> is the same fraction among
-only the studies that received a plan. It is lower, because it excludes
-the refusals, and it is what a researcher who did get a plan actually
-experiences.</li>
+only the studies that received a plan. It is lower, .708 here (Monte
+Carlo standard error .012), because it excludes the refusals, and it is
+what a researcher who did get a plan actually experiences.</li>
 </ul>
-<p>The gap between the two is the refusal rate, reported alongside them.
-A large gap is not a flaw in the method; it is the visible price of a
-method that refuses to plan from a prior result too weak to support the
-request, rather than returning a confident but hollow number.
+<p>The two are linked by the refusal rate reported alongside them:</p>
+<p><code>attainment_with_refusals = refusal_rate + (1 - refusal_rate) * attainment</code></p>
+<p>Here that is .324 + (1 - .324) times .708, or .803; the refusal
+rate’s own Monte Carlo standard error is .01. The two rates coincide
+when nothing is refused and separate as refusals rise. That separation
+is not a flaw in the method; it is the visible price of a method that
+refuses to plan from a prior result too weak to support the request,
+rather than returning a confident but hollow number.
 <code>size_at_true_effect</code> is the sample size the true effect
 really requires, the benchmark each simulated plan is measured against,
 and the quartiles show how widely the plans scatter around it.</p>
@@ -287,9 +331,22 @@ guard against:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">smaller</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_sensitivity.html">ss_buc_sensitivity</a></span><span class="op">(</span><span class="va">plan</span>, true_ncp <span class="op">=</span> <span class="va">ncp</span> <span class="op">*</span> <span class="fl">0.6</span>, replications <span class="op">=</span> <span class="fl">2000</span>,</span>
 <span>                              seed <span class="op">=</span> <span class="fl">2017</span><span class="op">)</span></span>
-<span><span class="va">smaller</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">smaller</span><span class="op">$</span><span class="va">term</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"attainment"</span>, <span class="st">"attainment_with_refusals"</span>,</span>
-<span>                                  <span class="st">"refusal_rate"</span>, <span class="st">"size_at_true_effect"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">#&gt; [1]   0.457500   0.637788   0.803500 200.000000</span></span></code></pre></div>
+<span><span class="va">rows</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"attainment_with_refusals"</span>, <span class="st">"attainment"</span>, <span class="st">"refusal_rate"</span>,</span>
+<span>          <span class="st">"size_at_true_effect"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>term <span class="op">=</span> <span class="va">rows</span>, value <span class="op">=</span> <span class="va">smaller</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/match.html" class="external-link">match</a></span><span class="op">(</span><span class="va">rows</span>, <span class="va">smaller</span><span class="op">$</span><span class="va">term</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt;                       term      value</span></span>
+<span><span class="co">#&gt; 1 attainment_with_refusals   0.803500</span></span>
+<span><span class="co">#&gt; 2               attainment   0.637788</span></span>
+<span><span class="co">#&gt; 3             refusal_rate   0.457500</span></span>
+<span><span class="co">#&gt; 4      size_at_true_effect 200.000000</span></span></code></pre></div>
+<p>A smaller truth needs a larger study, 200 participants rather than
+122, yet <code>attainment_with_refusals</code> holds at .804 (Monte
+Carlo standard error .0089): the guarantee does not depend on the
+corrected estimate being right. What changes is how it is kept. More of
+the published prior results are now too weak to plan from, so the
+refusal rate rises to .458 (Monte Carlo standard error .011), and among
+the plans actually issued only .638 reach the target (Monte Carlo
+standard error .015).</p>
 </div>
 <div class="section level2">
 <h2 id="when-the-prior-result-cannot-support-the-request">When the Prior Result Cannot Support the Request<a class="anchor" aria-label="anchor" href="#when-the-prior-result-cannot-support-the-request"></a>
@@ -306,7 +363,10 @@ weaker prior reaches its ceiling quickly. <code><a href="https://rdrr.io/r/graph
 plan draws the ceiling and the way the required sample size climbs
 toward it; see
 <code><a href="../articles/understanding-assurance.html">vignette("understanding-assurance", package = "BUCSS")</a></code> for
-that figure and a fuller discussion.</p>
+that figure and a fuller discussion. A refusal is informative in its own
+right: it says the prior study cannot anchor a replication aimed at
+detecting the effect, and Anderson and Kelley (2024) describe the other
+goals a replication can have, each with its own sample size logic.</p>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
@@ -318,10 +378,18 @@ Methods, 29</em>, 844–867. <a href="https://doi.org/10.1037/met0000520" class=
 planning for more accurate statistical power: A method adjusting sample
 effect sizes for publication bias and uncertainty. <em>Psychological
 Science, 28</em>, 1547–1562. <a href="https://doi.org/10.1177/0956797617723724" class="external-link uri">https://doi.org/10.1177/0956797617723724</a></p>
+<p>Gatsonis, C., &amp; Sampson, A. R. (1989). Multiple correlation:
+Exact power and sample size calculations. <em>Psychological Bulletin,
+106</em>, 516–524. <a href="https://doi.org/10.1037/0033-2909.106.3.516" class="external-link uri">https://doi.org/10.1037/0033-2909.106.3.516</a></p>
+<p>Kelley, K., &amp; Maxwell, S. E. (2003). Sample size for multiple
+regression: Obtaining regression coefficients that are accurate, not
+simply significant. <em>Psychological Methods, 8</em>, 305–321. <a href="https://doi.org/10.1037/1082-989X.8.3.305" class="external-link uri">https://doi.org/10.1037/1082-989X.8.3.305</a></p>
+<p>Sampson, A. R. (1974). A tale of two regressions. <em>Journal of the
+American Statistical Association, 69</em>, 682–689. <a href="https://doi.org/10.1080/01621459.1974.10480189" class="external-link uri">https://doi.org/10.1080/01621459.1974.10480189</a></p>
 <p>Taylor, D. J., &amp; Muller, K. E. (1996). Bias in linear model power
 and sample size calculation due to estimating noncentrality.
 <em>Communications in Statistics: Theory and Methods, 25</em>,
-1595–1610.</p>
+1595–1610. <a href="https://doi.org/10.1080/03610929608831787" class="external-link uri">https://doi.org/10.1080/03610929608831787</a></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

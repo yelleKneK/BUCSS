@@ -1,25 +1,28 @@
-# Deprecated 1.x functions in BUCSS
+# Deprecated 1.x Functions in BUCSS
 
 The dot-named functions from BUCSS 1.x are **deprecated** as of BUCSS
 2.0.0 and are no longer actively developed. They are retained so that
-scripts written for BUCSS 1.x continue to run unchanged. Each one
-translates its arguments to the 2.x convention and calls the
-corresponding `ss_buc_*` function, returning that function's
-[`bucss_power`](https://yelleKneK.github.io/BUCSS/reference/print.bucss_power.md)
+scripts written for BUCSS 1.x continue to run. Each one translates its
+arguments to the 2.x convention and calls the corresponding `ss_buc_*`
+function, returning that function's
+[`bucss_plan`](https://yelleKneK.github.io/BUCSS/reference/print.bucss_plan.md)
 object.
 
 For backward compatibility the returned object still supports the 1.x
 positional extraction: `result[[1]]` is the necessary sample size and
 `result[[2]]` is the bias and uncertainty adjusted noncentrality
 parameter, the same two values the 1.x functions returned as an unnamed
-list (this is provided by a `[[` method for `bucss_power`). The richer
-named view (`result$value`, `tidy(result)`, `glance(result)`) is also
-available.
+list (this is provided by a `[[` method for `bucss_plan`). Only those
+two subscripts are kept: code that treats the 1.x result as a list in
+other ways (`unlist(result)`, `result[[1L]]`, or printing it through
+[`rbind()`](https://rdrr.io/r/base/cbind.html)) now sees the data frame.
+The richer named view (`result$value`, `tidy(result)`, `glance(result)`)
+is also available.
 
 Calling one of these functions issues a deprecation warning that names
 its replacement, once per function per session; the `ss_buc_*` functions
-themselves never warn. New code should call the `ss_buc_*` functions
-directly.
+themselves never issue this deprecation warning. New code should call
+the `ss_buc_*` functions directly.
 
 ## Usage
 
@@ -176,7 +179,8 @@ ss.power.reg.joint(
 - alpha.prior, alpha.planned:
 
   The prior-study and planned-study Type I error rates (the 1.x spelling
-  of `alpha_prior` / `alpha_planned`).
+  of `alpha_prior` / `alpha_planned`). `alpha.prior` also accepts
+  `"No Publication Filter"`, which means 1.
 
 - assurance:
 
@@ -184,7 +188,8 @@ ss.power.reg.joint(
 
 - power:
 
-  The desired statistical power of the planned study.
+  The desired statistical power of the planned study, which must exceed
+  `alpha.planned`.
 
 - step:
 
@@ -232,7 +237,7 @@ ss.power.reg.joint(
 ## Value
 
 A
-[`bucss_power`](https://yelleKneK.github.io/BUCSS/reference/print.bucss_power.md)
+[`bucss_plan`](https://yelleKneK.github.io/BUCSS/reference/print.bucss_plan.md)
 object, as returned by the corresponding `ss_buc_*` function.
 
 ## Details
@@ -260,14 +265,39 @@ these wrappers return can differ slightly from 1.x and are no longer
 capped when the implied parameter exceeds 100. The `step` argument is
 accepted for call compatibility and ignored.
 
-Three further 1.x behaviors deliberately changed, so a 1.x call can now
-error where it used to return a number. `ss.power.ba.general` rejects a
+Some 1.x behaviors deliberately changed, so a 1.x call can now error
+where it used to return a number. `ss.power.ba.general` rejects a
 `df.denominator` greater than `N - cells` (1.x accepted such a value and
 ignored the argument entirely, including in its own documented example).
-An `assurance` or `power` of exactly 0 or 1, and a `power` of 100, are
-rejected rather than returning an artifact of the internal search.
+As in 1.x, an `assurance` or `power` of 1 or more is read as a
+percentage, so exactly 1 means 1 percent; after that reading, an
+`assurance` or `power` of 0, or of 100 (which means 1), is rejected
+rather than returning an artifact of the internal search. A `power` at
+or below `alpha.planned` after that reading is not allowable and stops
+too, so `power = 1` (which means .01) stops unless `alpha.planned` is
+below .01; 1.x returned the smallest sample size it considers for such a
+target, with no notice. An `alpha.prior` of 1 is computed as exactly 1,
+where 1.x computed with .999 in its place: most such plans are
+unchanged, and the rest are slightly smaller. `ss.power.ba` and
+`ss.power.wa` refuse `effect = "factor.B"` or `"interaction"` when
+`levels.B` is not given (1.x refused only the interaction, and silently
+returned the Factor A plan for `"factor.B"`). `ss.power.ba.general` and
+`ss.power.spa.general` reject numerator degrees of freedom no design of
+their kind can have (`df.numerator` above `cells - 1`; for the split
+plot, above `num.groups - 1` for the between-subjects effect, or not a
+multiple of `df.num.within` within that bound for the interaction).
 Non-scalar, non-finite, and fractional inputs are rejected with a
-message naming the argument. See `NEWS` for the full accounting.
+message naming the argument. Most errors raised through these wrappers
+come from the `ss_buc_*` planners and name their arguments (`t_observed`
+for `t.observed`, and so on); an unrecognized `effect` is rejected by
+the wrapper itself. The regression wrappers keep the 1.x fixed-predictor
+computation (`random_predictors = FALSE`); call
+[`ss_buc_reg_coef`](https://yelleKneK.github.io/BUCSS/reference/ss_buc_reg_coef.md),
+[`ss_buc_R2`](https://yelleKneK.github.io/BUCSS/reference/ss_buc_R2.md),
+or
+[`ss_buc_reg_joint`](https://yelleKneK.github.io/BUCSS/reference/ss_buc_reg_joint.md)
+directly for predictors sampled along with the outcome. See `NEWS` for
+the full accounting.
 
 ## See also
 

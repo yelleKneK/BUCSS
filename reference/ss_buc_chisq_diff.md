@@ -1,8 +1,8 @@
-# Necessary sample size to reach desired power for a nested model chi-square difference test using a publication bias and uncertainty correction procedure
+# Necessary Sample Size to Reach Desired Power for a Nested Model Chi Square Difference Test Using a Publication Bias and Uncertainty Correction Procedure
 
 `ss_buc_chisq_diff` returns the necessary total sample size to achieve a
 desired level of statistical power for a planned study whose effect of
-interest is tested by the chi-square difference between two nested
+interest is tested by the chi square difference between two nested
 models (the likelihood ratio test used, for example, to test a
 constrained path in a structural equation model), based on information
 obtained from a previous study. The effect from the previous study can
@@ -10,7 +10,10 @@ be corrected for publication bias and/or uncertainty to provide a sample
 size that will achieve more accurate statistical power for a planned
 study, when compared to approaches that use a sample effect size at face
 value or rely on sample size only. The bias and uncertainty adjusted
-previous study noncentrality parameter is also returned.
+previous study noncentrality parameter is also returned, together with
+the planning effect size, the effect size the plan is built on, as the
+root mean square error of approximation of the difference test,
+\\\mathrm{RMSEA}\_D\\ (D for difference).
 
 ## Usage
 
@@ -31,7 +34,7 @@ ss_buc_chisq_diff(
 
 - chisq_observed:
 
-  Observed chi-square difference between the two nested models in the
+  Observed chi square difference between the two nested models in the
   previous study.
 
 - N:
@@ -41,9 +44,10 @@ ss_buc_chisq_diff(
 - df_full:
 
   Degrees of freedom of the full (less constrained) model. A saturated
-  full model has zero, which identifies the comparison as an omnibus
-  test of model fit rather than a difference test between two
-  substantive models; the function refuses that case (see Details).
+  full model has zero, the signature of an omnibus test of model fit
+  rather than a difference test between two substantive models; the
+  function refuses that case (see Details, which also covers a
+  just-identified full model).
 
 - df_restricted:
 
@@ -53,9 +57,18 @@ ss_buc_chisq_diff(
 
 - alpha_prior:
 
-  Alpha level \\\alpha\\ for the previous study or the assumed
-  statistical significance necessary for publishing in the field; to
-  assume no publication bias, a value of 1 can be entered.
+  The significance level \\\alpha\\ a prior result had to reach to be
+  published (more generally, to reach you): the correction assumes you
+  see only results with *p* below `alpha_prior`. Enter a number above 0
+  and at most 1. A value of 1, which may also be written
+  `"No Publication Filter"`, means no publication filter: every *p*
+  value is at most 1, so any result would have been published whatever
+  its *p* value, there is no publication bias to correct, and only the
+  correction for uncertainty (set by `assurance`) remains, as for a
+  pilot study. Anderson, Kelley, and Maxwell (2017, p. 1552) note that
+  this level, their \\\alpha_P\\, can be set equal to 1 when publication
+  bias is thought not to apply. The string is read without regard to
+  case, and the result echoes it as an `alpha_prior` of 1.
 
 - alpha_planned:
 
@@ -63,40 +76,88 @@ ss_buc_chisq_diff(
 
 - assurance:
 
-  Desired level of assurance, or the long run proportion of times that
-  the planned study power will reach or surpass the desired level
-  (assurance \> .5 corrects for uncertainty; assurance \< .5 is not
-  recommended). Enter it as a proportion in (0, 1) or as a percentage
-  greater than 1 (for example, 80 is read as .80); a value of exactly 1
-  is read as 1 percent. A percentage is echoed in the result's
-  planning-input rows as the coerced proportion (80 is echoed as .80);
-  the same applies to `desired_power`.
+  Desired level of assurance: the long run proportion of planned studies
+  whose statistical power at the true effect reaches or surpasses
+  `desired_power`, when each is planned from a prior study published
+  under the rule `alpha_prior` describes. The adjusted noncentrality
+  parameter is the lower limit of a one-sided confidence interval at
+  this level, computed from the publication-truncated distribution of
+  the prior statistic, so `assurance = .5` plans from a median unbiased
+  estimate (correcting for publication bias only), a larger value adds
+  the correction for uncertainty, and a value below .5 is not
+  recommended. The term follows Kelley and Maxwell (2003), who used
+  assurance in sample size planning for the probability that a
+  confidence interval will be no wider than desired. With
+  `alpha_prior = 1` and `assurance = .80` the plan corresponds to
+  safeguard power, which plans for the lower limit of a two-sided 60
+  percent confidence interval around the prior effect size rather than
+  for the effect size itself (see
+  [`BUCSS-package`](https://yelleKneK.github.io/BUCSS/reference/BUCSS-package.md)
+  for how, and for where the two differ). Enter it as a proportion in
+  (0, 1) or as a percentage greater than 1 (for example, 80 is read as
+  .80); a value of exactly 1 is read as 1 percent. A percentage is
+  echoed in the result's planning-input rows as the coerced proportion
+  (80 is echoed as .80); the same applies to `desired_power`.
 
 - desired_power:
 
-  Desired level of statistical power for the planned study. Enter it as
-  a proportion in (0, 1) or as a percentage greater than 1; a value of
-  exactly 1 is read as 1 percent.
+  Desired level of statistical power for the planned study: the
+  probability that its test rejects the null hypothesis when the effect
+  is present (Maxwell, Delaney, & Kelley, 2027). It must exceed
+  `alpha_planned`: a test's power is never below its Type I error rate,
+  so a value at or below `alpha_planned` is not allowable, and the
+  function stops rather than return a plan. Enter it as a proportion in
+  (0, 1) or as a percentage greater than 1; a value of exactly 1 is read
+  as 1 percent (.01), which is then refused unless `alpha_planned` is
+  below .01.
 
 ## Value
 
-An object of class `bucss_power`: a `data.frame` with a character `term`
+An object of class `bucss_plan`: a `data.frame` with a character `term`
 column and a numeric `value` column, in the same shape as the sibling
 package `DMAR`'s planners. The design results come first: the necessary
 total sample size for the planned study, named for its unit
 (`necessary_n_per_group`, `necessary_n_per_cell`, or `necessary_N`); for
 the per-group and per-cell designs, `total_N`, the implied total sample
-size; `actual_power`, the conservative achieved power at the returned
-sample size (see Details); and `ncp_adjusted`, the publication bias and
-uncertainty adjusted prior study noncentrality parameter. Rows echoing
-the planning inputs follow, so the assumptions travel with the result.
-The design, the unit the sample size is counted in, the largest
-assurance this prior can support (the assurance ceiling), and the
-planned test's degrees of freedom (`df_effect` and `df_error`) travel on
-attributes; they are shown by `print.bucss_power`, and
-[`tidy()`](https://generics.r-lib.org/reference/tidy.html) and
+size; `actual_power`, the power of the plan returned, that is, of the
+returned sample size at the returned noncentrality parameter (see
+Details); `ncp_adjusted`, the publication bias and uncertainty adjusted
+prior study noncentrality parameter, on the scale of the chi square
+statistic, at the prior study's sample size; and the planning effect
+size, `rmsea_d_planning`, \\\mathrm{RMSEA}\_D\\, where the D stands for
+difference: the root mean square error of approximation of the chi
+square difference test between the two nested models (Savalei, Brace, &
+Fouladi, 2024), as distinct from the RMSEA of either model's fit; here
+\\\sqrt{\lambda/(\mathrm{df}\_D N)}\\, where \\\lambda\\ is
+`ncp_adjusted`, \\\mathrm{df}\_D\\ is the number of constraints
+(`df_restricted - df_full`, the difference test's degrees of freedom),
+and *N* the prior sample size, the scaling this planner plans with; the
+usual sample formula divides by \\N - 1\\ instead, which gives a value
+larger by the factor \\\sqrt{N/(N - 1)}\\.
+
+A planning effect size (the row whose name ends in `_planning`) is an
+adjusted effect size: the value, in the design's usual effect size
+metric, used to plan the sample size given the situation at hand (the
+prior study's result, the publication bias assumed through
+`alpha_prior`, and the uncertainty allowed for through `assurance`). It
+is `ncp_adjusted` restated in that metric and is what the plan is built
+on, not an estimate of the population effect to report: above an
+assurance of .5 it is deliberately conservative (a lower confidence
+limit), and at .5 it is the median unbiased estimate. Because it
+restates `ncp_adjusted`, `actual_power` is the ordinary power of a study
+of the returned sample size when the population effect is the planning
+effect size.
+
+Rows echoing the planning inputs follow the design results, so the
+assumptions travel with the result. The design, the unit the sample size
+is counted in, the largest assurance this prior can support (the
+assurance ceiling), and the planned test's degrees of freedom
+(`df_effect`, and `df_error` where the test has a denominator) travel on
+attributes. `print.bucss_plan` shows the design, for the regression
+planners the predictor frame, the unit, and the ceiling beneath the
+table; [`tidy()`](https://generics.r-lib.org/reference/tidy.html) and
 [`glance()`](https://generics.r-lib.org/reference/glance.html) give the
-compact and wide views.
+compact and wide views, the latter with every attribute as a column.
 
 ## Details
 
@@ -108,38 +169,49 @@ uncertainty.
 
 **Scope, and one thing this function is not for.** The correction
 applies to a test whose statistic is large when the effect is present,
-so that publication selects large values. A chi-square difference test
+so that publication selects large values. A chi square difference test
 between nested models is such a test: under the alternative it is
-approximately noncentral chi-square with degrees of freedom equal to the
+approximately noncentral chi square with degrees of freedom equal to the
 number of constraints released and a noncentrality parameter
 proportional to sample size, and a paper reports the constrained path as
-supported when the difference test is significant. The correction is
-therefore built for the difference test.
+supported when the difference test is significant. Steiger, Shapiro, and
+Browne (1985) give the asymptotic distribution of sequential chi square
+statistics for nested models and of the difference tests between them,
+and Satorra and Saris (1985) compute the power of the likelihood ratio
+test in covariance structure analysis from the noncentral chi square
+distribution, as is done here. The correction is therefore built for the
+difference test.
 
-It is *not* appropriate for an omnibus model fit chi-square, where a
+It is *not* appropriate for an omnibus model fit chi square, where a
 publishable result is a *small* statistic (a model that fits). The
 selection region is inverted there, so the truncated likelihood this
 function builds does not describe it.
 
 **The function refuses that case rather than only warning about it.**
 This is why both models' degrees of freedom are required rather than
-only their difference. An omnibus fit chi-square is the comparison of a
+only their difference. An omnibus fit chi square is the comparison of a
 model against the *saturated* model, and a saturated model has zero
-degrees of freedom, so `df_full = 0` identifies the misuse exactly.
-Given only the difference, nothing distinguishes a fit test from a
-genuine comparison of two substantive models, and the mistake would pass
-silently. Supplying both is also a more faithful description of what was
-tested, and the two values are what a paper reports for each model.
+degrees of freedom, so `df_full = 0` is its signature. Given only the
+difference, nothing distinguishes a fit test from a genuine comparison
+of two substantive models, and the mistake would pass silently.
+Supplying both is also a more faithful description of what was tested,
+and the two values are what a paper reports for each model. A
+just-identified full model (every parameter free, as in a path model
+compared with the same model with one path fixed at zero) also has zero
+degrees of freedom, and there the difference test is a genuine one. The
+plan depends only on the number of constraints, so for that case the
+call with `df_full = 1` and `df_restricted` one more than the number of
+constraints gives the plan.
 
-The correction uses a likelihood function of a truncated noncentral
-chi-square distribution, the same construction the rest of the package
-uses for the noncentral *F* (see Taylor & Muller, 1996, Equation 2.1,
-and Anderson & Maxwell, 2017): the truncated area between the critical
-value and the observed statistic, divided by the power of the test.
-Because the noncentrality parameter of a likelihood ratio test is
-proportional to sample size, the planned study's noncentrality parameter
-is the corrected one scaled by the ratio of the planned to the prior
-sample size.
+The correction uses a likelihood function of a truncated noncentral chi
+square distribution, the same construction the rest of the package uses
+for the noncentral *F* (see Taylor & Muller, 1996, Equation 2.1;
+Anderson, Kelley, & Maxwell, 2017, Equation 3; and Anderson & Maxwell,
+2017): the truncated area between the critical value and the observed
+statistic, divided by the power of the test. Because the noncentrality
+parameter of a likelihood ratio test is proportional to sample size, the
+planned study's noncentrality parameter is the corrected one scaled by
+the ratio of the planned to the prior sample size.
 
 Assurance is the proportion of times that power will be at or above the
 desired level, if the experiment were to be reproduced many times. For
@@ -153,14 +225,22 @@ uncertainty, `assurance > .5` can be selected, which corresponds to
 selecting the noncentrality parameter associated with the (1 -
 assurance) quantile of the likelihood distribution.
 
-If the previous study of interest has not been subjected to publication
-bias (e.g., a pilot study), `alpha_prior` can be set to 1 to indicate no
-publication bias. Alternative \\\alpha\\ levels can also be accommodated
-to represent differing amounts of publication bias. For example, setting
-`alpha_prior = .20` would reflect less severe publication bias than the
-default of .05. In essence, setting `alpha_prior` at .20 assumes that
-studies with *p* values less than .20 are published, whereas those with
-larger *p* values are not.
+`alpha_prior` is the significance level a prior result had to reach to
+be published: the correction assumes that only results with *p* values
+below `alpha_prior` reach the literature, and so reach you. Different
+\\\alpha\\ levels represent differing amounts of publication bias. For
+example, setting `alpha_prior = .20` assumes that studies with *p*
+values less than .20 are published, whereas those with larger *p* values
+are not, which reflects less severe publication bias than the default of
+.05. If the previous study of interest has not been subjected to
+publication bias (e.g., a pilot study), set `alpha_prior = 1`, which may
+also be written `alpha_prior = "No Publication Filter"`; Anderson,
+Kelley, and Maxwell (2017, p. 1552) note that it can be set equal to 1
+when publication bias is thought not to apply. Because no *p* value
+exceeds 1, this means no publication filter at all: any result would
+have been published whatever its *p* value, so there is no publication
+bias to correct, and only the correction for uncertainty, set by
+`assurance`, remains.
 
 In some cases, the corrected noncentrality parameter for a given level
 of assurance will be estimated to be zero. This is an indication that,
@@ -192,13 +272,20 @@ parameter. Because a sample size must be a whole number, `actual_power`
 is never below the `desired_power` that was requested and is usually a
 little above it.
 
-The chi-square difference test is asymptotic, so both the correction and
-the planned-study power inherit that approximation. The test is liberal
-in small samples: in simulation its actual Type I error is nearer .06
-than .05 at a total sample size of 50, and it reaches the nominal rate
-only around 200. Treat a planned sample size under a hundred or so with
-caution, and read a very small one as a signal that the prior effect was
-large rather than as a serious recommendation.
+The chi square difference test is asymptotic, so both the correction and
+the planned-study power inherit that approximation. The likelihood ratio
+test is liberal in small samples, and more so the more parameters a
+model estimates. For a test that drops 2 of 6 parameters of a normal
+linear model, its actual Type I error is about .07 at a total sample
+size of 50, .055 at 200, and .052 at 400; dropping 5 of 21 parameters,
+it is about .08 at 200. At such sample sizes the real test's power can
+also sit above or below `actual_power`. Treat a planned sample size that
+is small relative to the number of parameters estimated with caution,
+and read a very small one as a signal that the prior effect was large
+rather than as a serious recommendation. The search for the planned
+sample size starts at the number of constraints plus 2
+(`df_restricted - df_full + 2`), so no plan is smaller than that, even
+when a smaller study would already reach the desired power.
 
 ## References
 
@@ -213,10 +300,16 @@ effect sizes for publication bias and uncertainty. *Psychological
 Science, 28,* 1547–1562.
 [doi:10.1177/0956797617723724](https://doi.org/10.1177/0956797617723724)
 
-Anderson, S. F., & Maxwell, S. E. (2017). Addressing the 'replication
-crisis': Using original studies to design replication studies with
+Anderson, S. F., & Maxwell, S. E. (2017). Addressing the "replication
+crisis": Using original studies to design replication studies with
 appropriate statistical power. *Multivariate Behavioral Research, 52,*
 305–324.
+[doi:10.1080/00273171.2017.1289361](https://doi.org/10.1080/00273171.2017.1289361)
+
+Kelley, K., & Maxwell, S. E. (2003). Sample size for multiple
+regression: Obtaining regression coefficients that are accurate, not
+simply significant. *Psychological Methods, 8,* 305–321.
+[doi:10.1037/1082-989X.8.3.305](https://doi.org/10.1037/1082-989X.8.3.305)
 
 Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). *Designing
 experiments and analyzing data: A model comparison perspective* (4th
@@ -225,10 +318,26 @@ ed.). Routledge.
 Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
 sample size calculation due to estimating noncentrality. *Communications
 in Statistics: Theory and Methods, 25,* 1595–1610.
+[doi:10.1080/03610929608831787](https://doi.org/10.1080/03610929608831787)
+
+Satorra, A., & Saris, W. E. (1985). Power of the likelihood ratio test
+in covariance structure analysis. *Psychometrika, 50,* 83–90.
+[doi:10.1007/BF02294150](https://doi.org/10.1007/BF02294150)
+
+Savalei, V., Brace, J. C., & Fouladi, R. T. (2024). We need to change
+how we compute RMSEA for nested model comparisons in structural equation
+modeling. *Psychological Methods, 29,* 480–493.
+[doi:10.1037/met0000537](https://doi.org/10.1037/met0000537)
+
+Steiger, J. H., Shapiro, A., & Browne, M. W. (1985). On the multivariate
+asymptotic distribution of sequential chi-square statistics.
+*Psychometrika, 50,* 253–263.
+[doi:10.1007/BF02294104](https://doi.org/10.1007/BF02294104)
 
 ## Author
 
-Ken Kelley (<kkelley@nd.edu>)
+Ken Kelley (<kkelley@nd.edu>) and Samantha F. Anderson
+(<samantha.f.anderson@asu.edu>)
 
 ## Examples
 
@@ -239,20 +348,21 @@ result <- ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 42,
   df_restricted = 43, alpha_prior = .05, alpha_planned = .05,
   assurance = .80, desired_power = .80)
 result
-#>  term           value
-#>  necessary_N    726  
-#>  actual_power   0.8  
-#>  ncp_adjusted   2.71 
-#>  chisq_observed 9.5  
-#>  N              250  
-#>  df_full        42   
-#>  df_restricted  43   
-#>  alpha_prior    0.05 
-#>  alpha_planned  0.05 
-#>  assurance      0.8  
-#>  desired_power  0.8  
+#>  term             value
+#>  necessary_N      726  
+#>  actual_power     0.8  
+#>  ncp_adjusted     2.71 
+#>  rmsea_d_planning 0.104
+#>  chisq_observed   9.5  
+#>  N                250  
+#>  df_full          42   
+#>  df_restricted    43   
+#>  alpha_prior      0.05 
+#>  alpha_planned    0.05 
+#>  assurance        0.8  
+#>  desired_power    0.8  
 #> 
-#> Design: Nested model chi-square difference test
+#> Design: Nested model chi square difference test
 #> Sample size unit: total
 #> Largest supportable assurance: .95
 
@@ -260,7 +370,7 @@ result
 # fit, which this method does not describe, and the function says so:
 try(ss_buc_chisq_diff(chisq_observed = 9.5, N = 250, df_full = 0,
   df_restricted = 43))
-#> Error : 'df_full' is 0, so the full model is saturated and this comparison is the restricted model's omnibus test of model fit, not a difference test between two substantive models. This function does not apply to an omnibus fit chi-square: the correction assumes a literature publishes significant results, whereas a publishable fit chi-square is a small (nonsignificant) one, which inverts the selection region the method is built on. If you meant to compare two substantive nested models, give the full model's own degrees of freedom.
+#> Error : 'df_full' is 0, so the full model is saturated and this comparison is the restricted model's omnibus test of model fit, not a difference test between two substantive models. This function does not apply to an omnibus fit chi square: the correction assumes a literature publishes significant results, whereas a publishable fit chi square is a small (nonsignificant) one, which inverts the selection region the method is built on. A just-identified full model also has 0 degrees of freedom; if that is your case and the comparison is a genuine difference test, the plan depends only on the number of constraints, so call with 'df_full = 1' and 'df_restricted' equal to 1 plus the number of constraints.
 
 # Requesting more assurance than the prior result can support stops with an
 # informative error naming the largest workable assurance (here near .95):

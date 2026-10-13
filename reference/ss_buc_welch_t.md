@@ -1,4 +1,4 @@
-# Necessary sample size to reach desired power for a Welch (unequal variance) t test using a publication bias and uncertainty correction procedure
+# Necessary Sample Size to Reach Desired Power for a Welch (Unequal Variance) t Test Using a Publication Bias and Uncertainty Correction Procedure
 
 `ss_buc_welch_t` returns the necessary per-group sample size to achieve
 a desired level of statistical power for a planned study using a Welch
@@ -9,7 +9,8 @@ to provide a sample size that will achieve more accurate statistical
 power for a planned study, when compared to approaches that use a sample
 effect size at face value or rely on sample size only. The bias and
 uncertainty adjusted previous study noncentrality parameter is also
-returned, which can be transformed to various effect size metrics.
+returned, together with the planning effect size, the effect size the
+plan is built on, as a standardized mean difference.
 
 ## Usage
 
@@ -62,9 +63,18 @@ ss_buc_welch_t(
 
 - alpha_prior:
 
-  Alpha level \\\alpha\\ for the previous study or the assumed
-  statistical significance necessary for publishing in the field; to
-  assume no publication bias, a value of 1 can be entered.
+  The significance level \\\alpha\\ a prior result had to reach to be
+  published (more generally, to reach you): the correction assumes you
+  see only results with *p* below `alpha_prior`. Enter a number above 0
+  and at most 1. A value of 1, which may also be written
+  `"No Publication Filter"`, means no publication filter: every *p*
+  value is at most 1, so any result would have been published whatever
+  its *p* value, there is no publication bias to correct, and only the
+  correction for uncertainty (set by `assurance`) remains, as for a
+  pilot study. Anderson, Kelley, and Maxwell (2017, p. 1552) note that
+  this level, their \\\alpha_P\\, can be set equal to 1 when publication
+  bias is thought not to apply. The string is read without regard to
+  case, and the result echoes it as an `alpha_prior` of 1.
 
 - alpha_planned:
 
@@ -72,40 +82,86 @@ ss_buc_welch_t(
 
 - assurance:
 
-  Desired level of assurance, or the long run proportion of times that
-  the planned study power will reach or surpass the desired level
-  (assurance \> .5 corrects for uncertainty; assurance \< .5 is not
-  recommended). Enter it as a proportion in (0, 1) or as a percentage
-  greater than 1 (for example, 80 is read as .80); a value of exactly 1
-  is read as 1 percent. A percentage is echoed in the result's
-  planning-input rows as the coerced proportion (80 is echoed as .80);
-  the same applies to `desired_power`.
+  Desired level of assurance: the long run proportion of planned studies
+  whose statistical power at the true effect reaches or surpasses
+  `desired_power`, when each is planned from a prior study published
+  under the rule `alpha_prior` describes. The adjusted noncentrality
+  parameter is the lower limit of a one-sided confidence interval at
+  this level, computed from the publication-truncated distribution of
+  the prior statistic, so `assurance = .5` plans from a median unbiased
+  estimate (correcting for publication bias only), a larger value adds
+  the correction for uncertainty, and a value below .5 is not
+  recommended. The term follows Kelley and Maxwell (2003), who used
+  assurance in sample size planning for the probability that a
+  confidence interval will be no wider than desired. With
+  `alpha_prior = 1` and `assurance = .80` the plan corresponds to
+  safeguard power, which plans for the lower limit of a two-sided 60
+  percent confidence interval around the prior effect size rather than
+  for the effect size itself (see
+  [`BUCSS-package`](https://yelleKneK.github.io/BUCSS/reference/BUCSS-package.md)
+  for how, and for where the two differ). Enter it as a proportion in
+  (0, 1) or as a percentage greater than 1 (for example, 80 is read as
+  .80); a value of exactly 1 is read as 1 percent. A percentage is
+  echoed in the result's planning-input rows as the coerced proportion
+  (80 is echoed as .80); the same applies to `desired_power`.
 
 - desired_power:
 
-  Desired level of statistical power for the planned study. Enter it as
-  a proportion in (0, 1) or as a percentage greater than 1; a value of
-  exactly 1 is read as 1 percent.
+  Desired level of statistical power for the planned study: the
+  probability that its test rejects the null hypothesis when the effect
+  is present (Maxwell, Delaney, & Kelley, 2027). It must exceed
+  `alpha_planned`: a test's power is never below its Type I error rate,
+  so a value at or below `alpha_planned` is not allowable, and the
+  function stops rather than return a plan. Enter it as a proportion in
+  (0, 1) or as a percentage greater than 1; a value of exactly 1 is read
+  as 1 percent (.01), which is then refused unless `alpha_planned` is
+  below .01.
 
 ## Value
 
-An object of class `bucss_power`: a `data.frame` with a character `term`
+An object of class `bucss_plan`: a `data.frame` with a character `term`
 column and a numeric `value` column, in the same shape as the sibling
 package `DMAR`'s planners. The design results come first: the necessary
 per-group sample size for the planned study, named for its unit
 (`necessary_n_per_group`, `necessary_n_per_cell`, or `necessary_N`); for
 the per-group and per-cell designs, `total_N`, the implied total sample
-size; `actual_power`, the conservative achieved power at the returned
-sample size (see Details); and `ncp_adjusted`, the publication bias and
-uncertainty adjusted prior study noncentrality parameter. Rows echoing
-the planning inputs follow, so the assumptions travel with the result.
-The design, the unit the sample size is counted in, the largest
-assurance this prior can support (the assurance ceiling), and the
-planned test's degrees of freedom (`df_effect` and `df_error`) travel on
-attributes; they are shown by `print.bucss_power`, and
-[`tidy()`](https://generics.r-lib.org/reference/tidy.html) and
+size; `actual_power`, the power of the plan returned, that is, of the
+returned sample size at the returned noncentrality parameter (see
+Details); `ncp_adjusted`, the publication bias and uncertainty adjusted
+prior study noncentrality parameter, on the scale of the *t* statistic
+(the noncentrality parameter of the prior study's noncentral *t*); and
+the planning effect size, `smd_planning`, a standardized mean difference
+(a magnitude) whose standardizer is the root mean square of the two
+groups' standard deviations (Bonett, 2008), \\\lambda\sqrt{(1/n_1 +
+r^2/n_2)/((1 + r^2)/2)}\\, where \\\lambda\\ is `ncp_adjusted`, \\n_1\\
+and \\n_2\\ are the prior group sizes, and *r* is the ratio of standard
+deviations; with *n* per group in the planned study its noncentrality
+parameter is this value times \\\sqrt{n/2}\\, as for the equal-variance
+test, and with a ratio of 1 it is Cohen's \\\delta\\.
+
+A planning effect size (the row whose name ends in `_planning`) is an
+adjusted effect size: the value, in the design's usual effect size
+metric, used to plan the sample size given the situation at hand (the
+prior study's result, the publication bias assumed through
+`alpha_prior`, and the uncertainty allowed for through `assurance`). It
+is `ncp_adjusted` restated in that metric and is what the plan is built
+on, not an estimate of the population effect to report: above an
+assurance of .5 it is deliberately conservative (a lower confidence
+limit), and at .5 it is the median unbiased estimate. Because it
+restates `ncp_adjusted`, `actual_power` is the ordinary power of a study
+of the returned sample size when the population effect is the planning
+effect size.
+
+Rows echoing the planning inputs follow the design results, so the
+assumptions travel with the result. The design, the unit the sample size
+is counted in, the largest assurance this prior can support (the
+assurance ceiling), and the planned test's degrees of freedom
+(`df_effect`, and `df_error` where the test has a denominator) travel on
+attributes. `print.bucss_plan` shows the design, for the regression
+planners the predictor frame, the unit, and the ceiling beneath the
+table; [`tidy()`](https://generics.r-lib.org/reference/tidy.html) and
 [`glance()`](https://generics.r-lib.org/reference/glance.html) give the
-compact and wide views.
+compact and wide views, the latter with every attribute as a column.
 
 ## Details
 
@@ -116,38 +172,81 @@ used at face value to plan sample size, due to both publication bias and
 uncertainty.
 
 **This planner is an approximation, and needs one assumption the others
-do not.** A Welch *t* statistic is not exactly distributed as a
-noncentral *t*: its denominator degrees of freedom are estimated from
-the data by the Welch-Satterthwaite formula, and they depend on the
-ratio of the two population standard deviations. `ss_buc_welch_t` treats
-the statistic as noncentral *t* on the Welch-Satterthwaite degrees of
-freedom implied by the prior study's group sizes and the standard
-deviation ratio you supply, which is the usual approximation in power
-analysis for this test. In simulation that treatment is accurate: across
-ratios from 1 to 3 the Type I error of the real Welch test stays between
-.047 and .054 against a nominal .05, and the planned study's power is
-within about .006 of what this function predicts, with the agreement no
-worse at the extreme ratios.
+do not.** A Welch *t* statistic (Welch, 1947) is not exactly distributed
+as a noncentral *t*: its denominator degrees of freedom are estimated
+from the data by the Welch-Satterthwaite formula (Satterthwaite, 1946;
+Welch, 1947), and they depend on the ratio of the two population
+standard deviations. `ss_buc_welch_t` treats the statistic as noncentral
+*t* on the Welch-Satterthwaite degrees of freedom implied by the prior
+study's group sizes and the standard deviation ratio you supply, which
+is the usual approximation in power analysis for this test, and computes
+the planned study's power the same way. **A minimum planned sample size
+of 10 per group is imposed, because of estimation accuracy issues at
+smaller sample sizes.** With fewer per group the approximation is not
+accurate enough: the real test estimates its two variances, and so its
+degrees of freedom, from too few observations for the noncentral *t* to
+describe it, and the approximation overstates its power, badly so for
+the smallest (a plan of 2 per group that it puts at .82 has real power
+near .50). From 10 per group, at an `alpha_planned` of .05, the
+approximation is accurate: across ratios from 1 to 5, the power of the
+real Welch test is within .006 of what this function reports for every
+plan it returns, and within .003 from about 12 per group at a target
+power of .80, and its Type I error stays between .047 and .054 against a
+nominal .05 across ratios from 1 to 3. At a stricter `alpha_planned` the
+approximation overstates the power of the smallest plans by more, at 10
+per group by up to about .012 at .01, .016 at .005, and .025 at .001,
+and it is within .006 again from 14, 16, and 20 per group, respectively.
+When the target power is reached with fewer than 10 per group, the
+planner returns 10, whose power exceeds the target.
 
-**The assumption that matters is the ratio itself.** Planning assumes
-the ratio you supply is the ratio the planned study will have, and
-getting that wrong costs far more than the distributional approximation
-does. For the example below, a plan built assuming equal variances
-delivers about .43 power rather than .80 if the true ratio turns out to
-be 2. Re-run across a range of plausible ratios and plan for the least
-favorable one you find credible. The required sample size does not
-always rise with the ratio: it falls when the group assumed to be more
-variable is the smaller one.
+The correction of the prior study's statistic uses the same
+approximation and holds up well unless a prior group is very small.
+Simulating prior studies as raw data, published by the real Welch test,
+the corrected parameter fell at or below the truth in about .79 to .81
+of them at an `assurance` of .80 when each prior group had 10 to 20
+participants (a refusal counted as at or below). With 5 to 8 in the
+smaller prior group it ranged from about .78 to .86 when the true ratio
+was supplied, and fell as low as about .73 when the ratio was taken from
+the prior study's own standard deviations. One consequence of reading
+the prior study on the Welch-Satterthwaite degrees of freedom the
+supplied ratio implies, rather than on those its data produced: when the
+prior groups are small and unequal in size or in spread, including at
+the default ratio of 1, a prior result its paper reported as significant
+can fall short of the critical value here and be refused as
+nonsignificant. Such a result is typically close to the publication
+threshold, where it could support little assurance in any case.
+
+**The assumption that matters is the ratio itself.** One `sd_ratio`
+describes both studies: the prior study, whose statistic is read under
+it, and the planned study. Getting it wrong costs far more than the
+distributional approximation does. For the example below, the plan built
+assuming equal variances (213 per group) delivers about .76 power rather
+than .80 if the ratio is in fact 2 in both studies, and about .43 if the
+prior study's groups were equally variable but the planned study's ratio
+is 2, with the mean difference held fixed in units of the first group's
+standard deviation. Re-running across a range of plausible ratios, and
+planning for the least favorable one you find credible, guards against
+the first kind of error. The second, a planned study more unequal than
+the prior one, is not something the prior result can speak to, and needs
+its own allowance. The required sample size does not always rise as the
+two standard deviations move apart: when the group assumed to be more
+variable is the smaller one it often falls, though not always (for the
+prior study of the example below it rises).
 
 When the ratio is 1 and the prior groups were the same size, this
-planner returns exactly what
+planner returns what
 [`ss_buc_independent_t`](https://yelleKneK.github.io/BUCSS/reference/ss_buc_independent_t.md)
-returns. With unequal prior group sizes the two differ, and should: the
-equal-variance planner reduces the prior study to an equivalent
-equal-*n* design at the harmonic mean, while this one uses the actual
-Welch-Satterthwaite degrees of freedom, which are smaller when the
-groups are unbalanced. The same prior *t* is then less compelling and
-the plan is larger.
+returns, except for the minimum of 10 per group imposed here. With
+unequal prior group sizes the two differ, and should: the equal-variance
+planner reduces the prior study to an equivalent equal-*n* design at the
+harmonic mean, while this one uses the actual Welch-Satterthwaite
+degrees of freedom, which are smaller when the groups are unbalanced.
+The same prior *t* is then less compelling, and the plan is usually
+larger when one prior group is more than about twice the size of the
+other; when the two sizes are close it is more often the same, and it
+can be smaller, because the equal-variance planner rounds the harmonic
+mean down and up to whole group sizes and returns the larger of the two
+plans.
 
 The approach uses a likelihood function of a truncated noncentral *F*
 distribution, where the truncation occurs due to small effect sizes
@@ -156,7 +255,8 @@ likelihood function is the density of a noncentral *F* distribution. The
 denominator is the power of the test, which serves to truncate the
 distribution. In the two-group case, this formula reduces to the density
 of a truncated noncentral *t* distribution. (See Taylor & Muller, 1996,
-Equation 2.1, and Anderson & Maxwell, 2017, for more details.)
+Equation 2.1; Anderson, Kelley, & Maxwell, 2017, Equation 3; and
+Anderson & Maxwell, 2017, for more details.)
 
 Assurance is the proportion of times that power will be at or above the
 desired level, if the experiment were to be reproduced many times. For
@@ -170,14 +270,22 @@ uncertainty, `assurance > .5` can be selected, which corresponds to
 selecting the noncentrality parameter associated with the (1 -
 assurance) quantile of the likelihood distribution.
 
-If the previous study of interest has not been subjected to publication
-bias (e.g., a pilot study), `alpha_prior` can be set to 1 to indicate no
-publication bias. Alternative \\\alpha\\ levels can also be accommodated
-to represent differing amounts of publication bias. For example, setting
-`alpha_prior = .20` would reflect less severe publication bias than the
-default of .05. In essence, setting `alpha_prior` at .20 assumes that
-studies with *p* values less than .20 are published, whereas those with
-larger *p* values are not.
+`alpha_prior` is the significance level a prior result had to reach to
+be published: the correction assumes that only results with *p* values
+below `alpha_prior` reach the literature, and so reach you. Different
+\\\alpha\\ levels represent differing amounts of publication bias. For
+example, setting `alpha_prior = .20` assumes that studies with *p*
+values less than .20 are published, whereas those with larger *p* values
+are not, which reflects less severe publication bias than the default of
+.05. If the previous study of interest has not been subjected to
+publication bias (e.g., a pilot study), set `alpha_prior = 1`, which may
+also be written `alpha_prior = "No Publication Filter"`; Anderson,
+Kelley, and Maxwell (2017, p. 1552) note that it can be set equal to 1
+when publication bias is thought not to apply. Because no *p* value
+exceeds 1, this means no publication filter at all: any result would
+have been published whatever its *p* value, so there is no publication
+bias to correct, and only the correction for uncertainty, set by
+`assurance`, remains.
 
 In some cases, the corrected noncentrality parameter for a given level
 of assurance will be estimated to be zero. This is an indication that,
@@ -215,8 +323,8 @@ computation. The planned study is assumed to have equal group sizes,
 which is the allocation that maximizes power when the variances are
 equal and is a reasonable default otherwise. It is not the optimal
 allocation when they are not: sampling in proportion to the standard
-deviations would need about 11 percent fewer participants in total at a
-ratio of 2, and about 25 percent fewer at a ratio of 3.
+deviations would need about 10 percent fewer participants in total at a
+ratio of 2, and about 20 percent fewer at a ratio of 3.
 
 ## References
 
@@ -231,10 +339,16 @@ effect sizes for publication bias and uncertainty. *Psychological
 Science, 28,* 1547–1562.
 [doi:10.1177/0956797617723724](https://doi.org/10.1177/0956797617723724)
 
-Anderson, S. F., & Maxwell, S. E. (2017). Addressing the 'replication
-crisis': Using original studies to design replication studies with
+Anderson, S. F., & Maxwell, S. E. (2017). Addressing the "replication
+crisis": Using original studies to design replication studies with
 appropriate statistical power. *Multivariate Behavioral Research, 52,*
 305–324.
+[doi:10.1080/00273171.2017.1289361](https://doi.org/10.1080/00273171.2017.1289361)
+
+Kelley, K., & Maxwell, S. E. (2003). Sample size for multiple
+regression: Obtaining regression coefficients that are accurate, not
+simply significant. *Psychological Methods, 8,* 305–321.
+[doi:10.1037/1082-989X.8.3.305](https://doi.org/10.1037/1082-989X.8.3.305)
 
 Maxwell, S. E., Delaney, H. D., & Kelley, K. (2027). *Designing
 experiments and analyzing data: A model comparison perspective* (4th
@@ -243,6 +357,20 @@ ed.). Routledge.
 Taylor, D. J., & Muller, K. E. (1996). Bias in linear model power and
 sample size calculation due to estimating noncentrality. *Communications
 in Statistics: Theory and Methods, 25,* 1595–1610.
+[doi:10.1080/03610929608831787](https://doi.org/10.1080/03610929608831787)
+
+Bonett, D. G. (2008). Confidence intervals for standardized linear
+contrasts of means. *Psychological Methods, 13,* 99–109.
+[doi:10.1037/1082-989X.13.2.99](https://doi.org/10.1037/1082-989X.13.2.99)
+
+Satterthwaite, F. E. (1946). An approximate distribution of estimates of
+variance components. *Biometrics Bulletin, 2,* 110–114.
+[doi:10.2307/3002019](https://doi.org/10.2307/3002019)
+
+Welch, B. L. (1947). The generalization of 'Student's' problem when
+several different population variances are involved. *Biometrika, 34,*
+28–35.
+[doi:10.1093/biomet/34.1-2.28](https://doi.org/10.1093/biomet/34.1-2.28)
 
 ## See also
 
@@ -251,7 +379,8 @@ for the equal-variance test.
 
 ## Author
 
-Ken Kelley (<kkelley@nd.edu>)
+Ken Kelley (<kkelley@nd.edu>) and Samantha F. Anderson
+(<samantha.f.anderson@asu.edu>)
 
 ## Examples
 
@@ -267,6 +396,7 @@ result
 #>  total_N               444  
 #>  actual_power          0.801
 #>  ncp_adjusted          1.32 
+#>  smd_planning          0.267
 #>  t_observed            3    
 #>  n_1                   40   
 #>  n_2                   55   
@@ -288,6 +418,7 @@ ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_1 = 8.4, sd_2 = 12.6)
 #>  total_N               444  
 #>  actual_power          0.801
 #>  ncp_adjusted          1.32 
+#>  smd_planning          0.267
 #>  t_observed            3    
 #>  n_1                   40   
 #>  n_2                   55   
@@ -308,6 +439,7 @@ ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, var_1 = 70.56,
 #>  total_N               444  
 #>  actual_power          0.801
 #>  ncp_adjusted          1.32 
+#>  smd_planning          0.267
 #>  t_observed            3    
 #>  n_1                   40   
 #>  n_2                   55   
@@ -329,6 +461,7 @@ ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 1)
 #>  total_N               426  
 #>  actual_power          0.801
 #>  ncp_adjusted          1.31 
+#>  smd_planning          0.272
 #>  t_observed            3    
 #>  n_1                   40   
 #>  n_2                   55   
@@ -347,6 +480,7 @@ ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 2)
 #>  total_N               472  
 #>  actual_power          0.801
 #>  ncp_adjusted          1.31 
+#>  smd_planning          0.259
 #>  t_observed            3    
 #>  n_1                   40   
 #>  n_2                   55   

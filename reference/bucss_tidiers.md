@@ -1,23 +1,27 @@
-# Tidy and summarize a bias and uncertainty corrected sample size result
+# Tidy and Summarize a Bias and Uncertainty Corrected Sample Size Result
 
 [`tidy()`](https://generics.r-lib.org/reference/tidy.html) returns the
-compact estimate view, mirroring the sibling package `DMAR`'s sample
-size planners: one row with `term` (`"sample_size"`), `estimate` (the
-necessary sample size in the design's unit), and `power` (the
-conservative achieved power at that sample size; see the planner's help
-page). [`glance()`](https://generics.r-lib.org/reference/glance.html)
-returns the one-row wide view: the estimate plus one column per row of
-the result (`total_N` where applicable, `ncp_adjusted`, and every echoed
-planning input) together with the design, the effect tested, the unit,
-the planned test's degrees of freedom, and the assurance ceiling.
+compact estimate view, as the sibling package `DMAR`'s sample size
+planners do: one row with `term` (`"sample_size"`), `estimate` (the
+necessary sample size in the design's unit, which the result's
+`sample_size_unit` attribute names), and `power` (the power of the plan
+the result reports; see `actual_power` on the planner's help page).
+[`glance()`](https://generics.r-lib.org/reference/glance.html) returns
+the one-row wide view: the same three columns, then one column per row
+of the result, namely the sample size row, `total_N` where applicable,
+`actual_power`, `ncp_adjusted`, the planning effect size (the row whose
+name ends in `_planning`, such as `smd_planning`), and every echoed
+planning input, together with the design, the effect tested, the unit,
+the planned test's degrees of freedom where the design has them, and the
+assurance ceiling.
 
 ## Usage
 
 ``` r
-# S3 method for class 'bucss_power'
+# S3 method for class 'bucss_plan'
 tidy(x, ...)
 
-# S3 method for class 'bucss_power'
+# S3 method for class 'bucss_plan'
 glance(x, ...)
 ```
 
@@ -25,7 +29,7 @@ glance(x, ...)
 
 - x:
 
-  An object of class `bucss_power` returned by an `ss_buc_*` function.
+  An object of class `bucss_plan` returned by an `ss_buc_*` function.
 
 - ...:
 
@@ -37,7 +41,10 @@ A one-row `data.frame`. For
 [`tidy()`](https://generics.r-lib.org/reference/tidy.html), the columns
 `term`, `estimate`, and `power`. For
 [`glance()`](https://generics.r-lib.org/reference/glance.html), the wide
-summary described above.
+summary described above. Both stop with an explanation if the object no
+longer has the shape of a single plan (for example, several plans
+stacked with `dplyr::bind_rows()`, or a plan with a row removed by
+`dplyr::filter()`; both keep the class).
 
 ## Details
 
@@ -50,7 +57,8 @@ precision values remain available directly, for example
 
 ## Author
 
-Ken Kelley (<kkelley@nd.edu>)
+Ken Kelley (<kkelley@nd.edu>) and Samantha F. Anderson
+(<samantha.f.anderson@asu.edu>)
 
 ## Examples
 
@@ -67,14 +75,14 @@ tidy(result)$estimate
 
 # One-row wide view: every quantity and echoed input as a column.
 glance(result)
-#>   necessary_n_per_cell total_N actual_power ncp_adjusted F_observed   N
-#> 1                  659    3954    0.8005714    0.2930235          5 120
-#>   levels_A levels_B alpha_prior alpha_planned assurance desired_power
-#> 1        2        3        0.05          0.05       0.8           0.8
-#>                           design   effect sample_size_unit df_effect df_error
-#> 1 Two-way between-subjects ANOVA factor_B         per cell         2     3948
-#>   assurance_ceiling
-#> 1         0.8342054
+#>          term estimate     power necessary_n_per_cell total_N actual_power
+#> 1 sample_size      659 0.8005714                  659    3954    0.8005714
+#>   ncp_adjusted f_planning F_observed   N levels_A levels_B alpha_prior
+#> 1    0.2930235  0.0494152          5 120        2        3        0.05
+#>   alpha_planned assurance desired_power                         design   effect
+#> 1          0.05       0.8           0.8 Two-way between-subjects ANOVA factor_B
+#>   sample_size_unit df_effect df_error assurance_ceiling
+#> 1         per cell         2     3948         0.8342054
 glance(result)$total_N
 #> [1] 3954
 ```

@@ -65,7 +65,7 @@
 Samantha F. Anderson, and Scott E. Maxwell</h4>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/yelleKneK/BUCSS/blob/master/vignettes/understanding-assurance.Rmd" class="external-link"><code>vignettes/understanding-assurance.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/yelleKneK/BUCSS/blob/main/vignettes/understanding-assurance.Rmd" class="external-link"><code>vignettes/understanding-assurance.Rmd</code></a></small>
       <div class="d-none name"><code>understanding-assurance.Rmd</code></div>
     </div>
 
@@ -79,23 +79,56 @@ responds as you turn each knob. The correction is described by Anderson,
 Kelley, and Maxwell (2017) and builds on the truncated noncentral
 distribution of Taylor and Muller (1996).</p>
 <div class="section level2">
+<h2 id="what-assurance-means-here">What Assurance Means Here<a class="anchor" aria-label="anchor" href="#what-assurance-means-here"></a>
+</h2>
+<p>Assurance is the long run proportion of planned studies whose power
+reaches the target. Imagine the prior study drawn again and again from
+its literature, each draw seen only if it cleared the publication
+threshold that <code>alpha_prior</code> describes, and a new study
+planned from each one. At the true effect, some of those planned studies
+have at least the power you asked for and some fall short; assurance is
+the proportion that reach it. If you plan for 80% power with
+<code>assurance = .80</code>, about 80% of the studies planned this way
+have power of at least 80%.</p>
+<p>BUCSS delivers that proportion in a simple way. A planned study
+reaches its target power whenever the noncentrality parameter it was
+planned from is at or below the true one, because power rises with the
+effect (and, apart from rounding the sample size up to a whole number
+and from the smallest sample size a planner returns, the design’s own
+minimum or the Welch planner’s 10 per group, only then). So BUCSS plans
+from the lower limit of a one-sided confidence interval for the prior
+study’s noncentrality parameter, at a confidence level equal to the
+assurance, computed from the distribution of the prior statistic
+truncated at the publication threshold: the value at which a published
+prior study would exceed the observed statistic with probability
+<code>1 - assurance</code>, which Anderson, Kelley, and Maxwell (2017)
+call the <code>1 - assurance</code> quantile of the likelihood
+distribution. An interval at level .80 covers the true parameter in 80%
+of repetitions, and in each of those repetitions the plan is large
+enough.</p>
+<p>The term follows Kelley and Maxwell (2003), who used assurance in
+sample size planning for the probability that a confidence interval will
+be no wider than desired. Here it is the probability that the planned
+study’s power will be at least the desired power.</p>
+</div>
+<div class="section level2">
 <h2 id="assurance-correcting-for-uncertainty">Assurance: Correcting for Uncertainty<a class="anchor" aria-label="anchor" href="#assurance-correcting-for-uncertainty"></a>
 </h2>
-<p>Assurance is the long-run proportion of replications whose realized
-power meets or exceeds the target. If you plan for 80% power with
-<code>assurance = .80</code>, then in about 80% of replications the
-realized power will be at least 80%.</p>
+<p>The value of <code>assurance</code> sets how much protection against
+uncertainty the plan carries:</p>
 <ul>
 <li>
-<code>assurance = .5</code> selects the median of the likelihood.
-This corrects for publication bias only; it does not add any cushion for
+<code>assurance = .5</code> selects the noncentrality parameter at
+which the observed statistic sits at the median of the
+publication-truncated distribution, a median unbiased estimate. This
+corrects for publication bias only; it does not add any cushion for
 uncertainty.</li>
 <li>
-<code>assurance &gt; .5</code> selects a lower quantile of the
-likelihood, which is a smaller, more conservative noncentrality
-parameter, and therefore a larger planned sample size. The extra sample
-size is the price of protecting against the chance that the prior
-estimate was lucky.</li>
+<code>assurance &gt; .5</code> selects instead a one-sided lower
+confidence bound at that level, which is a smaller, more conservative
+noncentrality parameter, and therefore a larger planned sample size. The
+extra sample size is the price of protecting against the chance that the
+prior estimate was lucky.</li>
 <li>
 <code>assurance &lt; .5</code> is not recommended (the functions
 warn), because it implies under a 50% chance of reaching the desired
@@ -154,32 +187,35 @@ support so you know exactly how far to step back:</p>
 <span><span class="co">#&gt; 'assurance' is not free: the plan it returns carries that lower</span></span>
 <span><span class="co">#&gt; assurance, not the one you first asked for, so the long run proportion</span></span>
 <span><span class="co">#&gt; of replications reaching your target power falls accordingly.</span></span>
-<span><span class="co">#&gt; 'alpha_prior' does not change</span></span>
-<span><span class="co">#&gt; the prior study, which is what it is; it is your assumption about the</span></span>
-<span><span class="co">#&gt; publication threshold the study's literature faced, so raising it toward</span></span>
-<span><span class="co">#&gt; 1 assumes less publication bias to undo (for example, 'alpha_prior = .10'</span></span>
-<span><span class="co">#&gt; assumes the literature's journals would have published a result</span></span>
-<span><span class="co">#&gt; significant at the .10 level, a more lenient policy than .05, and</span></span>
-<span><span class="co">#&gt; 'alpha_prior = 1' assumes no publication bias at all). See Anderson,</span></span>
-<span><span class="co">#&gt; Kelley, and Maxwell (2017) and Anderson and Kelley (2024).</span></span></code></pre></div>
-<p>That last sentence is worth dwelling on, because the first remedy
-looks cheaper than it is. Assurance is a promise about the long run: at
-.90, nine replications in ten reach your target power. If the prior
-result cannot support .90 and you re-run at .80, the plan you get is a
-perfectly good .80 plan, but it is an .80 plan. You have not recovered
-the guarantee you wanted; you have accepted a smaller one in exchange
-for a feasible study. Raising <code>alpha_prior</code> is a different
-kind of move: it does not lower the guarantee, it changes an assumption
-about the literature the prior study came from, and it is defensible
-exactly to the extent that the assumption is.</p>
+<span><span class="co">#&gt; 'alpha_prior' does not change the prior study, which is what it is; it</span></span>
+<span><span class="co">#&gt; is your assumption about the publication threshold the study's</span></span>
+<span><span class="co">#&gt; literature faced, so raising it toward 1 assumes less publication bias</span></span>
+<span><span class="co">#&gt; to undo (for example, 'alpha_prior = .10' assumes the literature's</span></span>
+<span><span class="co">#&gt; journals would have published a result significant at the .10 level, a</span></span>
+<span><span class="co">#&gt; more lenient policy than .05, and 'alpha_prior = 1' assumes no</span></span>
+<span><span class="co">#&gt; publication bias at all). See Anderson, Kelley, and Maxwell (2017) and</span></span>
+<span><span class="co">#&gt; Anderson and Kelley (2024).</span></span></code></pre></div>
+<p>The sentence about re-running at a lower assurance is worth dwelling
+on, because the first remedy looks cheaper than it is. Assurance is a
+promise about the long run: at .90, nine replications in ten reach your
+target power. If the prior result cannot support .90 and you re-run at
+.80, the plan you get is a perfectly good .80 plan, but it is an .80
+plan. You have not recovered the guarantee you wanted; you have accepted
+a smaller one in exchange for a feasible study. Raising
+<code>alpha_prior</code> is a different kind of move: it does not lower
+the guarantee, it changes an assumption about the literature the prior
+study came from, and it is defensible exactly to the extent that the
+assumption is.</p>
 <p>The reported ceiling is exact: the largest assurance a prior result
 can support is <code>1 - p/alpha_prior</code>, where <em>p</em> is the
-prior study’s <em>p</em> value. Here that is about .90, so .95 is out of
-reach but .90 or below is fine. The two remedies are exactly the two
-knobs: lower the assurance to at or below the reported ceiling, or
-assume less publication bias by raising <code>alpha_prior</code>, which
-lifts the ceiling. When the ceiling is already at or below the .5 floor,
-only raising <code>alpha_prior</code> can help.</p>
+prior study’s <em>p</em> value (taken at the balanced design the planner
+plans from, when the prior study’s groups were unequal). Here that is
+about .90, so .95 is out of reach but .90 or below is fine. The two
+remedies are exactly the two knobs: lower the assurance to at or below
+the reported ceiling, or assume less publication bias by raising
+<code>alpha_prior</code>, which lifts the ceiling. When the ceiling is
+already at or below the .5 floor, only raising <code>alpha_prior</code>
+can help.</p>
 <p>Every successful call reports this same ceiling too, printed in the
 footer as “Largest supportable assurance”, so you can see how much
 headroom remains before the correction breaks down. The printed result
@@ -215,12 +251,11 @@ left, along a curve that is very steep near the ceiling, which is why a
 small step back can buy a large reduction in sample size. Raising
 <code>alpha_prior</code> moves the wall itself to the right.</p>
 <p>The plotted values come back invisibly, so the figure can be redrawn
-with any other graphics system:</p>
+with any other graphics system (the call also draws the sample size
+panel again, which is not repeated here):</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">curve_values</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">plan</span>, which <span class="op">=</span> <span class="st">"size"</span>, n_points <span class="op">=</span> <span class="fl">12</span><span class="op">)</span></span></code></pre></div>
-<p><img src="understanding-assurance_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="700"></p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">curve_values</span>, <span class="fl">4</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">curve_values</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">plan</span>, which <span class="op">=</span> <span class="st">"size"</span>, n_points <span class="op">=</span> <span class="fl">12</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">curve_values</span>, <span class="fl">4</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   assurance ncp_adjusted sample_size actual_power</span></span>
 <span><span class="co">#&gt; 1 0.5000000    2.5934021          25    0.8108657</span></span>
 <span><span class="co">#&gt; 2 0.6888979    1.7779261          51    0.8028359</span></span>
@@ -231,14 +266,83 @@ with any other graphics system:</p>
 <div class="section level2">
 <h2 id="alpha_prior-modeling-publication-bias">alpha_prior: Modeling Publication Bias<a class="anchor" aria-label="anchor" href="#alpha_prior-modeling-publication-bias"></a>
 </h2>
-<p><code>alpha_prior</code> is the significance threshold that governs
-publication in the prior study’s literature. Setting
-<code>alpha_prior = .05</code> assumes the field publishes results with
-<em>p</em> &lt; .05 and truncates the likelihood at that point. A larger
-value assumes a more permissive literature and therefore less severe
-bias; <code>alpha_prior = 1</code> assumes no publication bias at all,
-which is appropriate for a prior study that was never subject to the
-file drawer, such as a pilot study.</p>
+<p><code>alpha_prior</code> is the significance level a prior result had
+to reach to be published (more generally, to reach you): the correction
+assumes you see only results with <em>p</em> below
+<code>alpha_prior</code>, and it undoes the selection that assumption
+implies. Setting <code>alpha_prior = .05</code> assumes the field
+publishes results with <em>p</em> &lt; .05 and truncates the likelihood
+at that point. A larger value assumes a more permissive literature and
+therefore less severe bias.</p>
+<p>Setting <code>alpha_prior = 1</code> means there is no publication
+filter at all. Every <em>p</em> value is at most 1, so any result would
+have been published whatever its <em>p</em> value; there is then no
+publication bias to correct, and only the correction for uncertainty,
+set by <code>assurance</code>, remains. That is appropriate for a prior
+study that was never subject to the file drawer, such as a pilot study:
+Anderson, Kelley, and Maxwell (2017, p. 1552) note that the level can be
+set equal to 1 when publication bias is thought not to apply. So that a
+call says what it means, the value may also be written
+<code>"No Publication Filter"</code>, which is read as 1 and echoed as 1
+in the result:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ss_buc_independent_t.html">ss_buc_independent_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="fl">3</span>, n <span class="op">=</span> <span class="fl">20</span>,</span>
+<span>                     alpha_prior <span class="op">=</span> <span class="st">"No Publication Filter"</span>, assurance <span class="op">=</span> <span class="fl">.80</span>,</span>
+<span>                     desired_power <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<thead><tr class="header">
+<th align="left">term</th>
+<th align="left">value</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">necessary_n_per_group</td>
+<td align="left">37</td>
+</tr>
+<tr class="even">
+<td align="left">total_N</td>
+<td align="left">74</td>
+</tr>
+<tr class="odd">
+<td align="left">actual_power</td>
+<td align="left">0.801</td>
+</tr>
+<tr class="even">
+<td align="left">ncp_adjusted</td>
+<td align="left">2.09</td>
+</tr>
+<tr class="odd">
+<td align="left">smd_planning</td>
+<td align="left">0.661</td>
+</tr>
+<tr class="even">
+<td align="left">t_observed</td>
+<td align="left">3</td>
+</tr>
+<tr class="odd">
+<td align="left">n</td>
+<td align="left">20</td>
+</tr>
+<tr class="even">
+<td align="left">alpha_prior</td>
+<td align="left">1</td>
+</tr>
+<tr class="odd">
+<td align="left">alpha_planned</td>
+<td align="left">0.05</td>
+</tr>
+<tr class="even">
+<td align="left">assurance</td>
+<td align="left">0.8</td>
+</tr>
+<tr class="odd">
+<td align="left">desired_power</td>
+<td align="left">0.8</td>
+</tr>
+</tbody>
+</table>
+<p>Design: Independent t test; Sample size unit: per group; Largest
+supportable assurance: .99</p>
 <p>A dissertation study is a similar case, since it is typically
 completed and defended regardless of how the results turn out. Even a
 pilot study is not guaranteed to be bias-free, though. If the
@@ -274,6 +378,213 @@ for 130 per group; assuming none (<code>alpha_prior = 1</code>) calls
 for 37.</p>
 </div>
 <div class="section level2">
+<h2 id="safeguard-power-as-a-special-case">Safeguard Power as a Special Case<a class="anchor" aria-label="anchor" href="#safeguard-power-as-a-special-case"></a>
+</h2>
+<p>Safeguard power (Perugini, Gallucci, &amp; Costantini, 2014) is a way
+of planning a new study from a prior study’s effect size that guards
+against the prior estimate being too large. Instead of planning for the
+effect size the prior study observed, the researcher plans for the lower
+limit of a two-sided 60% confidence interval around it, a limit that, in
+repeated sampling, falls below the true effect 80% of the time. The new
+study then keeps its intended power even if the true effect is somewhat
+smaller than the one observed. Safeguard power allows for uncertainty in
+the prior estimate but not for publication bias.</p>
+<p>It is BUCSS with <code>alpha_prior = 1</code> and
+<code>assurance = .80</code>, that is, BUCSS without the publication
+bias correction, at an assurance of .80, and seeing why shows what each
+setting does.</p>
+<ul>
+<li>With <code>alpha_prior = 1</code> there is no publication filter,
+since no <em>p</em> value exceeds 1, so the truncation disappears and
+the truncated distribution of the prior statistic is its ordinary
+distribution.</li>
+<li>At <code>assurance = .80</code> the adjusted noncentrality parameter
+is then the value at which the observed statistic sits at the .80
+quantile of that distribution: the lower limit of a one-sided 80%
+confidence interval, which is the lower limit of a two-sided 60%
+interval, since either way 20% is left below it.</li>
+<li>The plan is the smallest sample size whose ordinary power at that
+value reaches the target, which is what safeguard power prescribes.</li>
+</ul>
+<p>For a paired <em>t</em> of 3.00 with 30 pairs, the lower limit of the
+60% interval can be found directly by inverting the noncentral
+<em>t</em> distribution, and the ordinary power analysis at that limit
+gives the safeguard plan:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">t_obs</span> <span class="op">&lt;-</span> <span class="fl">3</span></span>
+<span><span class="va">N</span> <span class="op">&lt;-</span> <span class="fl">30</span></span>
+<span><span class="co"># The lower limit of a two-sided interval at confidence level C: the</span></span>
+<span><span class="co"># noncentrality parameter at which the observed t is the (1 + C)/2 quantile.</span></span>
+<span><span class="va">lower_limit</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">C</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/uniroot.html" class="external-link">uniroot</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">ncp</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">pt</a></span><span class="op">(</span><span class="va">t_obs</span>, df <span class="op">=</span> <span class="va">N</span> <span class="op">-</span> <span class="fl">1</span>, ncp <span class="op">=</span> <span class="va">ncp</span><span class="op">)</span> <span class="op">-</span> <span class="op">(</span><span class="fl">1</span> <span class="op">+</span> <span class="va">C</span><span class="op">)</span> <span class="op">/</span> <span class="fl">2</span>,</span>
+<span>          <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span><span class="op">)</span>, tol <span class="op">=</span> <span class="fl">1e-10</span><span class="op">)</span><span class="op">$</span><span class="va">root</span></span>
+<span><span class="op">}</span></span>
+<span><span class="co"># Ordinary power of a paired t test with n pairs, at a noncentrality</span></span>
+<span><span class="co"># parameter stated for the prior study's N pairs.</span></span>
+<span><span class="va">power_at</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n</span>, <span class="va">ncp</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">crit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">qt</a></span><span class="op">(</span><span class="fl">.975</span>, df <span class="op">=</span> <span class="va">n</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="va">delta</span> <span class="op">&lt;-</span> <span class="va">ncp</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">n</span> <span class="op">/</span> <span class="va">N</span><span class="op">)</span></span>
+<span>  <span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">pt</a></span><span class="op">(</span><span class="va">crit</span>, df <span class="op">=</span> <span class="va">n</span> <span class="op">-</span> <span class="fl">1</span>, ncp <span class="op">=</span> <span class="va">delta</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">pt</a></span><span class="op">(</span><span class="op">-</span><span class="va">crit</span>, df <span class="op">=</span> <span class="va">n</span> <span class="op">-</span> <span class="fl">1</span>, ncp <span class="op">=</span> <span class="va">delta</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="va">safeguard_n</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">ncp</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">2</span></span>
+<span>  <span class="kw">while</span> <span class="op">(</span><span class="fu">power_at</span><span class="op">(</span><span class="va">n</span>, <span class="va">ncp</span><span class="op">)</span> <span class="op">&lt;</span> <span class="fl">.80</span><span class="op">)</span> <span class="va">n</span> <span class="op">&lt;-</span> <span class="va">n</span> <span class="op">+</span> <span class="fl">1</span></span>
+<span>  <span class="va">n</span></span>
+<span><span class="op">}</span></span>
+<span><span class="va">limit_60</span> <span class="op">&lt;-</span> <span class="fu">lower_limit</span><span class="op">(</span><span class="fl">.60</span><span class="op">)</span></span>
+<span><span class="va">plan_sg</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_paired_t.html">ss_buc_paired_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="va">t_obs</span>, N <span class="op">=</span> <span class="va">N</span>, alpha_prior <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>                           assurance <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"safeguard power"</span>, <span class="st">"BUCSS, alpha_prior = 1"</span><span class="op">)</span>,</span>
+<span>           ncp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">limit_60</span>, <span class="fu">row_value</span><span class="op">(</span><span class="va">plan_sg</span>, <span class="st">"ncp_adjusted"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>           necessary_N <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu">safeguard_n</span><span class="op">(</span><span class="va">limit_60</span><span class="op">)</span>,</span>
+<span>                           <span class="fu">row_value</span><span class="op">(</span><span class="va">plan_sg</span>, <span class="st">"necessary_N"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;                   method      ncp necessary_N</span></span>
+<span><span class="co">#&gt; 1        safeguard power 2.069878          57</span></span>
+<span><span class="co">#&gt; 2 BUCSS, alpha_prior = 1 2.069874          57</span></span></code></pre></div>
+<p>In general, the lower limit of a two-sided interval at confidence
+level C is <code>assurance = (1 + C)/2</code>: a 60% interval is
+assurance .80, an 80% interval is .90, and a 90% interval is .95. The
+same prior shows the correspondence at each level:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">levels_C</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">.60</span>, <span class="fl">.80</span>, <span class="fl">.90</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  confidence_level <span class="op">=</span> <span class="va">levels_C</span>,</span>
+<span>  assurance <span class="op">=</span> <span class="op">(</span><span class="fl">1</span> <span class="op">+</span> <span class="va">levels_C</span><span class="op">)</span> <span class="op">/</span> <span class="fl">2</span>,</span>
+<span>  interval_lower_limit <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">levels_C</span>, <span class="va">lower_limit</span><span class="op">)</span>,</span>
+<span>  ncp_adjusted <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">levels_C</span>, <span class="kw">function</span><span class="op">(</span><span class="va">C</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">plan</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_paired_t.html">ss_buc_paired_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="va">t_obs</span>, N <span class="op">=</span> <span class="va">N</span>, alpha_prior <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>                            assurance <span class="op">=</span> <span class="op">(</span><span class="fl">1</span> <span class="op">+</span> <span class="va">C</span><span class="op">)</span> <span class="op">/</span> <span class="fl">2</span><span class="op">)</span></span>
+<span>    <span class="fu">row_value</span><span class="op">(</span><span class="va">plan</span>, <span class="st">"ncp_adjusted"</span><span class="op">)</span></span>
+<span>  <span class="op">}</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   confidence_level assurance interval_lower_limit ncp_adjusted</span></span>
+<span><span class="co">#&gt; 1              0.6      0.80             2.069878     2.069874</span></span>
+<span><span class="co">#&gt; 2              0.8      0.90             1.598418     1.598360</span></span>
+<span><span class="co">#&gt; 3              0.9      0.95             1.209421     1.208942</span></span></code></pre></div>
+<p>For an <em>F</em> or chi square statistic on more than one degree of
+freedom the two agree exactly: there is no sign, and the adjusted
+noncentrality parameter is the interval’s lower limit. The differences
+that remain all make the BUCSS plan the same as the safeguard plan or
+larger, never smaller. One applies to the <em>t</em> tests and to every
+effect on one degree of freedom: BUCSS bounds the size of the effect
+whatever its sign, so its interval is computed from the magnitude of
+<em>t</em>, where the signed interval that safeguard power describes is
+computed from <em>t</em> itself. The difference is the chance of a
+<em>t</em> at least as extreme in the opposite direction, which is
+negligible for a convincing prior result and not for a weak one; it is
+why the two columns above differ in their later decimals. It lowers the
+adjusted noncentrality parameter, by more as the prior result weakens.
+At the safeguard <code>assurance = .80</code>, for a prior on two or
+more degrees of freedom and as a percentage of the parameter on the
+<em>F</em> scale (on the <em>t</em> scale that the <em>t</em> planners
+report, each percentage is about half as large), the magnitude of
+<em>t</em> lowers it by less than 0.005% for a prior significant at .01,
+by 0.3% to 0.7% at the .05 threshold (0.6% to 0.7% for a prior on 5 or
+more degrees of freedom), by about 6% to 7% at .10, and by 29% to 30% at
+.15. A <em>t</em> test whose two-sided <em>p</em> value is .20 or more
+is declined by BUCSS at <code>assurance = .80</code>, because with no
+publication filter the largest assurance a result supports is 1 -
+<em>p</em>, while the signed interval’s lower limit stays above zero
+until <em>p</em> reaches .40, with plans that run to thousands of
+participants.</p>
+<p>The sample size a plan needs is close to inversely proportional to
+the parameter on the <em>F</em> scale, so the plan grows by about the
+same proportion before it is rounded up to a whole participant. The plan
+can therefore equal the safeguard plan (7,823 pairs either way for a
+paired <em>t</em> significant at .01 with 3,000 pairs), be a little
+larger (20 per group rather than 19 for an independent <em>t</em> at the
+.05 threshold with 4 per group), or be much larger for a weak prior. The
+same comparison for a prior of 30 pairs at several two-sided <em>p</em>
+values shows the growth:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">p_prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">.01</span>, <span class="fl">.05</span>, <span class="fl">.10</span>, <span class="fl">.15</span><span class="op">)</span></span>
+<span><span class="va">t_prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">qt</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="va">p_prior</span> <span class="op">/</span> <span class="fl">2</span>, df <span class="op">=</span> <span class="va">N</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">signed_limit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">t_prior</span>, <span class="kw">function</span><span class="op">(</span><span class="va">t</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/uniroot.html" class="external-link">uniroot</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">ncp</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">pt</a></span><span class="op">(</span><span class="va">t</span>, df <span class="op">=</span> <span class="va">N</span> <span class="op">-</span> <span class="fl">1</span>, ncp <span class="op">=</span> <span class="va">ncp</span><span class="op">)</span> <span class="op">-</span> <span class="fl">.80</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span><span class="op">)</span>,</span>
+<span>          tol <span class="op">=</span> <span class="fl">1e-10</span><span class="op">)</span><span class="op">$</span><span class="va">root</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span><span class="va">plans_1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">t_prior</span>, <span class="kw">function</span><span class="op">(</span><span class="va">t</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="../reference/ss_buc_paired_t.html">ss_buc_paired_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="va">t</span>, N <span class="op">=</span> <span class="va">N</span>, alpha_prior <span class="op">=</span> <span class="fl">1</span>, assurance <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  p_value <span class="op">=</span> <span class="va">p_prior</span>,</span>
+<span>  signed_limit <span class="op">=</span> <span class="va">signed_limit</span>,</span>
+<span>  ncp_adjusted <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">plans_1</span>, <span class="va">row_value</span>, term <span class="op">=</span> <span class="st">"ncp_adjusted"</span><span class="op">)</span>,</span>
+<span>  safeguard_N <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">signed_limit</span>, <span class="va">safeguard_n</span><span class="op">)</span>,</span>
+<span>  bucss_N <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">plans_1</span>, <span class="va">row_value</span>, term <span class="op">=</span> <span class="st">"necessary_N"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   p_value signed_limit ncp_adjusted safeguard_N bucss_N</span></span>
+<span><span class="co">#&gt; 1    0.01    1.8378649    1.8378347          72      72</span></span>
+<span><span class="co">#&gt; 2    0.05    1.1563764    1.1524878         179     180</span></span>
+<span><span class="co">#&gt; 3    0.10    0.8223431    0.7936462         351     376</span></span>
+<span><span class="co">#&gt; 4    0.15    0.6087670    0.5093695         638     910</span></span></code></pre></div>
+<p>Two further differences can make the BUCSS plan larger. The first is
+that BUCSS reads an unbalanced prior design as a balanced one. When only
+the prior total is given and it does not divide evenly among the groups
+or cells, BUCSS rounds the per-group or per-cell size both down and up
+and returns the larger plan, which can make the plan larger by up to
+about the proportion that rounding up adds to the prior size, less than
+1/<em>n</em> for a prior study of about <em>n</em> per group or cell,
+again before the plan is rounded up. When the independent <em>t</em>
+planner is given two unequal group sizes, it reads the prior as two
+groups of their harmonic mean, rounded down and up, on those balanced
+designs’ degrees of freedom rather than on the prior study’s own (the
+two sizes’ sum less 2). The harmonic mean falls further below half the
+total the more unequal the sizes, and fewer degrees of freedom lower the
+limit. For similar sizes this adds little beyond the rounding, but for
+very unequal sizes it can add much more, most when the harmonic mean is
+small. A <em>t</em> of 3.00 from groups of 4 and 100, whose harmonic
+mean is 7.69, shows the difference:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">n_prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">100</span><span class="op">)</span></span>
+<span><span class="co"># Ordinary power of an independent t test with n per group at a standardized</span></span>
+<span><span class="co"># mean difference d.</span></span>
+<span><span class="va">power_ind</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n</span>, <span class="va">d</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">crit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">qt</a></span><span class="op">(</span><span class="fl">.975</span>, df <span class="op">=</span> <span class="fl">2</span> <span class="op">*</span> <span class="va">n</span> <span class="op">-</span> <span class="fl">2</span><span class="op">)</span></span>
+<span>  <span class="va">delta</span> <span class="op">&lt;-</span> <span class="va">d</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">n</span> <span class="op">/</span> <span class="fl">2</span><span class="op">)</span></span>
+<span>  <span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">pt</a></span><span class="op">(</span><span class="va">crit</span>, df <span class="op">=</span> <span class="fl">2</span> <span class="op">*</span> <span class="va">n</span> <span class="op">-</span> <span class="fl">2</span>, ncp <span class="op">=</span> <span class="va">delta</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">pt</a></span><span class="op">(</span><span class="op">-</span><span class="va">crit</span>, df <span class="op">=</span> <span class="fl">2</span> <span class="op">*</span> <span class="va">n</span> <span class="op">-</span> <span class="fl">2</span>, ncp <span class="op">=</span> <span class="va">delta</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="co"># Safeguard power with the 60% limit read on 'df' and restated as a</span></span>
+<span><span class="co"># standardized mean difference by the factor 'to_d'.</span></span>
+<span><span class="va">safeguard_ind</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">df</span>, <span class="va">to_d</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">limit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/uniroot.html" class="external-link">uniroot</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">ncp</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">pt</a></span><span class="op">(</span><span class="fl">3</span>, df <span class="op">=</span> <span class="va">df</span>, ncp <span class="op">=</span> <span class="va">ncp</span><span class="op">)</span> <span class="op">-</span> <span class="fl">.80</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span><span class="op">)</span>,</span>
+<span>                   tol <span class="op">=</span> <span class="fl">1e-10</span><span class="op">)</span><span class="op">$</span><span class="va">root</span></span>
+<span>  <span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">2</span></span>
+<span>  <span class="kw">while</span> <span class="op">(</span><span class="fu">power_ind</span><span class="op">(</span><span class="va">n</span>, <span class="va">limit</span> <span class="op">*</span> <span class="va">to_d</span><span class="op">)</span> <span class="op">&lt;</span> <span class="fl">.80</span><span class="op">)</span> <span class="va">n</span> <span class="op">&lt;-</span> <span class="va">n</span> <span class="op">+</span> <span class="fl">1</span></span>
+<span>  <span class="va">n</span></span>
+<span><span class="op">}</span></span>
+<span><span class="va">harmonic</span> <span class="op">&lt;-</span> <span class="fl">2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/prod.html" class="external-link">prod</a></span><span class="op">(</span><span class="va">n_prior</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">n_prior</span><span class="op">)</span></span>
+<span><span class="va">plan_unequal</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_independent_t.html">ss_buc_independent_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="fl">3</span>, n <span class="op">=</span> <span class="va">n_prior</span>,</span>
+<span>                                     alpha_prior <span class="op">=</span> <span class="fl">1</span>, assurance <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  prior_read_as <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"groups of 4 and 100, df 102"</span>, <span class="st">"7 per group, df 12"</span>,</span>
+<span>                    <span class="st">"8 per group, df 14"</span>, <span class="st">"BUCSS, alpha_prior = 1"</span><span class="op">)</span>,</span>
+<span>  necessary_n_per_group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="fu">safeguard_ind</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">n_prior</span><span class="op">)</span> <span class="op">-</span> <span class="fl">2</span>, <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="va">n_prior</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="fu">safeguard_ind</span><span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">floor</a></span><span class="op">(</span><span class="va">harmonic</span><span class="op">)</span> <span class="op">-</span> <span class="fl">2</span>, <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">2</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">floor</a></span><span class="op">(</span><span class="va">harmonic</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="fu">safeguard_ind</span><span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">ceiling</a></span><span class="op">(</span><span class="va">harmonic</span><span class="op">)</span> <span class="op">-</span> <span class="fl">2</span>, <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">2</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">ceiling</a></span><span class="op">(</span><span class="va">harmonic</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="fu">row_value</span><span class="op">(</span><span class="va">plan_unequal</span>, <span class="st">"necessary_n_per_group"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;                 prior_read_as necessary_n_per_group</span></span>
+<span><span class="co">#&gt; 1 groups of 4 and 100, df 102                    15</span></span>
+<span><span class="co">#&gt; 2          7 per group, df 12                    16</span></span>
+<span><span class="co">#&gt; 3          8 per group, df 14                    18</span></span>
+<span><span class="co">#&gt; 4      BUCSS, alpha_prior = 1                    18</span></span></code></pre></div>
+<p>Safeguard power at the prior study’s own design plans 15 per group.
+Read as two groups of 7, which rounds the harmonic mean down and so
+favors a smaller plan, the prior already plans 16 on its 12 degrees of
+freedom; read as two groups of 8 on 14 degrees of freedom it plans 18,
+which is the BUCSS plan.</p>
+<p>The second is the Welch planner’s minimum of 10 per group, which can
+make its plan larger. For the regression planners, the equivalence holds
+in the frame <code>random_predictors</code> names: with sampled
+predictors, both the interval and the power analysis use the
+distribution with random predictors.</p>
+<p>With <code>alpha_prior</code> below 1, BUCSS applies the same
+construction to the publication-truncated distribution, which is what
+the publication bias correction adds to safeguard power; and with
+<code>assurance = .5</code> it plans from the median unbiased estimate
+rather than from a lower limit.</p>
+</div>
+<div class="section level2">
 <h2 id="seeing-the-assurance-claim-exercised">Seeing the Assurance Claim Exercised<a class="anchor" aria-label="anchor" href="#seeing-the-assurance-claim-exercised"></a>
 </h2>
 <p>Everything above is a claim about a long run that a user planning one
@@ -287,24 +598,28 @@ happened.</p>
 because defaulting to the corrected estimate would ask the method to
 grade its own answer. The value goes on the same scale as the plan’s own
 <code>ncp_adjusted</code>, so that number is the natural anchor.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">plan</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_paired_t.html">ss_buc_paired_t</a></span><span class="op">(</span>t_observed <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">30</span>, assurance <span class="op">=</span> <span class="fl">.80</span><span class="op">)</span></span>
-<span><span class="va">plan</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">plan</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"ncp_adjusted"</span><span class="op">]</span></span>
+<span><span class="va">ncp</span> <span class="op">&lt;-</span> <span class="va">plan</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">plan</span><span class="op">$</span><span class="va">term</span> <span class="op">==</span> <span class="st">"ncp_adjusted"</span><span class="op">]</span></span>
+<span><span class="va">ncp</span></span>
 <span><span class="co">#&gt; [1] 0.9753901</span></span>
-<span><span class="fu"><a href="../reference/ss_buc_sensitivity.html">ss_buc_sensitivity</a></span><span class="op">(</span><span class="va">plan</span>, true_ncp <span class="op">=</span> <span class="fl">2</span>, replications <span class="op">=</span> <span class="fl">2000</span>, seed <span class="op">=</span> <span class="fl">2017</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  term                     value </span></span>
-<span><span class="co">#&gt;  true_ncp                 2     </span></span>
-<span><span class="co">#&gt;  ncp_adjusted             0.975 </span></span>
-<span><span class="co">#&gt;  replications             2000  </span></span>
-<span><span class="co">#&gt;  publication_rate         0.49  </span></span>
-<span><span class="co">#&gt;  refusal_rate             0.508 </span></span>
-<span><span class="co">#&gt;  attainment               0.604 </span></span>
-<span><span class="co">#&gt;  attainment_mcse          0.0156</span></span>
-<span><span class="co">#&gt;  attainment_with_refusals 0.806 </span></span>
-<span><span class="co">#&gt;  size_at_true_effect      61    </span></span>
-<span><span class="co">#&gt;  size_q25                 40    </span></span>
-<span><span class="co">#&gt;  size_median              85    </span></span>
-<span><span class="co">#&gt;  size_q75                 280   </span></span>
+<span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ss_buc_sensitivity.html">ss_buc_sensitivity</a></span><span class="op">(</span><span class="va">plan</span>, true_ncp <span class="op">=</span> <span class="va">ncp</span>, replications <span class="op">=</span> <span class="fl">2000</span>,</span>
+<span>                            seed <span class="op">=</span> <span class="fl">2017</span><span class="op">)</span></span>
+<span><span class="va">audit</span></span>
+<span><span class="co">#&gt;  term                          value  </span></span>
+<span><span class="co">#&gt;  true_ncp                      0.975  </span></span>
+<span><span class="co">#&gt;  ncp_adjusted                  0.975  </span></span>
+<span><span class="co">#&gt;  replications                  2000   </span></span>
+<span><span class="co">#&gt;  publication_rate              0.157  </span></span>
+<span><span class="co">#&gt;  refusal_rate                  0.692  </span></span>
+<span><span class="co">#&gt;  attainment                    0.356  </span></span>
+<span><span class="co">#&gt;  attainment_mcse               0.0193 </span></span>
+<span><span class="co">#&gt;  attainment_with_refusals      0.802  </span></span>
+<span><span class="co">#&gt;  attainment_with_refusals_mcse 0.00892</span></span>
+<span><span class="co">#&gt;  size_at_true_effect           250    </span></span>
+<span><span class="co">#&gt;  size_q25                      61.8   </span></span>
+<span><span class="co">#&gt;  size_median                   138    </span></span>
+<span><span class="co">#&gt;  size_q75                      434    </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Design: Dependent (paired) t test</span></span>
 <span><span class="co">#&gt; Sample size unit: number of pairs</span></span>
@@ -312,13 +627,17 @@ grade its own answer. The value goes on the same scale as the plan’s own
 <span><span class="co">#&gt; Target power: .80</span></span></code></pre></div>
 <p>Two attainment rates are reported, and the gap between them is the
 point. <code>attainment_with_refusals</code> lands on the requested
-assurance, because that is the quantity the guarantee is about: a
-refusal counts as attaining, since declining to plan is the limiting
-case of an arbitrarily conservative plan. <code>attainment</code> counts
-only the prior studies for which a plan was actually issued, and it is
-lower, often much lower. That is what a user experiences, and it is the
-visible price of a method that refuses rather than guesses. Its expected
-value is <code>(assurance - refusal_rate)/(1 - refusal_rate)</code>.</p>
+assurance within simulation error (here .802, with a Monte Carlo
+standard error of .0089), because that is the quantity the guarantee is
+about: a refusal counts as attaining, since declining to plan is the
+limiting case of an arbitrarily conservative plan.
+<code>attainment</code> counts only the prior studies for which a plan
+was actually issued, and it is lower, often much lower: here .356 (Monte
+Carlo standard error .019), because the method refuses .692 (Monte Carlo
+standard error .01) of the simulated published prior results as too weak
+to plan from. That is what a user experiences, and it is the visible
+price of a method that refuses rather than guesses. Its expected value
+is <code>(assurance - refusal_rate)/(1 - refusal_rate)</code>.</p>
 <p>The most useful thing to do with this function is to run it more than
 once, at the corrected estimate and at values below it, and watch how
 fast the attainment falls when the truth is smaller than the correction
@@ -352,10 +671,16 @@ Methods, 29</em>, 844–867. <a href="https://doi.org/10.1037/met0000520" class=
 planning for more accurate statistical power: A method adjusting sample
 effect sizes for publication bias and uncertainty. <em>Psychological
 Science, 28</em>, 1547–1562. <a href="https://doi.org/10.1177/0956797617723724" class="external-link uri">https://doi.org/10.1177/0956797617723724</a></p>
+<p>Kelley, K., &amp; Maxwell, S. E. (2003). Sample size for multiple
+regression: Obtaining regression coefficients that are accurate, not
+simply significant. <em>Psychological Methods, 8</em>, 305–321. <a href="https://doi.org/10.1037/1082-989X.8.3.305" class="external-link uri">https://doi.org/10.1037/1082-989X.8.3.305</a></p>
+<p>Perugini, M., Gallucci, M., &amp; Costantini, G. (2014). Safeguard
+power as a protection against imprecise power estimates.
+<em>Perspectives on Psychological Science, 9</em>, 319–332. <a href="https://doi.org/10.1177/1745691614528519" class="external-link uri">https://doi.org/10.1177/1745691614528519</a></p>
 <p>Taylor, D. J., &amp; Muller, K. E. (1996). Bias in linear model power
 and sample size calculation due to estimating noncentrality.
 <em>Communications in Statistics: Theory and Methods, 25</em>,
-1595–1610.</p>
+1595–1610. <a href="https://doi.org/10.1080/03610929608831787" class="external-link uri">https://doi.org/10.1080/03610929608831787</a></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

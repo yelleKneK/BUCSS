@@ -49,7 +49,7 @@ Taylor and Muller (1996) and is described in Anderson, Kelley, and Maxwell
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>BUCSS: Bias and Uncertainty Corrected Sample Size</h1>
-      <small class="dont-index">Source: <a href="https://github.com/yelleKneK/BUCSS/blob/master/R/BUCSS.R" class="external-link"><code>R/BUCSS.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/yelleKneK/BUCSS/blob/main/R/BUCSS.R" class="external-link"><code>R/BUCSS.R</code></a></small>
       <div class="d-none name"><code>BUCSS-package.Rd</code></div>
     </div>
 
@@ -66,19 +66,118 @@ Taylor and Muller (1996) and is described in Anderson, Kelley, and Maxwell
 
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The functions are also available, through a web interface, as Shiny apps at
-<a href="https://designingexperiments.com" class="external-link">https://designingexperiments.com</a>.</p>
+    <p>Each <code>ss_buc_*</code> function plans one analysis. The <em>t</em> tests:
+<code><a href="ss_buc_one_sample_t.html">ss_buc_one_sample_t</a></code>, <code><a href="ss_buc_paired_t.html">ss_buc_paired_t</a></code>,
+<code><a href="ss_buc_independent_t.html">ss_buc_independent_t</a></code>, and <code><a href="ss_buc_welch_t.html">ss_buc_welch_t</a></code>.
+Between-subjects analysis of variance and covariance:
+<code><a href="ss_buc_one_way_anova.html">ss_buc_one_way_anova</a></code>, <code><a href="ss_buc_factorial_anova.html">ss_buc_factorial_anova</a></code>,
+<code><a href="ss_buc_factorial_anova_general.html">ss_buc_factorial_anova_general</a></code>, and
+<code><a href="ss_buc_ancova.html">ss_buc_ancova</a></code>. Within-subjects and split-plot analysis of
+variance: <code><a href="ss_buc_rm_anova.html">ss_buc_rm_anova</a></code>,
+<code><a href="ss_buc_rm_anova_general.html">ss_buc_rm_anova_general</a></code>, <code><a href="ss_buc_mixed_anova.html">ss_buc_mixed_anova</a></code>,
+and <code><a href="ss_buc_mixed_anova_general.html">ss_buc_mixed_anova_general</a></code>. Regression and correlation:
+<code><a href="ss_buc_reg_coef.html">ss_buc_reg_coef</a></code>, <code><a href="ss_buc_R2.html">ss_buc_R2</a></code>,
+<code><a href="ss_buc_reg_joint.html">ss_buc_reg_joint</a></code>, and <code><a href="ss_buc_correlation.html">ss_buc_correlation</a></code>. And
+<code><a href="ss_buc_manova.html">ss_buc_manova</a></code> for a two-group multivariate comparison and
+<code><a href="ss_buc_chisq_diff.html">ss_buc_chisq_diff</a></code> for the chi square difference between
+nested models. The experimental designs among these, their tests, and the
+statistical power of those tests are described in Maxwell, Delaney, and
+Kelley (2027). <code><a href="ss_buc_sensitivity.html">ss_buc_sensitivity</a></code> simulates the literature a
+plan came from and reports how often such a plan attains its target power,
+and <code><a href="plot.bucss_plan.html">plot</a></code> draws the largest assurance a prior
+result can support.</p>
+<p>The planners carried over from BUCSS 1.x are also available, through a web
+interface, as Shiny apps at <a href="https://designingexperiments.com" class="external-link">https://designingexperiments.com</a>; the
+designs added in 2.0.0 are available in R only.</p>
 <p>BUCSS follows the design and naming conventions of the <span class="pkg">DMAR</span> package
-(Design, Measurement, and Analysis of Human-Centered Research): its
-<code>ss_buc_*</code> planners parallel the <code>ss_aipe_*</code> (accuracy in parameter
-estimation) and <code>ss_power_*</code> (power analysis) sample size planning
-families in <span class="pkg">DMAR</span>, returning a tidy result object in the same house
-style. <span class="pkg">DMAR</span> is a natural companion for effect size estimation,
-confidence intervals, and sample size planning across additional frameworks.</p>
+(Design, Measurement, and Analysis in R): its <code>ss_buc_*</code> planners
+parallel the <code>ss_aipe_*</code> (accuracy in parameter estimation) and
+<code>ss_power_*</code> (power analysis) sample size planning families in
+<span class="pkg">DMAR</span>, returning a tidy result object in the same house style.
+<span class="pkg">DMAR</span> is a natural companion for effect size estimation, confidence
+intervals, and sample size planning across additional frameworks.</p>
 <p>The bias and uncertainty adjusted noncentrality parameter is found by solving
 the truncated-likelihood equation directly with <code><a href="https://rdrr.io/r/stats/uniroot.html" class="external-link">uniroot</a></code>,
 so it is no longer capped at 100 (the 1.x grid bound) and needs no
 resolution argument.</p>
+<p><strong>How assurance is used.</strong> Every planner takes an <code>assurance</code>: the
+long run proportion of planned studies whose power at the true effect
+reaches or surpasses the desired power, when each is planned from a prior
+study published under the rule <code>alpha_prior</code> describes. A planned study
+reaches its target power whenever the noncentrality parameter it was planned
+from is at or below the true one, because power rises with the effect (and,
+apart from rounding the sample size up to a whole number and from the
+smallest sample size a planner returns, the design's own minimum or the
+Welch planner's 10 per group, only then). The planners therefore plan from
+the lower limit of a one-sided confidence interval for the prior study's
+noncentrality parameter, at confidence level <code>assurance</code>, computed from
+the distribution of the prior statistic truncated at the publication
+threshold: the value at which a published prior study would exceed the
+observed statistic with probability 1 - <code>assurance</code> (what Anderson,
+Kelley, and Maxwell, 2017, call the (1 - <code>assurance</code>) quantile of the
+likelihood distribution). At <code>assurance = .5</code> this is the median
+unbiased estimate, which corrects for publication bias only; above .5 it
+adds the correction for uncertainty. The term follows Kelley and Maxwell
+(2003), who used assurance in sample size planning for the probability that
+a confidence interval will be no wider than desired; here it is the
+probability that the planned study's power will be at least the desired
+power. <code><a href="ss_buc_sensitivity.html">ss_buc_sensitivity</a></code> checks the proportion by simulation
+for any plan, counting a refusal to plan as meeting the target, as the
+guarantee does, and also reporting the rate among the plans issued.</p>
+<p><strong>The planning effect size.</strong> Every plan also reports a planning
+effect size, in a row whose name ends in <code>_planning</code>
+(<code>smd_planning</code>, <code>f_planning</code>, <code>rho_planning</code>, and so on).
+It is an adjusted effect size: the value, in the design's usual effect size
+metric, used to plan the sample size given the situation at hand (the prior
+study's result, the publication bias assumed through <code>alpha_prior</code>,
+and the uncertainty allowed for through <code>assurance</code>). It is
+<code>ncp_adjusted</code> restated in that metric and is what the plan is built
+on, not an estimate of the population effect to report: above an assurance
+of .5 it is deliberately conservative (a lower confidence limit), and at .5
+it is the median unbiased estimate. Each planner's Value section names its
+metric.</p>
+<p><strong>Safeguard power is a special case.</strong> Safeguard power (Perugini,
+Gallucci, &amp; Costantini, 2014) is a way of planning a new study from a prior
+study's effect size that guards against the prior estimate being too large.
+Instead of planning for the effect size the prior study observed, the
+researcher plans for the lower limit of a two-sided 60 percent confidence
+interval around it (a limit that, in repeated sampling, falls below the
+true effect 80 percent of the time), so the new study keeps its intended
+power even if the true effect is somewhat smaller than the one observed. It
+allows for uncertainty in the prior estimate but not for publication bias.</p>
+<p>It is the special case <code>alpha_prior = 1</code> and <code>assurance = .80</code>
+of the method here, that is, BUCSS without the publication bias correction,
+at an assurance of .80. <code>alpha_prior</code> is the significance level a
+prior result had to reach to be published, and no <em>p</em> value exceeds 1,
+so <code>alpha_prior = 1</code>, which may also be written
+<code>alpha_prior = "No Publication Filter"</code>, means no publication filter:
+any result would have been published, the truncation is removed, and the
+prior statistic has its ordinary distribution. (Anderson, Kelley, and
+Maxwell, 2017, p. 1552, note that this level can be set equal to 1 when
+publication bias is thought not to apply.) At <code>assurance = .80</code> the
+adjusted noncentrality parameter is then the lower limit of a one-sided 80
+percent confidence interval, which is the lower limit of the two-sided 60
+percent interval (either way, 20 percent lies below it), and the plan is
+the smallest sample size whose ordinary power at that value reaches
+<code>desired_power</code>. In general, the lower limit of a two-sided interval
+at confidence level <em>C</em> is <code>assurance = (1 + C)/2</code>, so a
+two-sided 80 percent interval is <code>assurance = .90</code>.</p>
+<p>For an <em>F</em> or chi square statistic the correspondence is exact: the
+adjusted noncentrality parameter is the lower limit of that interval,
+computed from the statistic's ordinary noncentral distribution. Two
+differences from safeguard power remain, and each can only make the plan
+here the same as the safeguard plan or larger. First, for the <em>t</em>
+tests and every other effect on one degree of freedom, safeguard power
+computes its interval from the signed <em>t</em>, while the interval here
+bounds the size of the effect whatever its sign, because the publication
+rule is two-sided. That difference is negligible for a convincing prior
+result and grows as the prior result weakens. Second, an unbalanced prior
+design is read as a balanced one, and the Welch planner returns at least 10
+per group. <code><a href="../articles/understanding-assurance.html">vignette("understanding-assurance", package = "BUCSS")</a></code>
+measures both. For the regression planners the equivalence holds in the
+frame <code>random_predictors</code> names. With <code>alpha_prior</code> below 1 the
+same construction is applied to the publication-truncated distribution,
+which is what the bias correction adds to safeguard power.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -89,9 +188,20 @@ studies: The devil is in the design. <em>Psychological Methods, 29,</em>
 for more accurate statistical power: A method adjusting sample effect sizes
 for publication bias and uncertainty. <em>Psychological Science, 28,</em>
 1547–1562. <a href="https://doi.org/10.1177/0956797617723724" class="external-link">doi:10.1177/0956797617723724</a></p>
+<p>Kelley, K., &amp; Maxwell, S. E. (2003). Sample size for multiple regression:
+Obtaining regression coefficients that are accurate, not simply
+significant. <em>Psychological Methods, 8,</em> 305–321.
+<a href="https://doi.org/10.1037/1082-989X.8.3.305" class="external-link">doi:10.1037/1082-989X.8.3.305</a></p>
 <p>Maxwell, S. E., Delaney, H. D., &amp; Kelley, K. (2027). <em>Designing
 experiments and analyzing data: A model comparison perspective</em> (4th ed.).
 Routledge.</p>
+<p>Perugini, M., Gallucci, M., &amp; Costantini, G. (2014). Safeguard power as a
+protection against imprecise power estimates. <em>Perspectives on
+Psychological Science, 9,</em> 319–332. <a href="https://doi.org/10.1177/1745691614528519" class="external-link">doi:10.1177/1745691614528519</a></p>
+<p>Taylor, D. J., &amp; Muller, K. E. (1996). Bias in linear model power and
+sample size calculation due to estimating noncentrality. <em>Communications
+in Statistics: Theory and Methods, 25,</em> 1595–1610.
+<a href="https://doi.org/10.1080/03610929608831787" class="external-link">doi:10.1080/03610929608831787</a></p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
