@@ -10,9 +10,10 @@
 # ss_buc_mixed_anova_general() come after the round-down check, but they are
 # reachable. The critical F at 1 - alpha_prior falls as the error degrees of
 # freedom grow only when it is an upper quantile; with a large 'alpha_prior'
-# (1 is read as .999) it is a lower quantile, and with several numerator
-# degrees of freedom a lower quantile rises. Their own test is at the end of
-# this file.
+# below 1 (.8, .999) it is a lower quantile, and with several numerator
+# degrees of freedom a lower quantile rises. (At exactly 1, no publication
+# filter, the critical value is 0 at every degrees of freedom, and only a
+# statistic of 0 is refused.) Their own test follows the audit's blocks.
 
 expect_guard <- function(call, fragment, class = NULL) {
   label <- paste(deparse(call, width.cutoff = 500L), collapse = " ")
@@ -504,24 +505,34 @@ test_that("an unexpected planner error stops the audit rather than counting as a
 test_that("the split-plot planners' round-up nonsignificance checks fire", {
   # Twenty groups, N = 41: 2 and 3 per group, so the between effect's df are
   # (19, 20) rounded down and (19, 40) rounded up. With 'alpha_prior' of .8 or
-  # 1 (read as .999) the critical F is a lower quantile, which rises with the
-  # error df, so each statistic below passes the round-down check and falls
-  # short at the round-up one (independent check 2026-09-29, from qf() alone).
+  # .999 the critical F is a lower quantile, which rises with the error df, so
+  # each statistic below passes the round-down check and falls short at the
+  # round-up one (independent check 2026-09-29, from qf() alone). The .999
+  # cases were written as 'alpha_prior = 1' while 1 was read as .999; at
+  # exactly 1 the critical value is 0 in both designs, the checks cannot
+  # differ, and the same statistic reaches the zero noncentrality refusal
+  # instead (its largest supportable assurance is 1 - p, far below .80).
   expect_gt(.24, qf(1 - .999, 19, 20))
   expect_lte(.24, qf(1 - .999, 19, 40))
   expect_gt(.69, qf(1 - .8, 19, 20))
   expect_lte(.69, qf(1 - .8, 19, 40))
   cases <- list(
     quote(ss_buc_mixed_anova(F_observed = .24, N = 41, levels_between = 20,
-                             levels_within = 2, effect = "between", alpha_prior = 1)),
+                             levels_within = 2, effect = "between", alpha_prior = .999)),
     quote(ss_buc_mixed_anova(F_observed = .69, N = 41, levels_between = 20,
                              levels_within = 2, effect = "between", alpha_prior = .8)),
     quote(ss_buc_mixed_anova_general(F_observed = .24, N = 41, df_numerator = 19,
                                      num_groups = 20, effect = "between_only",
-                                     alpha_prior = 1)))
+                                     alpha_prior = .999)))
   for (call in cases)
     expect_error(eval(call), class = "bucss_nonsignificant",
                  label = paste(deparse(call, width.cutoff = 500L), collapse = " "))
+  stopifnot(qf(1 - 1, 19, 20) == 0, qf(1 - 1, 19, 40) == 0)
+  for (call in cases[c(1, 3)]) {
+    call$alpha_prior <- 1
+    expect_error(eval(call), class = "bucss_zero_ncp",
+                 label = paste(deparse(call, width.cutoff = 500L), collapse = " "))
+  }
 })
 
 # Guards added 2026-10-12, from the triage of the unfinished 2026-09-29
@@ -743,63 +754,86 @@ test_that("ENG-3 and CL-33: the 2^52 stop names every cause, and a power that is
 })
 
 test_that("ENG-9: a user already at alpha_prior = 1 is not told to increase it", {
-  # 'alpha_prior = 1' is read as .999, so only a statistic with p above .999
-  # is refused there, and "Please increase 'alpha_prior'" could not be
-  # followed. One case per planner; each premise is from qt(), qf(), and
-  # qchisq() alone.
-  stopifnot(.0005 < qt(1 - .999 / 2, 19), 1e-9 < qf(1 - .999, 1, 1e6),
-            1e-9 < qchisq(1 - .999, 1))
-  too_small <- paste0(" An 'alpha_prior' that large already assumes no publication bias, so ",
-                      "increasing it cannot help: ")
-  ending <- " is too small to plan from even with no publication bias assumed."
-  cases <- list(
-    list(quote(ss_buc_independent_t(t_observed = .0005, n = 20, alpha_prior = 1)),
+  # 'alpha_prior = 1' is computed as exactly 1: the critical value is 0, so
+  # only a statistic of exactly 0 is refused as nonsignificant there, and
+  # "Please increase 'alpha_prior'" could not be followed. One case per
+  # planner; the premise is from qt(), qf(), and qchisq() alone. (While 1 was
+  # read as .999 the cases were statistics with p above .999, such as a t of
+  # .0005; those now pass this check and are refused for a zero noncentrality
+  # parameter instead, as the second half of this block pins.)
+  stopifnot(qt(1 - 1 / 2, 19) == 0, qf(1 - 1, 1, 1e6) == 0, qf(1 - 1, 2, 57) == 0,
+            qchisq(1 - 1, 1) == 0)
+  too_small <- paste0(" An 'alpha_prior' of 1 already assumes no publication filter, so it ",
+                      "cannot be increased: ")
+  ending <- " is too small to plan from even with no publication filter."
+  planners <- list(
+    list(quote(ss_buc_independent_t(n = 20, alpha_prior = 1)), "t_observed", "'t_observed'"),
+    list(quote(ss_buc_paired_t(N = 30, alpha_prior = 1)), "t_observed", "'t_observed'"),
+    list(quote(ss_buc_one_sample_t(N = 30, alpha_prior = 1)), "t_observed", "'t_observed'"),
+    list(quote(ss_buc_welch_t(n_1 = 20, n_2 = 30, alpha_prior = 1)), "t_observed",
          "'t_observed'"),
-    list(quote(ss_buc_paired_t(t_observed = .0005, N = 30, alpha_prior = 1)), "'t_observed'"),
-    list(quote(ss_buc_one_sample_t(t_observed = .0005, N = 30, alpha_prior = 1)),
-         "'t_observed'"),
-    list(quote(ss_buc_welch_t(t_observed = .0005, n_1 = 20, n_2 = 30, alpha_prior = 1)),
-         "'t_observed'"),
-    list(quote(ss_buc_one_way_anova(F_observed = 1e-9, N = 41, levels_A = 4, alpha_prior = 1)),
+    list(quote(ss_buc_one_way_anova(N = 41, levels_A = 4, alpha_prior = 1)), "F_observed",
          "'F_observed'"),
-    list(quote(ss_buc_factorial_anova(F_observed = 1e-9, N = 120, levels_A = 2, levels_B = 3,
-                                      alpha_prior = 1)), "'F_observed'"),
-    list(quote(ss_buc_factorial_anova_general(F_observed = 1e-9, N = 120, cells = 6,
-                                              df_numerator = 2, df_denominator = 114,
-                                              alpha_prior = 1)), "'F_observed'"),
-    list(quote(ss_buc_ancova(F_observed = 1e-9, N = 120, cells = 3, n_covariates = 2,
-                             alpha_prior = 1)), "'F_observed'"),
-    list(quote(ss_buc_rm_anova(F_observed = 1e-9, N = 60, levels_A = 3, alpha_prior = 1)),
+    list(quote(ss_buc_factorial_anova(N = 120, levels_A = 2, levels_B = 3, alpha_prior = 1)),
+         "F_observed", "'F_observed'"),
+    list(quote(ss_buc_factorial_anova_general(N = 120, cells = 6, df_numerator = 2,
+                                              df_denominator = 114, alpha_prior = 1)),
+         "F_observed", "'F_observed'"),
+    list(quote(ss_buc_ancova(N = 120, cells = 3, n_covariates = 2, alpha_prior = 1)),
+         "F_observed", "'F_observed'"),
+    list(quote(ss_buc_rm_anova(N = 60, levels_A = 3, alpha_prior = 1)), "F_observed",
          "'F_observed'"),
-    list(quote(ss_buc_rm_anova_general(F_observed = 1e-9, N = 60, df_numerator = 2,
-                                       alpha_prior = 1)), "'F_observed'"),
-    list(quote(ss_buc_mixed_anova(F_observed = 1e-9, N = 60, levels_between = 2,
-                                  levels_within = 3, alpha_prior = 1)), "'F_observed'"),
-    list(quote(ss_buc_mixed_anova_general(F_observed = 1e-9, N = 60, df_numerator = 1,
-                                          num_groups = 2, alpha_prior = 1)), "'F_observed'"),
-    list(quote(ss_buc_reg_coef(t_observed = .0005, N = 150, p = 3, alpha_prior = 1)),
+    list(quote(ss_buc_rm_anova_general(N = 60, df_numerator = 2, alpha_prior = 1)),
+         "F_observed", "'F_observed'"),
+    list(quote(ss_buc_mixed_anova(N = 60, levels_between = 2, levels_within = 3,
+                                  alpha_prior = 1)), "F_observed", "'F_observed'"),
+    list(quote(ss_buc_mixed_anova_general(N = 60, df_numerator = 1, num_groups = 2,
+                                          alpha_prior = 1)), "F_observed", "'F_observed'"),
+    list(quote(ss_buc_reg_coef(N = 150, p = 3, alpha_prior = 1)), "t_observed",
          "'t_observed'"),
-    list(quote(ss_buc_R2(F_observed = 1e-9, N = 150, p = 3, alpha_prior = 1)), "'F_observed'"),
-    list(quote(ss_buc_reg_joint(F_observed = 1e-9, N = 150, p = 4, p_joint = 2,
-                                alpha_prior = 1)), "'F_observed'"),
-    list(quote(ss_buc_correlation(r_observed = 1e-6, N = 100, alpha_prior = 1)),
+    list(quote(ss_buc_R2(N = 150, p = 3, alpha_prior = 1)), "F_observed", "'F_observed'"),
+    list(quote(ss_buc_reg_joint(N = 150, p = 4, p_joint = 2, alpha_prior = 1)), "F_observed",
+         "'F_observed'"),
+    list(quote(ss_buc_correlation(N = 100, alpha_prior = 1)), "r_observed",
          "the prior result"),
-    list(quote(ss_buc_manova(F_observed = 1e-9, N = 80, p_variables = 3, alpha_prior = 1)),
+    list(quote(ss_buc_manova(N = 80, p_variables = 3, alpha_prior = 1)), "F_observed",
          "the prior result"),
-    list(quote(ss_buc_chisq_diff(chisq_observed = 1e-9, N = 250, df_full = 42,
-                                 df_restricted = 43, alpha_prior = 1)), "the prior result"))
-  expect_length(cases, 18L)
-  for (case in cases) {
-    label <- paste(deparse(case[[1]], width.cutoff = 500L), collapse = " ")
-    err <- tryCatch(eval(case[[1]]), error = function(e) e)
+    list(quote(ss_buc_chisq_diff(N = 250, df_full = 42, df_restricted = 43, alpha_prior = 1)),
+         "chisq_observed", "the prior result"))
+  expect_length(planners, 18L)
+  # The statistics the .999 reading refused as nonsignificant, by argument.
+  tiny <- c(t_observed = .0005, F_observed = 1e-9, r_observed = 1e-6, chisq_observed = 1e-9)
+  for (case in planners) {
+    # A statistic of exactly 0: nonsignificant even with no publication filter.
+    call <- case[[1]]
+    call[[case[[2]]]] <- 0
+    label <- paste(deparse(call, width.cutoff = 500L), collapse = " ")
+    err <- tryCatch(eval(call), error = function(e) e)
     expect_s3_class(err, "bucss_nonsignificant")
-    expect_match(conditionMessage(err), paste0(too_small, case[[2]], ending), fixed = TRUE,
+    expect_match(conditionMessage(err), paste0(too_small, case[[3]], ending), fixed = TRUE,
                  label = label)
     expect_match(conditionMessage(err), "is nonsignificant based on your specified 'alpha_prior'",
                  fixed = TRUE, label = label)
     expect_no_match(conditionMessage(err), "Please increase", fixed = TRUE, label = label)
+    # The string spelling of 1 is refused the same way.
+    call$alpha_prior <- "No Publication Filter"
+    expect_identical(conditionMessage(tryCatch(eval(call), error = function(e) e)),
+                     conditionMessage(err), label = label)
+    # A statistic barely above 0 is not nonsignificant at 1: it is too weak to
+    # support the assurance (its ceiling is 1 - p, below .001 here).
+    call <- case[[1]]
+    call[[case[[2]]]] <- tiny[[case[[2]]]]
+    label <- paste(deparse(call, width.cutoff = 500L), collapse = " ")
+    err <- tryCatch(eval(call), error = function(e) e)
+    expect_s3_class(err, "bucss_zero_ncp")
+    expect_match(conditionMessage(err), "the prior result is too weak to plan from",
+                 fixed = TRUE, label = label)
   }
-  # Below .999 the advice can be followed, and is still given.
+  # Below 1 the advice can be followed, and is still given: at .999, the
+  # largest value the old reading used, as at any smaller value.
+  expect_error(ss_buc_paired_t(t_observed = .0005, N = 30, alpha_prior = .999),
+               "Please increase 'alpha_prior' so 't_observed' exceeds the critical value.",
+               fixed = TRUE, class = "bucss_nonsignificant")
   expect_error(ss_buc_paired_t(t_observed = 1, N = 40),
                "Please increase 'alpha_prior' so 't_observed' exceeds the critical value.",
                fixed = TRUE, class = "bucss_nonsignificant")

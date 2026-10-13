@@ -63,7 +63,9 @@
 #'
 #'   \code{ss_buc_correlation} uses the mixture, which has an exact closed form
 #'   (the Poisson weights of the noncentral \emph{F} become negative binomial
-#'   weights), for both the correction and the planned study's power. The
+#'   weights), for both the correction and the planned study's power. Stated
+#'   for the correlation itself, it is the general sampling distribution of the
+#'   multiple correlation coefficient (Fisher, 1928) with one predictor. The
 #'   returned sample size is therefore exact for bivariate normal data rather
 #'   than a few participants light, and it is typically 2 to 5 participants
 #'   larger than the fixed-predictor calculation (1 to 3 for the smallest plans,
@@ -109,11 +111,14 @@
 #'   larger \emph{p} values are not, which reflects less severe publication
 #'   bias than the default of .05. If the previous study of interest has not
 #'   been subjected to publication bias (e.g., a pilot study), set
-#'   \code{alpha_prior = 1}. Because no \emph{p} value exceeds 1, this means
-#'   no publication filter at all: any result would have been published
-#'   whatever its \emph{p} value, so there is no publication bias to correct,
-#'   and only the correction for uncertainty, set by \code{assurance},
-#'   remains.
+#'   \code{alpha_prior = 1}, which may also be written
+#'   \code{alpha_prior = "No Publication Filter"}; Anderson, Kelley, and
+#'   Maxwell (2017, p. 1552) note that it can be set equal to 1 when
+#'   publication bias is thought not to apply. Because no \emph{p} value
+#'   exceeds 1, this means no publication filter at all: any result would
+#'   have been published whatever its \emph{p} value, so there is no
+#'   publication bias to correct, and only the correction for uncertainty,
+#'   set by \code{assurance}, remains.
 #'
 #'   In some cases, the corrected noncentrality parameter for a given level of
 #'   assurance will be estimated to be zero. This is an indication that, at the
@@ -196,7 +201,12 @@
 #'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'
 #' @template references
-#' @references Gatsonis, C., & Sampson, A. R. (1989). Multiple correlation:
+#' @references Fisher, R. A. (1928). The general sampling distribution of the
+#'   multiple correlation coefficient. \emph{Proceedings of the Royal Society
+#'   of London. Series A, Containing Papers of a Mathematical and Physical
+#'   Character, 121,} 654--673. \doi{10.1098/rspa.1928.0224}
+#'
+#'   Gatsonis, C., & Sampson, A. R. (1989). Multiple correlation:
 #'   Exact power and sample size calculations. \emph{Psychological Bulletin,
 #'   106,} 516--524. \doi{10.1037/0033-2909.106.3.516}
 #'

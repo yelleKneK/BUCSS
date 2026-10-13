@@ -37,8 +37,12 @@
 }
 
 # The publication threshold on the same scale, and the proportion of studies
-# that clear it (the prior study's own power at the true effect).
+# that clear it (the prior study's own power at the true effect). With no
+# publication filter ('alpha_prior' of exactly 1) there is no threshold: every
+# study is published, so the rate is exactly 1 and the threshold is below
+# every statistic, whatever its family.
 .prior_publication <- function(spec, df, ncp, alpha_prior) {
+  if (alpha_prior >= 1) return(list(crit = -Inf, rate = 1))
   switch(
     spec$family,
     t = list(crit = qt(1 - alpha_prior / 2, df = df),
@@ -99,8 +103,10 @@
 #'
 #' @details The bias and uncertainty correction rests on a claim about the long
 #'   run. At \code{assurance = .80}, eight replications in ten should reach the
-#'   target power. That claim is a statement about a whole literature, and a
-#'   user planning one study never sees it exercised.
+#'   target power, the probability that a study's test rejects the null
+#'   hypothesis when the effect is present (Maxwell, Delaney, & Kelley, 2027).
+#'   That claim is a statement about a whole literature, and a user planning
+#'   one study never sees it exercised.
 #'
 #'   This function exercises it on the user's own numbers. It reads the design
 #'   and the planning inputs off the plan you pass it, simulates prior studies
@@ -264,7 +270,6 @@ ss_buc_sensitivity <- function(object, true_ncp, replications = 1000L,
     stop("The planning inputs stored in 'object' do not reproduce it when replayed, so this plan cannot be simulated. Please report this, naming the design '", design, "'.", call. = FALSE)
 
   alpha_prior <- inputs$alpha_prior
-  if (alpha_prior == 1) alpha_prior <- .999
   # A within-subjects plan made under a sphericity correction draws its prior
   # studies under the same approximation: the registry's df are already
   # scaled by epsilon, and the noncentrality parameter is scaled here, so

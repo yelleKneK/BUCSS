@@ -80,7 +80,7 @@ test_that("each spec's prior distribution reproduces the plan's own ceiling", {
       spec$df(inputs)
     args <- BUCSS:::.bucss_design_args(inputs, spec, effect)
     stat <- args[[spec$statistic]]
-    alpha_prior <- if (inputs$alpha_prior == 1) .999 else inputs$alpha_prior
+    alpha_prior <- inputs$alpha_prior
     p_spec <- switch(
       spec$family,
       t = 2 * (1 - pt(abs(stat), df)),
@@ -95,6 +95,44 @@ test_that("each spec's prior distribution reproduces the plan's own ceiling", {
                  tolerance = 1e-9,
                  info = paste("design:", attr(o, "design"),
                               "effect:", if (is.null(effect)) "-" else effect))
+  }
+})
+
+test_that("with no publication filter each spec's prior p value is 1 minus the ceiling", {
+  # The same identity at 'alpha_prior = 1', which is computed as exactly 1:
+  # the ceiling is 1 - p, with no divisor. Each plan above is planned again
+  # from its own echoed inputs with 'alpha_prior = 1' (and once more with the
+  # string that means 1), and the p value is computed from the spec's family
+  # and degrees of freedom as before. Every one of these prior studies is
+  # balanced, so the design the planner reads is the prior study's own.
+  for (o in sensitivity_plans) {
+    inputs <- BUCSS:::.bucss_design_inputs(o)
+    spec <- BUCSS:::.bucss_resolve_spec(
+      BUCSS:::.BUCSS_DESIGN_SPECS[[attr(o, "design")]], inputs)
+    effect <- attr(o, "effect")
+    df <- if (length(formals(spec$df)) > 1L) spec$df(inputs, effect) else
+      spec$df(inputs)
+    args <- BUCSS:::.bucss_design_args(inputs, spec, effect)
+    planner <- get(spec$planner, envir = asNamespace("BUCSS"))
+    args$alpha_prior <- 1
+    one <- do.call(planner, args)
+    args$alpha_prior <- "No Publication Filter"
+    expect_identical(do.call(planner, args), one)
+    stat <- args[[spec$statistic]]
+    p_spec <- switch(
+      spec$family,
+      t = 2 * pt(abs(stat), df, lower.tail = FALSE),
+      f = pf(stat, df[1], df[2], lower.tail = FALSE),
+      f_from_t = pf(stat^2, 1, df[2], lower.tail = FALSE),
+      f_random = pf(stat, df[1], df[2], lower.tail = FALSE),
+      f_from_t_random = pf(stat^2, 1, df[2], lower.tail = FALSE),
+      correlation = pf(stat^2, 1, df - 2, lower.tail = FALSE),
+      chisq = pchisq(stat, df, lower.tail = FALSE))
+    expect_equal(attr(one, "assurance_ceiling"), 1 - p_spec, tolerance = 1e-12,
+                 info = paste("design:", attr(o, "design"),
+                              "effect:", if (is.null(effect)) "-" else effect))
+    # A less strict filter never lowers the ceiling.
+    expect_gt(attr(one, "assurance_ceiling"), attr(o, "assurance_ceiling"))
   }
 })
 

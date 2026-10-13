@@ -52,8 +52,10 @@ Re-runs the planner that produced \code{x} across a range of
 Every prior result has a largest supportable assurance, the closed
   form \eqn{1 - p/\alpha}{1 - p/alpha} where \emph{p} is the prior study's
   \emph{p} value and \eqn{\alpha} is \code{alpha_prior}. Request more than
-  that and the corrected noncentrality parameter is driven to zero, no
-  sample size attains the target power, and the planner stops. The ceiling
+  that and the corrected noncentrality parameter is driven to zero, where a
+  test's power is its Type I error rate whatever the sample size (on
+  statistical power, see Maxwell, Delaney, & Kelley, 2027), so no sample
+  size attains the target power, and the planner stops. The ceiling
   is reported in the printed footer of every plan and, when it is above .5,
   named in that error, but its shape is the point: assurance does not
   degrade gracefully as it rises, it hits a wall. For a planner that

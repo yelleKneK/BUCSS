@@ -7,7 +7,10 @@
 # handful of sample sizes move by a few units because the slightly different
 # parameter propagates through the planned-n search. Cases whose sample size
 # differs from the 1.2.1 grid value are flagged inline. See NEWS for the full
-# accounting.
+# accounting. The one exception is 'alpha_prior = 1', which 1.x computed as
+# .999 and 2.0.0 computes as exactly 1 (no publication filter), so a plan at
+# 'alpha_prior = 1' can differ from 1.2.1 in its parameter as well (flagged
+# inline).
 
 ss  <- function(x) x$value[x$term %in% BUCSS:::.BUCSS_SIZE_TERMS][1]
 ncp <- function(x) x$value[x$term == "ncp_adjusted"]
@@ -43,12 +46,25 @@ test_that("independent t test (scalar n, assurance .90)", {
 test_that("paired t test at alpha_prior = 1 (the safeguard power table)", {
   # The vignette "Assurance and the Publication Bias Correction" tabulates it:
   # a prior t with a two-sided p value of .15 from 30 pairs, planned at
-  # alpha_prior = 1 and assurance .80. 1.2.1 grid gave 915; uniroot gives 913
-  # (same rounded ncp).
-  expect_oracle(
-    ss_buc_paired_t(t_observed = qt(1 - .15 / 2, df = 29), N = 30, alpha_prior = 1,
-                    assurance = .80),
-    913, 0.508)
+  # alpha_prior = 1 and assurance .80. With no publication filter the adjusted
+  # parameter solves P(|T| <= t | df 29, ncp) = .80: .5093695352, and 910
+  # pairs (independent check 2026-10-13, base R only, exactly 1). The 1.2.1
+  # grid gave 915, and the builds that still computed 1 as .999 gave 913 with
+  # .5084551131.
+  plan <- ss_buc_paired_t(t_observed = qt(1 - .15 / 2, df = 29), N = 30, alpha_prior = 1,
+                          assurance = .80)
+  expect_oracle(plan, 910, 0.509)
+  expect_equal(ncp(plan), 0.5093695352, tolerance = 1e-7)
+  # The row above it in the same table, a two-sided p value of .10: the
+  # parameter is .7936462474 and the plan 376 pairs, whose power is .80026
+  # against .79921 for 375 (independent check 2026-10-13, base R only, exactly
+  # 1). The 1.2.1 grid gave 377 with .793, and so did the builds that computed
+  # 1 as .999 (.7930526); NEWS lists both rows among the documented sizes
+  # that moved.
+  plan <- ss_buc_paired_t(t_observed = qt(1 - .10 / 2, df = 29), N = 30, alpha_prior = 1,
+                          assurance = .80)
+  expect_oracle(plan, 376, 0.794)
+  expect_equal(ncp(plan), 0.7936462474, tolerance = 1e-7)
 })
 
 test_that("dependent t test", {

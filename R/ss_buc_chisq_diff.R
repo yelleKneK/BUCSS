@@ -29,8 +29,12 @@
 #'   approximately noncentral chi square with degrees of freedom equal to the
 #'   number of constraints released and a noncentrality parameter proportional
 #'   to sample size, and a paper reports the constrained path as supported when
-#'   the difference test is significant. The correction is therefore built for
-#'   the difference test.
+#'   the difference test is significant. Steiger, Shapiro, and Browne (1985)
+#'   give the asymptotic distribution of sequential chi square statistics for
+#'   nested models and of the difference tests between them, and Satorra and
+#'   Saris (1985) compute the power of the likelihood ratio test in covariance
+#'   structure analysis from the noncentral chi square distribution, as is
+#'   done here. The correction is therefore built for the difference test.
 #'
 #'   It is \emph{not} appropriate for an omnibus model fit chi square, where a
 #'   publishable result is a \emph{small} statistic (a model that fits). The
@@ -84,11 +88,14 @@
 #'   larger \emph{p} values are not, which reflects less severe publication
 #'   bias than the default of .05. If the previous study of interest has not
 #'   been subjected to publication bias (e.g., a pilot study), set
-#'   \code{alpha_prior = 1}. Because no \emph{p} value exceeds 1, this means
-#'   no publication filter at all: any result would have been published
-#'   whatever its \emph{p} value, so there is no publication bias to correct,
-#'   and only the correction for uncertainty, set by \code{assurance},
-#'   remains.
+#'   \code{alpha_prior = 1}, which may also be written
+#'   \code{alpha_prior = "No Publication Filter"}; Anderson, Kelley, and
+#'   Maxwell (2017, p. 1552) note that it can be set equal to 1 when
+#'   publication bias is thought not to apply. Because no \emph{p} value
+#'   exceeds 1, this means no publication filter at all: any result would
+#'   have been published whatever its \emph{p} value, so there is no
+#'   publication bias to correct, and only the correction for uncertainty,
+#'   set by \code{assurance}, remains.
 #'
 #'   In some cases, the corrected noncentrality parameter for a given level of
 #'   assurance will be estimated to be zero. This is an indication that, at the
@@ -177,10 +184,18 @@
 #'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'
 #' @template references
-#' @references Savalei, V., Brace, J. C., & Fouladi, R. T. (2024). We need to
+#' @references Satorra, A., & Saris, W. E. (1985). Power of the likelihood
+#'   ratio test in covariance structure analysis. \emph{Psychometrika, 50,}
+#'   83--90. \doi{10.1007/BF02294150}
+#'
+#'   Savalei, V., Brace, J. C., & Fouladi, R. T. (2024). We need to
 #'   change how we compute RMSEA for nested model comparisons in structural
 #'   equation modeling. \emph{Psychological Methods, 29,} 480--493.
 #'   \doi{10.1037/met0000537}
+#'
+#'   Steiger, J. H., Shapiro, A., & Browne, M. W. (1985). On the multivariate
+#'   asymptotic distribution of sequential chi-square statistics.
+#'   \emph{Psychometrika, 50,} 253--263. \doi{10.1007/BF02294104}
 ss_buc_chisq_diff <- function(chisq_observed, N, df_full, df_restricted,
                               alpha_prior = .05, alpha_planned = .05,
                               assurance = .80, desired_power = .80) {

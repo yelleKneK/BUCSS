@@ -157,11 +157,14 @@ the prior study (the 1.x spelling of \code{t_observed} / \code{F_observed}).}
 \code{ss.power.dt}).}
 
 \item{alpha.prior, alpha.planned}{The prior-study and planned-study Type I
-error rates (the 1.x spelling of \code{alpha_prior} / \code{alpha_planned}).}
+error rates (the 1.x spelling of \code{alpha_prior} / \code{alpha_planned}).
+\code{alpha.prior} also accepts \code{"No Publication Filter"}, which
+means 1.}
 
 \item{assurance}{The desired assurance.}
 
-\item{power}{The desired statistical power of the planned study.}
+\item{power}{The desired statistical power of the planned study, which
+must exceed \code{alpha.planned}.}
 
 \item{step}{Ignored. Accepted only so that 1.x calls that set it do not error.}
 
@@ -250,7 +253,14 @@ The replacements are:
   example). As in 1.x, an \code{assurance} or \code{power} of 1 or more is
   read as a percentage, so exactly 1 means 1 percent; after that reading, an
   \code{assurance} or \code{power} of 0, or of 100 (which means 1), is
-  rejected rather than returning an artifact of the internal search.
+  rejected rather than returning an artifact of the internal search. A
+  \code{power} at or below \code{alpha.planned} after that reading is not
+  allowable and stops too, so \code{power = 1} (which means .01) stops
+  unless \code{alpha.planned} is below .01; 1.x returned the smallest
+  sample size it considers for such a target, with no notice. An
+  \code{alpha.prior} of 1 is computed as exactly 1, where 1.x computed
+  with .999 in its place: most such plans are unchanged, and the rest are
+  slightly smaller.
   \code{ss.power.ba} and \code{ss.power.wa} refuse \code{effect =
   "factor.B"} or \code{"interaction"} when \code{levels.B} is not given (1.x
   refused only the interaction, and silently returned the Factor A plan for

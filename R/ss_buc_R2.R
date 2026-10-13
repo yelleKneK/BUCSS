@@ -43,14 +43,16 @@
 #'   variable on \emph{N} - 1 degrees of freedom, so the statistic follows a
 #'   chi square mixture of noncentral \emph{F} distributions, which is more
 #'   dispersed. This is the exact distribution of the squared multiple
-#'   correlation when the predictors are sampled, the one for which Gatsonis
-#'   and Sampson (1989) give exact power and sample size calculations. The
-#'   mixture has an exact closed form (the Poisson weights of the noncentral
-#'   \emph{F} become negative binomial weights), used for both the correction
-#'   and the planned study's power. It is exact when the predictors are
-#'   multivariate normal. In observational research in the behavioral
-#'   sciences the predictors are typically random (Kelley & Maxwell, 2003), and
-#'   \code{random_predictors = TRUE} is then the frame to plan in.
+#'   correlation when the predictors are sampled (the general sampling
+#'   distribution of the multiple correlation coefficient; Fisher, 1928), the
+#'   one for which Gatsonis and Sampson (1989) give exact power and sample
+#'   size calculations. The mixture has an exact closed form (the Poisson
+#'   weights of the noncentral \emph{F} become negative binomial weights),
+#'   used for both the correction and the planned study's power. It is exact
+#'   when the predictors are multivariate normal. In observational research
+#'   in the behavioral sciences the predictors are typically random (Kelley &
+#'   Maxwell, 2003), and \code{random_predictors = TRUE} is then the frame to
+#'   plan in.
 #'
 #'   Treating sampled predictors as fixed overstates the planned study's
 #'   power, by about 1/\emph{n} for a plan of \emph{n} participants with one
@@ -112,11 +114,14 @@
 #'   larger \emph{p} values are not, which reflects less severe publication
 #'   bias than the default of .05. If the previous study of interest has not
 #'   been subjected to publication bias (e.g., a pilot study), set
-#'   \code{alpha_prior = 1}. Because no \emph{p} value exceeds 1, this means
-#'   no publication filter at all: any result would have been published
-#'   whatever its \emph{p} value, so there is no publication bias to correct,
-#'   and only the correction for uncertainty, set by \code{assurance},
-#'   remains.
+#'   \code{alpha_prior = 1}, which may also be written
+#'   \code{alpha_prior = "No Publication Filter"}; Anderson, Kelley, and
+#'   Maxwell (2017, p. 1552) note that it can be set equal to 1 when
+#'   publication bias is thought not to apply. Because no \emph{p} value
+#'   exceeds 1, this means no publication filter at all: any result would
+#'   have been published whatever its \emph{p} value, so there is no
+#'   publication bias to correct, and only the correction for uncertainty,
+#'   set by \code{assurance}, remains.
 #'
 #'   In some cases, the corrected noncentrality parameter for a given level of
 #'   assurance will be estimated to be zero. This is an indication that, at the
@@ -199,6 +204,11 @@
 #' @references Anderson, S. F. (2021). Using prior information to plan
 #'   appropriately powered regression studies: A tutorial using BUCSS.
 #'   \emph{Psychological Methods, 26,} 513--526. \doi{10.1037/met0000366}
+#'
+#'   Fisher, R. A. (1928). The general sampling distribution of the multiple
+#'   correlation coefficient. \emph{Proceedings of the Royal Society of London.
+#'   Series A, Containing Papers of a Mathematical and Physical Character,
+#'   121,} 654--673. \doi{10.1098/rspa.1928.0224}
 #'
 #'   Gatsonis, C., & Sampson, A. R. (1989). Multiple correlation: Exact power
 #'   and sample size calculations. \emph{Psychological Bulletin, 106,}

@@ -50,8 +50,10 @@ An object of class \code{bucss_sensitivity}, a \code{data.frame}
 \details{
 The bias and uncertainty correction rests on a claim about the long
   run. At \code{assurance = .80}, eight replications in ten should reach the
-  target power. That claim is a statement about a whole literature, and a
-  user planning one study never sees it exercised.
+  target power, the probability that a study's test rejects the null
+  hypothesis when the effect is present (Maxwell, Delaney, & Kelley, 2027).
+  That claim is a statement about a whole literature, and a user planning
+  one study never sees it exercised.
 
   This function exercises it on the user's own numbers. It reads the design
   and the planning inputs off the plan you pass it, simulates prior studies

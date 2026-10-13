@@ -1,14 +1,16 @@
 #' @param alpha_prior The significance level \eqn{\alpha} a prior result had
 #'   to reach to be published (more generally, to reach you): the correction
-#'   assumes you see only results with \emph{p} below \code{alpha_prior}. A
-#'   value of 1 means no publication filter: every \emph{p} value is at most
-#'   1, so any result would have been published whatever its \emph{p} value,
-#'   there is no publication bias to correct, and only the correction for
-#'   uncertainty (set by \code{assurance}) remains, as for a pilot study. The
-#'   planners compute with .999 in place of 1, as BUCSS 1.x did, so plans
-#'   match earlier versions; that filter is so lenient (it drops only results
-#'   with \emph{p} above .999) that it changes the plan negligibly, and the
-#'   result echoes the 1 you entered.
+#'   assumes you see only results with \emph{p} below \code{alpha_prior}.
+#'   Enter a number above 0 and at most 1. A value of 1, which may also be
+#'   written \code{"No Publication Filter"}, means no publication filter:
+#'   every \emph{p} value is at most 1, so any result would have been
+#'   published whatever its \emph{p} value, there is no publication bias to
+#'   correct, and only the correction for uncertainty (set by
+#'   \code{assurance}) remains, as for a pilot study. Anderson, Kelley, and
+#'   Maxwell (2017, p. 1552) note that this level, their
+#'   \eqn{\alpha_P}{alpha_P}, can be set equal to 1 when publication bias is
+#'   thought not to apply. The string is read without regard to case, and
+#'   the result echoes it as an \code{alpha_prior} of 1.
 #' @param alpha_planned Alpha level \eqn{\alpha} assumed for the planned study.
 #' @param assurance Desired level of assurance: the long run proportion of
 #'   planned studies whose statistical power at the true effect reaches or
@@ -32,5 +34,11 @@
 #'   the coerced proportion (80 is echoed as .80); the same applies to
 #'   \code{desired_power}.
 #' @param desired_power Desired level of statistical power for the planned
-#'   study. Enter it as a proportion in (0, 1) or as a percentage greater than
-#'   1; a value of exactly 1 is read as 1 percent.
+#'   study: the probability that its test rejects the null hypothesis when
+#'   the effect is present (Maxwell, Delaney, & Kelley, 2027). It must exceed
+#'   \code{alpha_planned}: a test's power is never below its Type I error
+#'   rate, so a value at or below \code{alpha_planned} is not allowable, and
+#'   the function stops rather than return a plan. Enter it as a proportion
+#'   in (0, 1) or as a percentage greater than 1; a value of exactly 1 is
+#'   read as 1 percent (.01), which is then refused unless
+#'   \code{alpha_planned} is below .01.

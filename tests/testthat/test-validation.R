@@ -41,12 +41,134 @@ test_that("endpoint assurance and power are rejected, not silently planned", {
   expect_error(ss_buc_independent_t(t_observed = 3, n = 20, assurance = 100),
                "There is a problem with 'assurance'", fixed = TRUE)
   # The documented percentage rule is untouched: exactly 1 still means 1
-  # percent (coercion runs before the range check), so desired_power = 1 plans at a
-  # .01 target without error, and assurance = 1 reaches the < .5 warning
-  # rather than the range stop.
-  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, desired_power = 1), NA)
+  # percent (coercion runs before the range check), so desired_power = 1 is
+  # read as a target of .01, not stopped as out of range, and assurance = 1
+  # reaches the < .5 warning rather than the range stop. Until 2026-10-13 this
+  # line asserted that 'desired_power = 1' planned without error (it returned
+  # the smallest size the search considers). A target of .01 is below
+  # 'alpha_planned', which is not allowable, so the call is now refused, with
+  # a message that explains the percentage reading; the coercion itself shows
+  # where 'alpha_planned' is smaller still, and the plan echoes .01.
+  expect_error(ss_buc_independent_t(t_observed = 3, n = 20, desired_power = 1),
+               paste0("The 'desired_power' you entered, 1, is 1 or more, so it was read as a ",
+                      "percentage (1 percent, that is, .01)."), fixed = TRUE)
+  one_percent <- ss_buc_independent_t(t_observed = 3, n = 20, desired_power = 1,
+                                      alpha_planned = .001)
+  expect_identical(one_percent$value[one_percent$term == "desired_power"], .01)
   expect_warning(ss_buc_independent_t(t_observed = 3, n = 20, assurance = 1),
                  "< .5", fixed = TRUE)
+})
+
+test_that("a desired_power at or below alpha_planned is not allowable", {
+  # Ken Kelley's decision, 2026-10-13 (the triage's GF-4 and PC-7). A test's
+  # power is never below its Type I error rate, so every sample size "meets"
+  # such a target: the planners used to return the smallest size the search
+  # considers, with no notice. They now refuse, in the shared validator, after
+  # the percentage coercion, and no plan is returned. One call per planner.
+  planners <- list(
+    quote(ss_buc_independent_t(t_observed = 3, n = 20)),
+    quote(ss_buc_paired_t(t_observed = 3, N = 30)),
+    quote(ss_buc_one_sample_t(t_observed = 3, N = 30)),
+    quote(ss_buc_welch_t(t_observed = 3, n_1 = 40, n_2 = 55, sd_ratio = 2)),
+    quote(ss_buc_one_way_anova(F_observed = 5, N = 60, levels_A = 3)),
+    quote(ss_buc_factorial_anova(F_observed = 12, N = 60, levels_A = 3, levels_B = 2)),
+    quote(ss_buc_factorial_anova_general(F_observed = 5, N = 120, cells = 6,
+                                         df_numerator = 2, df_denominator = 114)),
+    quote(ss_buc_ancova(F_observed = 6, N = 120, cells = 3, n_covariates = 2)),
+    quote(ss_buc_rm_anova(F_observed = 5, N = 30, levels_A = 4)),
+    quote(ss_buc_rm_anova_general(F_observed = 9, N = 80, df_numerator = 1)),
+    quote(ss_buc_mixed_anova(F_observed = 5, N = 60, levels_between = 2,
+                             levels_within = 3, effect = "within")),
+    quote(ss_buc_mixed_anova_general(F_observed = 9, N = 60, df_numerator = 1,
+                                     num_groups = 2, effect = "between_only")),
+    quote(ss_buc_reg_coef(t_observed = 3, N = 150, p = 3)),
+    quote(ss_buc_R2(F_observed = 5, N = 150, p = 4, random_predictors = TRUE)),
+    quote(ss_buc_reg_joint(F_observed = 6, N = 150, p = 4, p_joint = 2)),
+    quote(ss_buc_correlation(r_observed = .35, N = 100)),
+    quote(ss_buc_manova(F_observed = 5, N = 80, p_variables = 3)),
+    quote(ss_buc_chisq_diff(chisq_observed = 9, N = 250, df_full = 42, df_restricted = 43)))
+  expect_setequal(vapply(planners, function(call) as.character(call[[1]]), character(1)),
+                  vapply(BUCSS:::.BUCSS_DESIGN_SPECS, `[[`, character(1), "planner"))
+  with_args <- function(call, ...) {
+    extra <- list(...)
+    for (nm in names(extra)) call[[nm]] <- extra[[nm]]
+    call
+  }
+  reason <- paste0("A test's power is never below its Type I error rate, so every sample ",
+                   "size would meet such a target and no plan is meaningful. Please specify ",
+                   "a 'desired_power' above 'alpha_planned' (the default is .80).")
+  plain <- paste0("A 'desired_power' at or below 'alpha_planned' is not allowable: ",
+                  "'desired_power' is .03 and 'alpha_planned' is .05. ", reason)
+  percent <- paste0("A 'desired_power' at or below 'alpha_planned' is not allowable: ",
+                    "'desired_power' is .04 and 'alpha_planned' is .05. The 'desired_power' ",
+                    "you entered, 4, is 1 or more, so it was read as a percentage (4 ",
+                    "percent, that is, .04). ", reason)
+  for (call in planners) {
+    label <- paste(deparse(call, width.cutoff = 500L), collapse = " ")
+    # Below alpha_planned: the whole message, raised with call. = FALSE.
+    err <- tryCatch(eval(with_args(call, desired_power = .03)), error = function(e) e)
+    expect_s3_class(err, "error")
+    expect_identical(conditionMessage(err), plain, label = label)
+    expect_null(conditionCall(err), label = label)
+    # Equal to alpha_planned is refused too ("at or below").
+    expect_error(eval(with_args(call, desired_power = .05)),
+                 "'desired_power' is .05 and 'alpha_planned' is .05.", fixed = TRUE,
+                 label = label)
+    # A value of 1 or more is read as a percentage first, and the message says so.
+    err <- tryCatch(eval(with_args(call, desired_power = 4)), error = function(e) e)
+    expect_identical(conditionMessage(err), percent, label = label)
+    expect_error(eval(with_args(call, desired_power = 1)),
+                 "it was read as a percentage (1 percent, that is, .01).", fixed = TRUE,
+                 label = label)
+    # The comparison is with this call's 'alpha_planned', after the coercion:
+    # 8 percent is below a planned alpha of .10 and above one of .05.
+    expect_error(eval(with_args(call, desired_power = 8, alpha_planned = .10)),
+                 "'desired_power' is .08 and 'alpha_planned' is .10.", fixed = TRUE,
+                 label = label)
+    just_above <- eval(with_args(call, desired_power = 8))
+    expect_s3_class(just_above, "bucss_plan")
+    expect_identical(just_above$value[just_above$term == "desired_power"], .08)
+    expect_gte(just_above$value[just_above$term == "actual_power"], .08)
+  }
+
+  # Not allowable means no plan: it is an error, not a warning with a plan.
+  refused <- tryCatch(withCallingHandlers(
+    ss_buc_paired_t(t_observed = 3, N = 30, desired_power = .05),
+    warning = function(w) stop("a warning was raised: ", conditionMessage(w))),
+    error = function(e) e)
+  expect_match(conditionMessage(refused), "is not allowable", fixed = TRUE)
+  # The other checks of 'desired_power' come first and are unchanged: out of
+  # range values keep their own message, and 100 still means 1.
+  for (bad in list(0, -.1, 100, 150))
+    expect_error(ss_buc_paired_t(t_observed = 3, N = 30, desired_power = bad),
+                 "There is a problem with 'desired_power'", fixed = TRUE)
+  # Small values print as decimals, never in scientific notation.
+  expect_error(ss_buc_paired_t(t_observed = 3, N = 30, desired_power = .00002,
+                               alpha_planned = .0001),
+               "'desired_power' is .00002 and 'alpha_planned' is .0001.", fixed = TRUE)
+  expect_error(ss_buc_paired_t(t_observed = 3, N = 30, desired_power = 2.5),
+               paste0("The 'desired_power' you entered, 2.5, is 1 or more, so it was read as a ",
+                      "percentage (2.5 percent, that is, .025)."), fixed = TRUE)
+})
+
+test_that("the replays refuse a plan whose target power is not allowable", {
+  # No planner returns such a plan, so one can only be made by editing a
+  # plan's rows. ss_buc_sensitivity() and plot() replay the planner from the
+  # echoed rows before doing anything else, and the replay is refused with
+  # the validator's own message rather than audited or drawn.
+  plan <- ss_buc_paired_t(t_observed = 3, N = 30)
+  forged <- unclass(plan)
+  forged$value[forged$term == "desired_power"] <- .03
+  class(forged) <- class(plan)
+  expect_true(BUCSS:::.is_plan_shape(forged))
+  not_allowable <- "A 'desired_power' at or below 'alpha_planned' is not allowable:"
+  expect_error(ss_buc_sensitivity(forged, true_ncp = 2, replications = 10, seed = 2017),
+               not_allowable, fixed = TRUE)
+  pdf(NULL)
+  drawn <- tryCatch(plot(forged), error = function(e) e)
+  dev.off()
+  expect_s3_class(drawn, "error")
+  expect_match(conditionMessage(drawn), not_allowable, fixed = TRUE)
 })
 
 test_that("assurance below .5 warns but still computes", {

@@ -22,7 +22,9 @@
 #' \code{\link{ss_buc_reg_joint}}, and \code{\link{ss_buc_correlation}}. And
 #' \code{\link{ss_buc_manova}} for a two-group multivariate comparison and
 #' \code{\link{ss_buc_chisq_diff}} for the chi square difference between
-#' nested models. \code{\link{ss_buc_sensitivity}} simulates the literature a
+#' nested models. The experimental designs among these, their tests, and the
+#' statistical power of those tests are described in Maxwell, Delaney, and
+#' Kelley (2027). \code{\link{ss_buc_sensitivity}} simulates the literature a
 #' plan came from and reports how often such a plan attains its target power,
 #' and \code{\link[=plot.bucss_plan]{plot}} draws the largest assurance a prior
 #' result can support.
@@ -96,34 +98,36 @@
 #' of the method here, that is, BUCSS without the publication bias correction,
 #' at an assurance of .80. \code{alpha_prior} is the significance level a
 #' prior result had to reach to be published, and no \emph{p} value exceeds 1,
-#' so \code{alpha_prior = 1} means no publication filter: any result would
-#' have been published, the truncation is removed, and the prior statistic has
-#' its ordinary distribution. At \code{assurance = .80} the adjusted
-#' noncentrality parameter is then the lower limit of a one-sided 80 percent
-#' confidence interval, which is the lower limit of the two-sided 60 percent
-#' interval (either way, 20 percent lies below it), and the plan is the
-#' smallest sample size whose ordinary power at that value reaches
+#' so \code{alpha_prior = 1}, which may also be written
+#' \code{alpha_prior = "No Publication Filter"}, means no publication filter:
+#' any result would have been published, the truncation is removed, and the
+#' prior statistic has its ordinary distribution. (Anderson, Kelley, and
+#' Maxwell, 2017, p. 1552, note that this level can be set equal to 1 when
+#' publication bias is thought not to apply.) At \code{assurance = .80} the
+#' adjusted noncentrality parameter is then the lower limit of a one-sided 80
+#' percent confidence interval, which is the lower limit of the two-sided 60
+#' percent interval (either way, 20 percent lies below it), and the plan is
+#' the smallest sample size whose ordinary power at that value reaches
 #' \code{desired_power}. In general, the lower limit of a two-sided interval
 #' at confidence level \emph{C} is \code{assurance = (1 + C)/2}, so a
 #' two-sided 80 percent interval is \code{assurance = .90}.
 #'
-#' A few differences remain, and each can only make the plan here the same as
-#' the safeguard plan or larger. First, the planners compute with .999 in
-#' place of an \code{alpha_prior} of exactly 1, as BUCSS 1.x did, so plans
-#' match earlier versions; that filter is so lenient (it drops only results
-#' with \emph{p} above .999) that at an assurance of .80 it lowers the
-#' adjusted noncentrality parameter by less than 0.1 percent for a prior
-#' significant at .05. Second, for the \emph{t} tests and every other effect
-#' on one degree of freedom the interval bounds the size of the effect
-#' whatever its sign, because the publication rule is two-sided. Third, an
-#' unbalanced prior design is read as a balanced one, and the Welch planner
-#' returns at least 10 per group. All of the differences are negligible for a
-#' convincing prior result and grow as the prior result weakens;
-#' \code{vignette("understanding-assurance", package = "BUCSS")} measures
-#' them. For the regression planners the equivalence holds in the frame
-#' \code{random_predictors} names. With \code{alpha_prior} below 1 the same
-#' construction is applied to the publication-truncated distribution, which is
-#' what the bias correction adds to safeguard power.
+#' For an \emph{F} or chi square statistic the correspondence is exact: the
+#' adjusted noncentrality parameter is the lower limit of that interval,
+#' computed from the statistic's ordinary noncentral distribution. Two
+#' differences from safeguard power remain, and each can only make the plan
+#' here the same as the safeguard plan or larger. First, for the \emph{t}
+#' tests and every other effect on one degree of freedom, safeguard power
+#' computes its interval from the signed \emph{t}, while the interval here
+#' bounds the size of the effect whatever its sign, because the publication
+#' rule is two-sided. That difference is negligible for a convincing prior
+#' result and grows as the prior result weakens. Second, an unbalanced prior
+#' design is read as a balanced one, and the Welch planner returns at least 10
+#' per group. \code{vignette("understanding-assurance", package = "BUCSS")}
+#' measures both. For the regression planners the equivalence holds in the
+#' frame \code{random_predictors} names. With \code{alpha_prior} below 1 the
+#' same construction is applied to the publication-truncated distribution,
+#' which is what the bias correction adds to safeguard power.
 #'
 #' @references
 #' Anderson, S. F., & Kelley, K. (2024). Sample size planning for replication

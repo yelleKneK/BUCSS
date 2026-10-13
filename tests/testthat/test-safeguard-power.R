@@ -10,19 +10,23 @@
 # package and no MBESS; the plans are the ordinary power analysis at the limit,
 # found by a linear walk.
 #
-# Two departures are deliberate and one-directional, each making the package's
-# parameter smaller (so its plan is never smaller): alpha_prior = 1 is read as
-# .999, and the effects on one degree of freedom bound the magnitude of the
-# effect from |t|, which adds P(T < -t) to the signed interval's probability.
-# Every comparison therefore asserts the direction and a relative difference of
-# at most 1e-3. The largest relative difference among the priors pinned here is
-# 2.3e-4 (the regression coefficient, t = 2.5), then 1.4e-4 (confidence level
-# .80); every F and chi square prior on more than one degree of freedom is
-# within 9.0e-5 (measured 2026-09-30, and against MBESS 5.0.1's
-# conf.limits.nct, conf.limits.ncf, and conf.limits.nc.chisq, which agree with
-# these inversions to 1.3e-8). The weak-prior region, where the |t|
-# construction declines a prior the signed interval would still plan from, is
-# pinned in the last block.
+# 'alpha_prior = 1' is computed as exactly 1 (since 2026-10-13; it was read as
+# .999 before, which made every parameter a little smaller), so for the F and
+# chi square designs, and for the regression coefficient, which is planned on
+# the F = t^2 scale, the package's parameter is the limit itself, to the
+# tolerance of the two root finders: those comparisons assert equality to a
+# relative 1e-7 (measured 4e-10 or less, 2026-10-13). One departure remains,
+# deliberate and one-directional: the t planners bound the magnitude of the
+# effect from |t|, which adds P(T < -t) to the signed interval's probability,
+# so their parameter is smaller than the signed limit and their plan is never
+# smaller. Every t comparison therefore asserts the direction and a relative
+# difference of at most 1e-4. The largest among the t priors pinned here is
+# 3.6e-5 (paired t = 3, confidence level .80), then 2.1e-5 (t = 3 from groups
+# of 4 and 100, read on 12 df) and 2.2e-6 (paired t = 3, level .60); measured
+# 2026-10-13. (Against MBESS 5.0.1's conf.limits.nct, conf.limits.ncf, and
+# conf.limits.nc.chisq these inversions agree to 1.3e-8, measured 2026-09-30.)
+# The weak-prior region, where the |t| construction declines a prior the
+# signed interval would still plan from, is pinned in the last block.
 
 sg_size <- function(x) x$value[x$term %in% BUCSS:::.BUCSS_SIZE_TERMS][1]
 sg_ncp <- function(x) x$value[x$term == "ncp_adjusted"]
@@ -56,7 +60,7 @@ test_that("alpha_prior = 1 and assurance = .80 is safeguard power: t tests", {
   plan <- ss_buc_paired_t(t_observed = 3, N = 30, alpha_prior = 1,
                           assurance = .80)
   lim <- lower_t(3, 29)
-  expect_lte(sg_rel(sg_ncp(plan), lim), 1e-3)
+  expect_lte(sg_rel(sg_ncp(plan), lim), 1e-4)
   expect_lte(sg_ncp(plan), lim)
   expect_identical(sg_size(plan),
                    first_n(function(n) power_t(lim * sqrt(n / 30), n - 1), 2))
@@ -66,7 +70,7 @@ test_that("alpha_prior = 1 and assurance = .80 is safeguard power: t tests", {
   plan <- ss_buc_independent_t(t_observed = 3, n = 20, alpha_prior = 1,
                                assurance = .80)
   lim <- lower_t(3, 38)
-  expect_lte(sg_rel(sg_ncp(plan), lim), 1e-3)
+  expect_lte(sg_rel(sg_ncp(plan), lim), 1e-4)
   expect_lte(sg_ncp(plan), lim)
   expect_identical(sg_size(plan),
                    first_n(function(n) power_t(lim * sqrt(n / 20), 2 * n - 2), 2))
@@ -82,7 +86,7 @@ test_that("an unequal-n prior is safeguard power at each rounded design", {
   lim_rd <- lower_t(3, 102)
   lim_ru <- lower_t(3, 104)
   expect_lte(lim_rd, lim_ru)
-  expect_lte(sg_rel(sg_ncp(plan), lim_rd), 1e-3)
+  expect_lte(sg_rel(sg_ncp(plan), lim_rd), 1e-4)
   expect_lte(sg_ncp(plan), lim_rd)
   plan_rd <- first_n(function(n) power_t(lim_rd * sqrt(n / 52), 2 * n - 2), 2)
   plan_ru <- first_n(function(n) power_t(lim_ru * sqrt(n / 53), 2 * n - 2), 2)
@@ -110,7 +114,7 @@ test_that("a very unequal prior is read on the harmonic mean design's df", {
   lim_rd <- lower_t(3, 12)
   lim_ru <- lower_t(3, 14)
   expect_lte(lim_rd, lim_ru)
-  expect_lte(sg_rel(sg_ncp(plan), lim_rd), 1e-3)
+  expect_lte(sg_rel(sg_ncp(plan), lim_rd), 1e-4)
   expect_lte(sg_ncp(plan), lim_rd)
   plan_rd <- first_n(function(n) power_t(lim_rd * sqrt(n / 7), 2 * n - 2), 2)
   plan_ru <- first_n(function(n) power_t(lim_ru * sqrt(n / 8), 2 * n - 2), 2)
@@ -128,8 +132,7 @@ test_that("alpha_prior = 1 and assurance = .80 is safeguard power: F and chi squ
   plan <- ss_buc_one_way_anova(F_observed = 5, N = 60, levels_A = 3,
                                alpha_prior = 1, assurance = .80)
   lim <- lower_f(5, 2, 57)
-  expect_lte(sg_rel(sg_ncp(plan), lim), 1e-3)
-  expect_lte(sg_ncp(plan), lim)
+  expect_equal(sg_ncp(plan), lim, tolerance = 1e-7)
   expect_identical(sg_size(plan),
                    first_n(function(n) power_f(lim * n / 20, 2, 3 * n - 3), 2))
   expect_identical(sg_size(plan), 47)
@@ -140,8 +143,7 @@ test_that("alpha_prior = 1 and assurance = .80 is safeguard power: F and chi squ
                                alpha_prior = 1, assurance = .80)
   lim_rd <- lower_f(5, 2, 57)
   lim_ru <- lower_f(5, 2, 60)
-  expect_lte(sg_rel(sg_ncp(plan), min(lim_rd, lim_ru)), 1e-3)
-  expect_lte(sg_ncp(plan), min(lim_rd, lim_ru))
+  expect_equal(sg_ncp(plan), min(lim_rd, lim_ru), tolerance = 1e-7)
   expect_identical(sg_size(plan), max(
     first_n(function(n) power_f(lim_rd * n / 20, 2, 3 * n - 3), 2),
     first_n(function(n) power_f(lim_ru * n / 21, 2, 3 * n - 3), 2)))
@@ -151,31 +153,30 @@ test_that("alpha_prior = 1 and assurance = .80 is safeguard power: F and chi squ
   plan <- ss_buc_R2(F_observed = 5, N = 150, p = 4, alpha_prior = 1,
                     assurance = .80, random_predictors = FALSE)
   lim <- lower_f(5, 4, 145)
-  expect_lte(sg_rel(sg_ncp(plan), lim), 1e-3)
-  expect_lte(sg_ncp(plan), lim)
+  expect_equal(sg_ncp(plan), lim, tolerance = 1e-7)
   expect_identical(sg_size(plan),
                    first_n(function(n) power_f(lim * n / 150, 4, n - 5), 7))
   expect_identical(sg_size(plan), 181)
 
   # A single regression coefficient, t = 2.5 with N = 100 and three fixed
   # predictors, is planned on the F = t^2 scale with one numerator df: its
-  # interval is the F interval, which is the |t| construction.
+  # interval is the F interval, which is the |t| construction, so the
+  # parameter equals that limit (and is below the signed t limit squared).
   plan <- ss_buc_reg_coef(t_observed = 2.5, N = 100, p = 3, alpha_prior = 1,
                           assurance = .80, random_predictors = FALSE)
   lim <- lower_f(2.5^2, 1, 96)
-  expect_lte(sg_rel(sg_ncp(plan), lim), 1e-3)
-  expect_lte(sg_ncp(plan), lim)
+  expect_equal(sg_ncp(plan), lim, tolerance = 1e-7)
   expect_identical(sg_size(plan),
                    first_n(function(n) power_f(lim * n / 100, 1, n - 4), 5))
   expect_identical(sg_size(plan), 295)
+  expect_lt(sg_ncp(plan), lower_t(2.5, 96)^2)
 
   # Nested model chi square difference of 12 on 2 df with N = 300.
   plan <- ss_buc_chisq_diff(chisq_observed = 12, N = 300, df_full = 10,
                             df_restricted = 12, alpha_prior = 1,
                             assurance = .80)
   lim <- lower_chisq(12, 2)
-  expect_lte(sg_rel(sg_ncp(plan), lim), 1e-3)
-  expect_lte(sg_ncp(plan), lim)
+  expect_equal(sg_ncp(plan), lim, tolerance = 1e-7)
   expect_identical(sg_size(plan), first_n(
     function(n) 1 - pchisq(qchisq(.95, 2), 2, lim * n / 300), 2))
   expect_identical(sg_size(plan), 483)
@@ -195,8 +196,7 @@ test_that("with sampled predictors the equivalence holds in that frame", {
                  c(0, 100), tol = 1e-12)$root
   plan <- ss_buc_R2(F_observed = 5, N = 150, p = 4, alpha_prior = 1,
                     assurance = .80, random_predictors = TRUE)
-  expect_lte(sg_rel(sg_ncp(plan), lim), 1e-3)
-  expect_lte(sg_ncp(plan), lim)
+  expect_equal(sg_ncp(plan), lim, tolerance = 1e-7)
   prob <- 150 / (150 + lim)
   expect_identical(sg_size(plan), first_n(function(n) {
     1 - mixture_cdf(qf(.95, 4, n - 5), 4, n - 5, n - 1, prob)
@@ -212,30 +212,39 @@ test_that("a two-sided confidence level C corresponds to assurance (1 + C)/2", {
     plan <- ss_buc_paired_t(t_observed = 3, N = 30, alpha_prior = 1,
                             assurance = (1 + C) / 2)
     lim <- lower_t(3, 29, level = (1 + C) / 2)
-    expect_lte(sg_rel(sg_ncp(plan), lim), 1e-3)
+    expect_lte(sg_rel(sg_ncp(plan), lim), 1e-4)
     expect_lte(sg_ncp(plan), lim)
   }
   # And assurance .5 is the median unbiased estimate, the zero-width limit.
   plan <- ss_buc_paired_t(t_observed = 3, N = 30, alpha_prior = 1,
                           assurance = .50)
   lim <- lower_t(3, 29, level = .50)
-  expect_lte(sg_rel(sg_ncp(plan), lim), 1e-3)
+  expect_lte(sg_rel(sg_ncp(plan), lim), 1e-4)
 })
 
 test_that("a weak t prior is declined where the signed limit is still positive", {
-  # At alpha_prior = 1 the largest supportable assurance is 1 - p/.999, so an
-  # assurance of .80 is declined once the two-sided p reaches .1998; the
-  # signed one-sided 80% limit stays above zero until the one-sided p reaches
-  # .20, a two-sided p of .40.
+  # At alpha_prior = 1 the largest supportable assurance is exactly 1 - p, so
+  # an assurance of .80 is declined once the two-sided p reaches .20 (while 1
+  # was read as .999 the ceiling was 1 - p/.999, and it was declined from
+  # .1998); the signed one-sided 80% limit stays above zero until the
+  # one-sided p reaches .20, a two-sided p of .40.
   t_at <- function(p) qt(1 - p / 2, 29)
   expect_error(ss_buc_paired_t(t_observed = t_at(.21), N = 30, alpha_prior = 1,
+                               assurance = .80),
+               class = "bucss_zero_ncp")
+  expect_error(ss_buc_paired_t(t_observed = t_at(.2001), N = 30, alpha_prior = 1,
                                assurance = .80),
                class = "bucss_zero_ncp")
   expect_gt(lower_t(t_at(.21), 29), 0)
   expect_gt(pt(t_at(.39), 29), .80)
   expect_lt(pt(t_at(.41), 29), .80)
-  # Just inside the boundary a plan is issued, and it is larger than the
-  # safeguard plan (the |t| construction matters most for a weak prior).
+  # Just inside the boundary a plan is issued (at .1999 too, which the .999
+  # reading declined), and it is larger than the safeguard plan (the |t|
+  # construction matters most for a weak prior).
+  edge <- ss_buc_paired_t(t_observed = t_at(.1999), N = 30, alpha_prior = 1,
+                          assurance = .80)
+  expect_equal(attr(edge, "assurance_ceiling"), 1 - .1999, tolerance = 1e-12)
+  expect_gt(sg_ncp(edge), 0)
   plan <- ss_buc_paired_t(t_observed = t_at(.19), N = 30, alpha_prior = 1,
                           assurance = .80)
   lim <- lower_t(t_at(.19), 29)

@@ -20,10 +20,11 @@
 #'   uncertainty.
 #'
 #'   \strong{This planner is an approximation, and needs one assumption the
-#'   others do not.} A Welch \emph{t} statistic is not exactly distributed as a
-#'   noncentral \emph{t}: its denominator degrees of freedom are estimated from
-#'   the data by the Welch-Satterthwaite formula, and they depend on the ratio
-#'   of the two population standard deviations. \code{ss_buc_welch_t} treats the
+#'   others do not.} A Welch \emph{t} statistic (Welch, 1947) is not exactly
+#'   distributed as a noncentral \emph{t}: its denominator degrees of freedom
+#'   are estimated from the data by the Welch-Satterthwaite formula
+#'   (Satterthwaite, 1946; Welch, 1947), and they depend on the ratio of the
+#'   two population standard deviations. \code{ss_buc_welch_t} treats the
 #'   statistic as noncentral \emph{t} on the Welch-Satterthwaite degrees of
 #'   freedom implied by the prior study's group sizes and the standard deviation
 #'   ratio you supply, which is the usual approximation in power analysis for
@@ -127,11 +128,14 @@
 #'   larger \emph{p} values are not, which reflects less severe publication
 #'   bias than the default of .05. If the previous study of interest has not
 #'   been subjected to publication bias (e.g., a pilot study), set
-#'   \code{alpha_prior = 1}. Because no \emph{p} value exceeds 1, this means
-#'   no publication filter at all: any result would have been published
-#'   whatever its \emph{p} value, so there is no publication bias to correct,
-#'   and only the correction for uncertainty, set by \code{assurance},
-#'   remains.
+#'   \code{alpha_prior = 1}, which may also be written
+#'   \code{alpha_prior = "No Publication Filter"}; Anderson, Kelley, and
+#'   Maxwell (2017, p. 1552) note that it can be set equal to 1 when
+#'   publication bias is thought not to apply. Because no \emph{p} value
+#'   exceeds 1, this means no publication filter at all: any result would
+#'   have been published whatever its \emph{p} value, so there is no
+#'   publication bias to correct, and only the correction for uncertainty,
+#'   set by \code{assurance}, remains.
 #'
 #'   In some cases, the corrected noncentrality parameter for a given level of
 #'   assurance will be estimated to be zero. This is an indication that, at the
@@ -226,6 +230,14 @@
 #' @references Bonett, D. G. (2008). Confidence intervals for standardized
 #'   linear contrasts of means. \emph{Psychological Methods, 13,} 99--109.
 #'   \doi{10.1037/1082-989X.13.2.99}
+#'
+#'   Satterthwaite, F. E. (1946). An approximate distribution of estimates of
+#'   variance components. \emph{Biometrics Bulletin, 2,} 110--114.
+#'   \doi{10.2307/3002019}
+#'
+#'   Welch, B. L. (1947). The generalization of 'Student's' problem when
+#'   several different population variances are involved. \emph{Biometrika,
+#'   34,} 28--35. \doi{10.1093/biomet/34.1-2.28}
 ss_buc_welch_t <- function(t_observed, n_1, n_2, sd_ratio = 1,
                            sd_1, sd_2, var_1, var_2,
                            alpha_prior = .05, alpha_planned = .05,

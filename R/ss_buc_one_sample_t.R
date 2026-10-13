@@ -13,11 +13,11 @@
 #'   effect size the plan is built on, as a standardized mean.
 #'
 #' @details The one-sample \emph{t} test and the dependent (paired) \emph{t}
-#'   test are the same test applied to a single column of scores: the statistic
-#'   has \emph{N} - 1 degrees of freedom and a noncentrality parameter of
-#'   \eqn{d\sqrt{N}}{d*sqrt(N)}. \code{ss_buc_one_sample_t} therefore performs
-#'   exactly the computation \code{\link{ss_buc_paired_t}} performs, and
-#'   reports it with a
+#'   test are the same test applied to a single column of scores (Maxwell,
+#'   Delaney, & Kelley, 2027): the statistic has \emph{N} - 1 degrees of
+#'   freedom and a noncentrality parameter of \eqn{d\sqrt{N}}{d*sqrt(N)}.
+#'   \code{ss_buc_one_sample_t} therefore performs exactly the computation
+#'   \code{\link{ss_buc_paired_t}} performs, and reports it with a
 #'   one-sample design label and a total sample size rather than a number of
 #'   pairs. See \code{\link{ss_buc_paired_t}} for the full description of the
 #'   method, the meaning of \code{assurance}, the role of \code{alpha_prior},

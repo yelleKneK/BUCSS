@@ -530,28 +530,64 @@ test_that("the band message reports the balanced design's p value and an alpha_p
   expect_error(ss_buc_independent_t(t9, N = 9, assurance = .8, alpha_prior = .264),
                class = "bucss_zero_ncp")
 
-  # An assurance so high that no practical alpha_prior will do: the threshold
-  # is 1.26 here, and at .999 or more even 'alpha_prior = 1' (read as .999)
-  # refuses. The assurance prints as entered, never as 1.00.
+  # An assurance so high that no alpha_prior will do: the threshold is 1.26
+  # here, above the largest 'alpha_prior' there is, and at 'alpha_prior = 1'
+  # (no publication filter, computed as exactly 1) the balanced design
+  # supports an assurance below 1 - .0503 = .9497, so the planner refuses
+  # there too. The assurance prints as entered, never as 1.00.
+  stopifnot(1 - 2 * pt(2.77, 4, lower.tail = FALSE) < .96)
   none <- tryCatch(ss_buc_independent_t(t_observed = 2.77, n = c(2, 1000), assurance = .96),
                    bucss_nonsignificant = conditionMessage)
-  expect_match(none, paste0("Planning from it at an 'assurance' of .96 would need an ",
-                            "'alpha_prior' above .999, and 'alpha_prior = 1' (no publication ",
-                            "bias) is treated as .999, so no practical 'alpha_prior' allows ",
-                            "it; a lower 'assurance' lowers the 'alpha_prior' needed."),
-               fixed = TRUE)
-  p9 <- 2 * pt(t9, 6, lower.tail = FALSE)
-  edge <- 1 - p9 / .9995                         # a threshold of .9995
-  msg <- tryCatch(ss_buc_independent_t(t9, N = 9, assurance = edge),
-                  bucss_nonsignificant = conditionMessage)
-  expect_match(msg, "would need an 'alpha_prior' above .999", fixed = TRUE)
-  expect_no_match(msg, "or more", fixed = TRUE)
-  expect_error(ss_buc_independent_t(t9, N = 9, assurance = edge, alpha_prior = 1),
-               class = "bucss_zero_ncp")
+  expect_match(none, paste0("No 'alpha_prior' allows planning from it at an 'assurance' of ",
+                            ".96: even with no publication filter ('alpha_prior = 1') the ",
+                            "result does not support that much assurance. A lower ",
+                            "'assurance' can be planned for, and lowers the 'alpha_prior' ",
+                            "needed."), fixed = TRUE)
+  expect_no_match(none, "or more", fixed = TRUE)
+  expect_no_match(none, ".999", fixed = TRUE)
+  expect_error(ss_buc_independent_t(t_observed = 2.77, n = c(2, 1000), assurance = .96,
+                                    alpha_prior = 1), class = "bucss_zero_ncp")
   top <- tryCatch(ss_buc_independent_t(t_observed = 2.77, n = c(2, 1000), assurance = .999),
                   bucss_nonsignificant = conditionMessage)
-  expect_match(top, "at an 'assurance' of .999 would need", fixed = TRUE)
+  expect_match(top, "No 'alpha_prior' allows planning from it at an 'assurance' of .999:",
+               fixed = TRUE)
   expect_no_match(top, "1.00", fixed = TRUE)
+
+  # A threshold below 1 that rounds up to 1 (.9995 here; while 1 was read as
+  # .999 the message said no practical 'alpha_prior' would do, and
+  # 'alpha_prior = 1' refused): the message names 1 and "No Publication
+  # Filter", and 1 plans, in either spelling. The plan is very large
+  # (102,823 per group), as the message says.
+  p9 <- 2 * pt(t9, 6, lower.tail = FALSE)
+  edge <- 1 - p9 / .9995
+  msg <- tryCatch(ss_buc_independent_t(t9, N = 9, assurance = edge),
+                  bucss_nonsignificant = conditionMessage)
+  expect_match(msg, paste0("would need 'alpha_prior = 1' (\"No Publication Filter\"), which ",
+                           "assumes that any result would have been published. The plan is ",
+                           "then very large, because the result barely supports the ",
+                           "requested assurance; a lower 'assurance' gives a practical ",
+                           "plan, and lowers the 'alpha_prior' needed."), fixed = TRUE)
+  expect_no_match(msg, "or more", fixed = TRUE)
+  expect_no_match(msg, "1.00", fixed = TRUE)
+  at_one <- ss_buc_independent_t(t9, N = 9, assurance = edge, alpha_prior = 1)
+  expect_s3_class(at_one, "bucss_plan")
+  expect_gt(size(at_one), 1e5)
+  expect_identical(ss_buc_independent_t(t9, N = 9, assurance = edge,
+                                        alpha_prior = "No Publication Filter"), at_one)
+  # Just below the rounding point the value named is .999, which plans, and
+  # the largest value the helper names is 1, for any threshold below 1.
+  msg <- tryCatch(ss_buc_independent_t(t9, N = 9, assurance = 1 - p9 / .9985),
+                  bucss_nonsignificant = conditionMessage)
+  expect_match(msg, "would need an 'alpha_prior' of .999 or more", fixed = TRUE)
+  expect_s3_class(ss_buc_independent_t(t9, N = 9, assurance = 1 - p9 / .9985,
+                                       alpha_prior = .999), "bucss_plan")
+  above <- BUCSS:::.format_alpha_above
+  expect_identical(above(.2856145), ".286")
+  expect_identical(above(.9985), ".999")
+  expect_identical(above(.9989), ".999")
+  expect_identical(above(.9995), "1")
+  expect_identical(above(.999999), "1")
+  expect_identical(above(1 - 1e-12), "1")
 })
 
 test_that("every rounding planner's band message names an alpha_prior that plans", {

@@ -62,14 +62,18 @@ test_that("H-03: actual_power follows the displayed ncp where branch orderings d
   expect_equal(val(r, "actual_power"),
                power_t2(2 * 233 - 2, sqrt(233 / 52) * val(r, "ncp_adjusted")))
 
-  # Two-way, 3 x 4, N = 41: prior n 3 and 4 (B-03's verifier found n 9, ncp
-  # 11.915830, power .983816; other branch .9255340798, which is also what
-  # mutant B-M07, taking the two-way planner's actual_power from the other
-  # branch, reports).
+  # Two-way, 3 x 4, N = 41: prior n 3 and 4, at 'alpha_prior = 1', computed
+  # as exactly 1 since 2026-10-13: n 9, ncp 11.9158701383, power .9838166011;
+  # other branch .9255350521, which is also what mutant B-M07, taking the
+  # two-way planner's actual_power from the other branch, reports (independent
+  # check 2026-10-13: the root of pf(2.9, 6, 24, ncp) = .5 from pf() alone).
+  # While 1 was computed as .999, B-03's verifier found n 9, ncp 11.9158296797,
+  # power .9838162280, and other branch .9255340798.
   r <- ss_buc_factorial_anova(F_observed = 2.9, N = 41, levels_A = 3, levels_B = 4,
                               effect = "interaction", alpha_prior = 1,
                               alpha_planned = .01, assurance = .5, desired_power = .9)
-  expect_plan(r, 9, 11.9158296797, 0.9838162280)
+  expect_plan(r, 9, 11.9158701383, 0.9838166011)
+  expect_equal(pf(2.9, 6, 3 * 12 - 12, ncp = val(r, "ncp_adjusted")), .5, tolerance = 1e-8)
   expect_equal(val(r, "actual_power"),
                power_f(9, 3, val(r, "ncp_adjusted"), 6, 12 * 9 - 12, alpha = .01))
 
@@ -231,19 +235,34 @@ test_that("B-03: unbalanced, nuisance-df, and two-alpha paths of the between-sub
                0.7619448215, tolerance = 1e-9)
 })
 
-test_that("H-10: alpha_prior = 1 is .999, pinned where the difference shows", {
+test_that("H-10: alpha_prior = 1 is exactly 1, pinned where the difference shows", {
   # A weak prior (the pilot-study use of alpha_prior = 1), where the
-  # truncation point matters: mutant H-M13 (.99 instead of .999) moves the plan
-  # to 315 with ncp .49997 (H-10; independent check 2026-09-28 gives 305 and
-  # .508474632 at .999, 315 and .4999740138 at .99).
+  # truncation point matters. With no publication filter the adjusted
+  # parameter solves P(|T| <= 1.5 | df 18, ncp) = .8: independent check
+  # 2026-10-13 (base R only) gives 304 per group and .5094066426, power
+  # .8007379476, and a ceiling of 1 - p = .849049547816. Until 2026-10-13 a 1
+  # was computed as .999, which gives 305 and .5084746316 (independent check
+  # 2026-09-28), and mutant H-M13 (.99 instead of .999) gave 315 and
+  # .4999740138; any substitute for 1 moves this plan.
   one <- ss_buc_independent_t(t_observed = 1.5, n = 10, alpha_prior = 1, assurance = .8)
-  expect_plan(one, 305, 0.5084746316)
+  expect_plan(one, 304, 0.5094066426, 0.8007379476, tol = 1e-7)
+  expect_equal(attr(one, "assurance_ceiling"), 1 - 2 * pt(1.5, 18, lower.tail = FALSE),
+               tolerance = 1e-12)
+  by_hand <- uniroot(function(ncp) pt(1.5, 18, ncp) - pt(-1.5, 18, ncp) - .8, c(0, 5),
+                     tol = 1e-12)$root
+  expect_equal(val(one, "ncp_adjusted"), by_hand, tolerance = 1e-7)
+  # .999 is a different, slightly stricter filter, with its own plan (the one
+  # 'alpha_prior = 1' used to return), and .9999 lies between the two.
   point999 <- ss_buc_independent_t(t_observed = 1.5, n = 10, alpha_prior = .999,
                                    assurance = .8)
-  computed <- BUCSS:::.BUCSS_COMPUTED_TERMS
-  expect_identical(one$value[one$term %in% computed],
-                   point999$value[point999$term %in% computed])
-  expect_identical(attr(one, "assurance_ceiling"), attr(point999, "assurance_ceiling"))
+  expect_plan(point999, 305, 0.5084746316)
+  point9999 <- ss_buc_independent_t(t_observed = 1.5, n = 10, alpha_prior = .9999,
+                                    assurance = .8)
+  expect_plan(point9999, 304, 0.5093135513, tol = 1e-7)
+  expect_gt(val(one, "ncp_adjusted"), val(point9999, "ncp_adjusted"))
+  expect_gt(val(point9999, "ncp_adjusted"), val(point999, "ncp_adjusted"))
+  expect_gt(attr(one, "assurance_ceiling"), attr(point9999, "assurance_ceiling"))
+  expect_gt(attr(point9999, "assurance_ceiling"), attr(point999, "assurance_ceiling"))
   # ...and alpha_prior is echoed as entered.
   expect_identical(val(one, "alpha_prior"), 1)
 })

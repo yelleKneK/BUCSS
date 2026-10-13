@@ -254,23 +254,61 @@
   invisible(seed)
 }
 
+# The words that may stand for an 'alpha_prior' of 1, as the help pages and
+# the messages write them.
+.BUCSS_NO_FILTER <- "No Publication Filter"
+
+# Read 'alpha_prior' as a number. The string "No Publication Filter" is
+# accepted as a synonym for 1, so that a call can say what 1 means; it is
+# matched without regard to case, with surrounding whitespace trimmed, and
+# with any run of spaces, underscores, or hyphens between the three words
+# read alike ("no publication filter", "No_Publication_Filter",
+# "no-publication-filter"). Every other string, a missing string, and a
+# character vector of any other length are refused with one message that
+# names both forms. A value that is not a string is returned untouched for
+# the numeric checks that follow. Only 'alpha_prior' takes a string.
+.read_alpha_prior <- function(alpha_prior) {
+  if (!is.character(alpha_prior)) return(alpha_prior)
+  key <- if (length(alpha_prior) == 1L && !is.na(alpha_prior))
+    gsub("[ _-]+", " ", tolower(trimws(alpha_prior)))
+  if (!identical(key, tolower(.BUCSS_NO_FILTER)))
+    stop("'alpha_prior' must be a number above 0 and at most 1, or the string \"",
+         .BUCSS_NO_FILTER, "\", which means 1 (any result would have been ",
+         "published, whatever its p value).", call. = FALSE)
+  1
+}
+
 # Validate the planning inputs shared by every ss_buc_* function and apply the
 # documented coercions, so the checks stay identical across all planners. The
-# three coercions are load-bearing: 'alpha_prior == 1' becomes .999 to model
-# "no publication bias" without a degenerate truncation, and 'assurance' or
-# 'power' entered as a percentage (>= 1) is divided by 100 so that, for example,
-# 80 means .80. Returns the (possibly coerced) values; 'alpha_prior_input' is
-# the value the user supplied, echoed back in the result's planning inputs.
-# call. = FALSE keeps this internal helper out of the error the user sees.
+# coercions are load-bearing: 'alpha_prior' given as the string "No
+# Publication Filter" is read as 1 (.read_alpha_prior()), and 'assurance' or
+# 'power' entered as a percentage (>= 1) is divided by 100 so that, for
+# example, 80 means .80. An 'alpha_prior' of 1 is computed as exactly 1: the
+# publication critical value is then 0, the power term of the truncated
+# likelihood is 1, and the truncated distribution is the statistic's ordinary
+# distribution, so the largest supportable assurance is exactly 1 - p. (BUCSS
+# 1.x and the builds of 2.0.0 before 2026-10-13 computed with .999 in its
+# place; never substitute another number for it again.) Returns the (possibly
+# coerced) values; 'alpha_prior_input' is the numeric value echoed back in the
+# result's planning inputs (1 for the string, since the value column is
+# numeric), the same number as 'alpha_prior'. call. = FALSE keeps this
+# internal helper out of the error the user sees.
+#
+# A 'desired_power' at or below 'alpha_planned' is not allowable and is
+# refused, after the percentage coercion: a test's power is never below its
+# Type I error rate, so every sample size would meet such a target (the search
+# used to return the smallest size it considers, with no notice). The message
+# names both values and, when the value entered was 1 or more, says that it
+# was read as a percentage (1 is read as .01, 5 as .05).
 .validate_planning_inputs <- function(alpha_prior, alpha_planned, assurance,
                                       desired_power) {
+  alpha_prior <- .read_alpha_prior(alpha_prior)
   .check_scalar_finite(alpha_prior, "alpha_prior")
   .check_scalar_finite(alpha_planned, "alpha_planned")
   .check_scalar_finite(assurance, "assurance")
   .check_scalar_finite(desired_power, "desired_power")
   if (alpha_prior > 1 | alpha_prior <= 0) stop("There is a problem with 'alpha_prior' of the prior study (i.e., the Type I error rate), please specify as a value between 0 and 1 (the default is .05).", call. = FALSE)
   alpha_prior_input <- alpha_prior
-  if (alpha_prior == 1) alpha_prior <- .999
 
   if (alpha_planned >= 1 | alpha_planned <= 0) stop("There is a problem with 'alpha_planned' of the planned study (i.e., the Type I error rate), please specify as a value between 0 and 1 (the default is .05).", call. = FALSE)
   # Below about 5.6e-17, 1 - alpha_planned is exactly 1 in double precision:
@@ -282,8 +320,23 @@
   if (assurance <= 0 | assurance >= 1) stop("There is a problem with 'assurance' (i.e., the proportion of times statistical power is at or above the desired value), please specify as a value strictly between 0 and 1 (the default is .80). An 'assurance' of exactly 0 or 1 does not define a plannable study; note that 100 entered as a percentage means 1.", call. = FALSE)
   if (assurance < .5) warning("The 'assurance' you have entered is < .5, which implies you will have under a 50% chance at achieving your desired level of power.", call. = FALSE)
 
+  desired_power_entered <- desired_power
   if (desired_power >= 1) desired_power <- desired_power / 100
   if (desired_power <= 0 | desired_power >= 1) stop("There is a problem with 'desired_power' (i.e., desired statistical power), please specify as a value strictly between 0 and 1 (the default is .80). A planned power of exactly 0 or 1 is not attainable; note that 100 entered as a percentage means 1.", call. = FALSE)
+  if (desired_power <= alpha_planned)
+    stop("A 'desired_power' at or below 'alpha_planned' is not allowable: ",
+         "'desired_power' is ", .format_alpha(desired_power),
+         " and 'alpha_planned' is ", .format_alpha(alpha_planned), ". ",
+         if (desired_power_entered >= 1)
+           paste0("The 'desired_power' you entered, ",
+                  format(desired_power_entered, scientific = FALSE, trim = TRUE),
+                  ", is 1 or more, so it was read as a percentage (",
+                  format(desired_power_entered, scientific = FALSE, trim = TRUE),
+                  " percent, that is, ", .format_alpha(desired_power), "). "),
+         "A test's power is never below its Type I error rate, so every ",
+         "sample size would meet such a target and no plan is meaningful. ",
+         "Please specify a 'desired_power' above 'alpha_planned' (the default ",
+         "is .80).", call. = FALSE)
 
   list(alpha_prior = alpha_prior, alpha_prior_input = alpha_prior_input,
        assurance = assurance, desired_power = desired_power)
@@ -721,18 +774,22 @@
 # Planning at the requested 'assurance' needs the balanced design's ceiling,
 # 1 - p_balanced/alpha_prior, to exceed the assurance, so 'alpha_prior' must be
 # strictly above p_balanced/(1 - assurance); at that threshold itself the
-# planner refuses. The message names a value strictly above it (see
-# .format_alpha_above()) and says that plans near it are very large; when the
-# threshold is .999 or more it says instead that no practical 'alpha_prior'
-# will do ('alpha_prior = 1' is read as .999). It mentions the recommended
-# floor of .5 only when the own-df ceiling is below it, and words a ceiling
-# that floors to less than .01 as "below .01" (it printed "at most about
-# .00"). Each p value is printed by .format_p_value(), so it reads on the
-# side of 'alpha_prior' it is on. Every planner passes 'alpha_prior' (the
-# value in use, so .999 for an entered 1): when it is .999 or more the plain
-# message does not ask the user to increase it, which cannot help, and says
-# instead that the statistic is too small to plan from even with no
-# publication bias assumed. The condition carries the class
+# planner refuses. An 'alpha_prior' is at most 1, and 1 is computed as exactly
+# 1 (no publication filter), so there are three cases. Below 1, the message
+# names a value strictly above the threshold (see .format_alpha_above()) and
+# says that plans near it are very large. When that value rounds up to 1 (a
+# threshold within about .001 of 1), it names 1 and "No Publication Filter",
+# which plans, though the plan is very large. When the threshold is 1 or
+# more, no 'alpha_prior' allows planning at that assurance, and it says so.
+# It mentions the recommended floor of .5 only when the own-df ceiling is
+# below it, and words a ceiling that floors to less than .01 as "below .01"
+# (it printed "at most about .00"). Each p value is printed by
+# .format_p_value(), so it reads on the side of 'alpha_prior' it is on. Every
+# planner passes 'alpha_prior': at exactly 1 the critical value is 0, so only
+# a statistic of 0 (or a negative F or chi square) is refused here, and the
+# plain message does not ask the user to increase 'alpha_prior', which cannot
+# be done; it says instead that the statistic is too small to plan from even
+# with no publication filter. The condition carries the class
 # 'bucss_nonsignificant' so code that loops over plans can catch it alone.
 .stop_nonsignificant <- function(what, arg, p_own = NULL, alpha_prior = NULL,
                                  p_balanced = NULL, assurance = NULL) {
@@ -744,26 +801,34 @@
       p_own < alpha_prior && p_balanced > p_own) {
     ceiling_own <- .floor_assurance(1 - p_own / alpha_prior)
     needed <- if (!is.null(assurance)) p_balanced / (1 - assurance)
+    named <- if (!is.null(needed) && needed < 1) .format_alpha_above(needed)
     msg <- paste0(
       "Your observed ", what, " is significant at the prior study's own degrees ",
       "of freedom (p = ", fmtp(p_own), "), but this planner reduces a prior ",
       "study with unequal group sizes to a balanced design with fewer error ",
       "degrees of freedom, and there its p value is ", fmtp(p_balanced),
       ", above 'alpha_prior'. ",
-      if (!is.null(needed) && needed < .999)
+      if (!is.null(named) && named != "1")
         paste0("Planning from it at an 'assurance' of ", .format_alpha(assurance),
-               " would need an 'alpha_prior' of ", .format_alpha_above(needed),
+               " would need an 'alpha_prior' of ", named,
                " or more, which assumes a more lenient publication threshold. ",
                "Near that value the plan is very large, because the result ",
                "then barely supports the requested assurance; a larger ",
                "'alpha_prior' gives a practical plan, and so does a lower ",
                "'assurance', which lowers the 'alpha_prior' needed. ")
-      else if (!is.null(needed))
+      else if (!is.null(named))
         paste0("Planning from it at an 'assurance' of ", .format_alpha(assurance),
-               " would need an 'alpha_prior' above .999, and 'alpha_prior = 1' ",
-               "(no publication bias) is treated as .999, so no practical ",
-               "'alpha_prior' allows it; a lower 'assurance' lowers the ",
-               "'alpha_prior' needed. "),
+               " would need 'alpha_prior = 1' (\"", .BUCSS_NO_FILTER, "\"), ",
+               "which assumes that any result would have been published. The ",
+               "plan is then very large, because the result barely supports ",
+               "the requested assurance; a lower 'assurance' gives a ",
+               "practical plan, and lowers the 'alpha_prior' needed. ")
+      else if (!is.null(needed))
+        paste0("No 'alpha_prior' allows planning from it at an 'assurance' of ",
+               .format_alpha(assurance), ": even with no publication filter ",
+               "('alpha_prior = 1') the result does not support that much ",
+               "assurance. A lower 'assurance' can be planned for, and lowers ",
+               "the 'alpha_prior' needed. "),
       if (ceiling_own < .01)
         paste0("Even at its own degrees of freedom the result supports an ",
                "assurance below .01, far below the recommended floor of .5.")
@@ -775,10 +840,10 @@
     msg <- paste0(
       "Your observed ", what, " is nonsignificant based on your specified ",
       "'alpha_prior' of the prior study. ",
-      if (!is.null(alpha_prior) && alpha_prior >= .999)
-        paste0("An 'alpha_prior' that large already assumes no publication ",
-               "bias, so increasing it cannot help: ", arg, " is too small to ",
-               "plan from even with no publication bias assumed.")
+      if (!is.null(alpha_prior) && alpha_prior >= 1)
+        paste0("An 'alpha_prior' of 1 already assumes no publication filter, ",
+               "so it cannot be increased: ", arg, " is too small to plan ",
+               "from even with no publication filter.")
       else
         paste0("Please increase 'alpha_prior' so ", arg,
                " exceeds the critical value."))
@@ -805,13 +870,16 @@
 # up to three significant digits. The value named is therefore strictly above
 # the threshold, where the planner plans; rounding to the nearest three
 # digits named a value at or below it about half the time, and the planner
-# refused there. Never above .999, the largest value used as given; the
-# caller passes only thresholds below .999, so .999 is itself above them.
-# Display only: the value is text in a message, never stored.
+# refused there. Never above 1, the largest 'alpha_prior' there is: the caller
+# passes only thresholds below 1, so 1 is itself strictly above them, and a
+# threshold within about .001 of 1 is named "1", which the caller words as
+# 'alpha_prior = 1'. Display only: the value is text in a message, never
+# stored.
 .format_alpha_above <- function(x) {
   y <- x * (1 + 1e-6)
   k <- 2 - floor(log10(y))
-  .format_alpha(min(ceiling(y * 10^k) / 10^k, .999))
+  above <- min(ceiling(y * 10^k) / 10^k, 1)
+  if (above >= 1) "1" else .format_alpha(above)
 }
 
 # The assurance ceiling as the messages and footers state it: floored to two

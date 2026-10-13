@@ -23,8 +23,9 @@
 #'   \strong{Scope.} The correction this package implements works on a single
 #'   test statistic with an exact noncentral \emph{F} distribution. A
 #'   multivariate hypothesis has one only when its rank is one, which is the
-#'   case for a comparison of two groups: Hotelling's \eqn{T^2} on \emph{p}
-#'   outcome variables with total sample size \emph{N} maps exactly to
+#'   case for a comparison of two groups: Hotelling's \eqn{T^2} (the
+#'   generalization of Student's ratio; Hotelling, 1931) on \emph{p} outcome
+#'   variables with total sample size \emph{N} maps exactly to
 #'   \eqn{F = T^2 (N - p - 1) / (p (N - 2))} on \emph{p} and \emph{N} - \emph{p}
 #'   - 1 degrees of freedom. Supply either the \emph{F} or the \eqn{T^2}. For a
 #'   hypothesis of rank greater than one (three or more groups, say) the
@@ -64,11 +65,14 @@
 #'   larger \emph{p} values are not, which reflects less severe publication
 #'   bias than the default of .05. If the previous study of interest has not
 #'   been subjected to publication bias (e.g., a pilot study), set
-#'   \code{alpha_prior = 1}. Because no \emph{p} value exceeds 1, this means
-#'   no publication filter at all: any result would have been published
-#'   whatever its \emph{p} value, so there is no publication bias to correct,
-#'   and only the correction for uncertainty, set by \code{assurance},
-#'   remains.
+#'   \code{alpha_prior = 1}, which may also be written
+#'   \code{alpha_prior = "No Publication Filter"}; Anderson, Kelley, and
+#'   Maxwell (2017, p. 1552) note that it can be set equal to 1 when
+#'   publication bias is thought not to apply. Because no \emph{p} value
+#'   exceeds 1, this means no publication filter at all: any result would
+#'   have been published whatever its \emph{p} value, so there is no
+#'   publication bias to correct, and only the correction for uncertainty,
+#'   set by \code{assurance}, remains.
 #'
 #'   In some cases, the corrected noncentrality parameter for a given level of
 #'   assurance will be estimated to be zero. This is an indication that, at the
@@ -148,6 +152,9 @@
 #'   Samantha F. Anderson (\email{samantha.f.anderson@@asu.edu})
 #'
 #' @template references
+#' @references Hotelling, H. (1931). The generalization of Student's ratio.
+#'   \emph{The Annals of Mathematical Statistics, 2,} 360--378.
+#'   \doi{10.1214/aoms/1177732979}
 ss_buc_manova <- function(F_observed, N, p_variables, T2_observed,
                           alpha_prior = .05, alpha_planned = .05,
                           assurance = .80, desired_power = .80) {

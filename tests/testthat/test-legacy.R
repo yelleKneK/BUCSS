@@ -73,6 +73,47 @@ test_that("the regression wrappers keep the fixed-predictor frame of 1.x", {
                           fixed = TRUE)), info = f)
 })
 
+test_that("the wrappers forward \"No Publication Filter\" and the refusal of a low target power", {
+  # The wrappers pass 'alpha.prior' and 'power' to the planners untouched, so
+  # the rules of 2026-10-13 reach every 1.x call: 'alpha.prior' may be the
+  # string "No Publication Filter", which is 1 (computed as exactly 1), and a
+  # 'power' at or below 'alpha.planned' is not allowable (1.x returned its
+  # smallest size for it; note that a 1.x 'power = 1' is read as 1 percent).
+  for (nm in names(legacy_pairs)) {
+    with_old <- function(...) {
+      call <- legacy_pairs[[nm]]$old
+      extra <- list(...)
+      for (arg in names(extra)) call[[arg]] <- extra[[arg]]
+      suppressWarnings(eval(call))
+    }
+    one <- with_old(alpha.prior = 1)
+    named <- with_old(alpha.prior = "No Publication Filter")
+    expect_s3_class(named, "bucss_plan")
+    expect_identical(named, one, info = nm)
+    expect_identical(named$value[named$term == "alpha_prior"], 1, info = nm)
+    # The 1.x positional reading still works on it.
+    expect_identical(named[[1]], one[[1]], info = nm)
+    expect_identical(named[[2]], one[[2]], info = nm)
+    # ...and it is the replacement's plan at 'alpha_prior = 1'.
+    new_call <- legacy_pairs[[nm]]$new
+    new_call$alpha_prior <- 1
+    expect_identical(named, eval(new_call), info = nm)
+    expect_error(with_old(alpha.prior = "none"),
+                 "or the string \"No Publication Filter\", which means 1", fixed = TRUE,
+                 info = nm)
+
+    expect_error(with_old(power = .03),
+                 "A 'desired_power' at or below 'alpha_planned' is not allowable:",
+                 fixed = TRUE, info = nm)
+    expect_error(with_old(power = 1),
+                 "it was read as a percentage (1 percent, that is, .01).", fixed = TRUE,
+                 info = nm)
+    expect_error(with_old(power = .09, alpha.planned = .10),
+                 "'desired_power' is .09 and 'alpha_planned' is .10.", fixed = TRUE,
+                 info = nm)
+  }
+})
+
 test_that("deprecation warning fires once per session and names the replacement", {
   # Clear the per-session warning record so the first call below warns.
   rm(list = ls(envir = BUCSS:::.bucss_deprecated_warned),

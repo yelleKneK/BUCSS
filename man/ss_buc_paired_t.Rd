@@ -35,15 +35,17 @@ correction (see Details).}
 
 \item{alpha_prior}{The significance level \eqn{\alpha} a prior result had
 to reach to be published (more generally, to reach you): the correction
-assumes you see only results with \emph{p} below \code{alpha_prior}. A
-value of 1 means no publication filter: every \emph{p} value is at most
-1, so any result would have been published whatever its \emph{p} value,
-there is no publication bias to correct, and only the correction for
-uncertainty (set by \code{assurance}) remains, as for a pilot study. The
-planners compute with .999 in place of 1, as BUCSS 1.x did, so plans
-match earlier versions; that filter is so lenient (it drops only results
-with \emph{p} above .999) that it changes the plan negligibly, and the
-result echoes the 1 you entered.}
+assumes you see only results with \emph{p} below \code{alpha_prior}.
+Enter a number above 0 and at most 1. A value of 1, which may also be
+written \code{"No Publication Filter"}, means no publication filter:
+every \emph{p} value is at most 1, so any result would have been
+published whatever its \emph{p} value, there is no publication bias to
+correct, and only the correction for uncertainty (set by
+\code{assurance}) remains, as for a pilot study. Anderson, Kelley, and
+Maxwell (2017, p. 1552) note that this level, their
+\eqn{\alpha_P}{alpha_P}, can be set equal to 1 when publication bias is
+thought not to apply. The string is read without regard to case, and
+the result echoes it as an \code{alpha_prior} of 1.}
 
 \item{alpha_planned}{Alpha level \eqn{\alpha} assumed for the planned study.}
 
@@ -70,8 +72,14 @@ the coerced proportion (80 is echoed as .80); the same applies to
 \code{desired_power}.}
 
 \item{desired_power}{Desired level of statistical power for the planned
-study. Enter it as a proportion in (0, 1) or as a percentage greater than
-1; a value of exactly 1 is read as 1 percent.}
+study: the probability that its test rejects the null hypothesis when
+the effect is present (Maxwell, Delaney, & Kelley, 2027). It must exceed
+\code{alpha_planned}: a test's power is never below its Type I error
+rate, so a value at or below \code{alpha_planned} is not allowable, and
+the function stops rather than return a plan. Enter it as a proportion
+in (0, 1) or as a percentage greater than 1; a value of exactly 1 is
+read as 1 percent (.01), which is then refused unless
+\code{alpha_planned} is below .01.}
 }
 \value{
 An object of class \code{bucss_plan}: a \code{data.frame} with a
@@ -176,11 +184,14 @@ Researchers often use the sample effect size from a prior study as
   larger \emph{p} values are not, which reflects less severe publication
   bias than the default of .05. If the previous study of interest has not
   been subjected to publication bias (e.g., a pilot study), set
-  \code{alpha_prior = 1}. Because no \emph{p} value exceeds 1, this means
-  no publication filter at all: any result would have been published
-  whatever its \emph{p} value, so there is no publication bias to correct,
-  and only the correction for uncertainty, set by \code{assurance},
-  remains.
+  \code{alpha_prior = 1}, which may also be written
+  \code{alpha_prior = "No Publication Filter"}; Anderson, Kelley, and
+  Maxwell (2017, p. 1552) note that it can be set equal to 1 when
+  publication bias is thought not to apply. Because no \emph{p} value
+  exceeds 1, this means no publication filter at all: any result would
+  have been published whatever its \emph{p} value, so there is no
+  publication bias to correct, and only the correction for uncertainty,
+  set by \code{assurance}, remains.
 
   In some cases, the corrected noncentrality parameter for a given level of
   assurance will be estimated to be zero. This is an indication that, at the
